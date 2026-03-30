@@ -17,6 +17,14 @@
       "destination": "api/index.py"
     },
     {
+      "source": "/admin",
+      "destination": "api/index.py"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "api/index.py"
+    },
+    {
       "source": "/(.*)",
       "destination": "/ai-bd-tracker/$1"
     }
