@@ -162,3 +162,12 @@
   - **同步成果**: 成功迁移了 8 个项目 (Project), 8 个任务 (Task), 4 名高管履历 (Contact + History), 以及 4 份 AI 竞争情报 (Intelligence)。
   - **网络细节**: 因本地屏蔽了 IPv6 外回，使用 `aws-1-ap-southeast-2.pooler.supabase.com:6543` 的 IPv4 Proxy 池成功连接并写入完毕。
 
+### Phase 17: Vercel 云端运行时优化与 Bug 修复 (Serverless DB Fix)
+
+在 Vercel 部署连结线上 Supabase 之后，针对 Vercel Edge/Serverless Functions 和 Supabase Pooler 的特性进行了三次关键修复，彻底解决了前端 "Loading / Syncing" 永远转圈的 500 崩溃问题。
+
+- **核心变更记录**:
+  - **数据库连接池兼容**: 修改了 `backend/main.py`，**移除并注销了 `models.Base.metadata.create_all`**。因为在 Serverless 环境加上 Supabase 默认开启事务池 (Transaction Pooler, 6543端口) 的情况下，每次冷启动执行 DDL 会阻塞并直接触发 Vercel 10s 超时上限导致崩溃。
+  - **Vercel 环境变量智能读取**: 修改了 `backend/database.py`，代码目前会智能轮询读取 `DATABASE_URL`, `POSTGRES_URL` (Supabase Vercel 插件默认提供), 以及 `POSTGRES_URL_NON_POOLING`，全方位保证不回退到 SQLite 从而引发 Vercel 容器只读报错。
+  - **SQLAdmin 后台云端穿透**: 修改了 `vercel.json` 路由规则，新增了对 `/admin` 及 `/admin/(.*)` 的精确规则，保证了 FastAPI 内置的后台管理界面能在生产环境被正确代理打开。
+  - **构建防错**: 清理了被工具误加到根目录下的 `package.json`，确保 Vercel 构建系统能够准确识别当前为 Python 后端，并根据 `requirements.txt` 打包依赖。
