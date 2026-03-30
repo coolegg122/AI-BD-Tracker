@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # We'll use SQLite for development if DATABASE_URL isn't set.
-# Vercel will provide DATABASE_URL for Postgres.
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
+# Vercel will provide POSTGRES_URL (from Supabase integration) or DATABASE_URL.
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_URL_NON_POOLING") or "sqlite:///./sql_app.db"
 
 # Fix for Heroku/Supabase giving postgres:// instead of postgresql://
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

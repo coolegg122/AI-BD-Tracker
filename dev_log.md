@@ -126,3 +126,39 @@
   1. **正式 AI 接口联调**: 目前 `AIAnalysisModal.jsx` 与竞争情报中的输出虽然逼近完美，但若要实际商用，需在本地根目录下配置 `.env` 文件填充真实的 `GEMINI_API_KEY`。
   2. **可视化增强**: 考虑在 Dashboard 引入 Recharts 曲线，展示 Pipeline 中不同阶段项目的估值/里程碑趋势。
   3. **数据反哺闭环**: 让人脉页面和会议页面的信息也能通过 Smart Input 从非结构化文本中一键提取落库。
+
+---
+
+## [2026-03-31] 部署就绪：完成 Phase 15 (Vercel Cloud Deployment Prep)
+
+### Phase 15: 生产环境部署优化与 GitHub 同步
+
+为了将项目发布至 Vercel，我们对架构进行了最后的云端适配优化。
+
+- **工作目录**: 项目根目录
+- **核心变更记录**:
+  - **路径适配**: 修改了 `api/index.py`，动态向 `sys.path` 注入了 `backend` 路径，解决了 Vercel Serverless 环境下跨目录导入 `models`, `schemas` 失败的问题。
+  - **依赖补完**: 深度审计了 `requirements.txt` 和 `package.json`，确保所有生产环境依赖（如 `sqladmin`, `google-generativeai`, `zustand`）均已声明。
+  - **构建优化**: 新增了 `.vercelignore`，排除了 `node_modules`、本地 SQLite 数据库 (`sql_app.db`) 以及 macOS 缓存文件，显著提升了 Vercel 的上传与构建速度。
+  - **GitHub 整合**: 用户已成功将全量代码推送到 GitHub (`coolegg122/AI-BD-Tracker`)。
+
+### **给下一个接手 AI 的关键上下文提示 (Context for Vercel Deployment)**
+
+- **Vercel 配置**: 
+  - **Framework Preset**: 选择 `Other` (由 `vercel.json` 接管)。
+  - **Root Directory**: 保持为项目根目录。
+  - **Environment Variables**: 必须在 Vercel 控制台配置 `GEMINI_API_KEY` 以开启 AI 解析功能。
+- **持久化提醒**: 目前使用 SQLite。如果需要生产级数据持久化，请在 Vercel 配置 `DATABASE_URL` 指向外部 Postgres 数据库。
+
+**当前状态**: 🚀 **代码已就绪，可直接在 Vercel 导入 GitHub 仓库进行一键部署。**
+
+### Phase 16: 数据彻底迁移至 Supabase (Cloud Database Sync)
+
+通过直接执行 Python 脚本，已成功将本地离线的 `sql_app.db` 内容无损迁移到线上的 Supabase Postgres 库中。
+
+- **工作目录**: `scripts/`
+- **操作记录**:
+  - 创建并执行了 `migrate_to_supabase.py`。
+  - **同步成果**: 成功迁移了 8 个项目 (Project), 8 个任务 (Task), 4 名高管履历 (Contact + History), 以及 4 份 AI 竞争情报 (Intelligence)。
+  - **网络细节**: 因本地屏蔽了 IPv6 外回，使用 `aws-1-ap-southeast-2.pooler.supabase.com:6543` 的 IPv4 Proxy 池成功连接并写入完毕。
+
