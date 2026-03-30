@@ -8,8 +8,8 @@ import models, schemas, database
 from ai_engine import extract_project_info
 from sqladmin import Admin, ModelView
 
-# Initialize database tables
-models.Base.metadata.create_all(bind=database.engine)
+# Avoid running DDL (create_all) in serverless environments or pooler connections
+# models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
 
