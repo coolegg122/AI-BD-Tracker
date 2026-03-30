@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api/v1' : '/api/v1';
 
 export const api = {
   // Extract project data from raw text using AI Engine

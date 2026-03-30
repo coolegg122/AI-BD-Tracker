@@ -5,16 +5,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# We'll use SQLite for development if POSTGRES_URL isn't set, 
-# for easier out-of-the-box local testing without running a real DB container.
+# We'll use SQLite for development if DATABASE_URL isn't set.
+# Vercel will provide DATABASE_URL for Postgres.
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
+
+# Fix for Heroku/Supabase giving postgres:// instead of postgresql://
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
     )
 else:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    # Use pool_pre_ping for cloud DBs to keep connections alive
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
