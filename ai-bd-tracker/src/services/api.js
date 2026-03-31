@@ -30,18 +30,21 @@ export const api = {
   createProject: async (projectData) => {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(projectData),
     });
     if (!response.ok) {
-      let detail = response.statusText;
+      let detail = `HTTP ${response.status}`;
       try {
-        const errBody = await response.json();
-        detail = JSON.stringify(errBody.detail || errBody);
+        const text = await response.text();
+        if (text) {
+          try {
+            const json = JSON.parse(text);
+            detail = json.detail ? JSON.stringify(json.detail) : text;
+          } catch (_) { detail = text; }
+        }
       } catch (_) {}
-      throw new Error(detail);
+      throw new Error(`Create project failed: ${detail}`);
     }
     return response.json();
   },
@@ -100,9 +103,17 @@ export const api = {
       body: JSON.stringify(contactData),
     });
     if (!response.ok) {
-      let detail = response.statusText;
-      try { const e = await response.json(); detail = JSON.stringify(e.detail || e); } catch (_) {}
-      throw new Error(detail);
+      let detail = `HTTP ${response.status}`;
+      try {
+        const text = await response.text();
+        if (text) {
+          try {
+            const json = JSON.parse(text);
+            detail = json.detail ? JSON.stringify(json.detail) : text;
+          } catch (_) { detail = text; }
+        }
+      } catch (_) {}
+      throw new Error(`Create contact failed: ${detail}`);
     }
     return response.json();
   },
@@ -146,8 +157,16 @@ export const api = {
   processIngestion: async (id) => {
     const response = await fetch(`${API_BASE_URL}/ingestion/${id}/process`, { method: 'POST' });
     if (!response.ok) {
-      let detail = response.statusText;
-      try { const e = await response.json(); detail = JSON.stringify(e.detail || e); } catch (_) {}
+      let detail = `HTTP ${response.status}`;
+      try {
+        const text = await response.text();
+        if (text) {
+          try {
+            const json = JSON.parse(text);
+            detail = json.detail ? JSON.stringify(json.detail) : text;
+          } catch (_) { detail = text; }
+        }
+      } catch (_) {}
       throw new Error(`processIngestion failed: ${detail}`);
     }
     return response.json();
