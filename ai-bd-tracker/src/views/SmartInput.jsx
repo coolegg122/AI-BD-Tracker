@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown, Inbox, Trash2, Paperclip, Mail } from 'lucide-react';
+import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown, Inbox, Trash2, Paperclip, Mail, Plus } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 
@@ -76,7 +76,7 @@ export default function SmartInput() {
       setEditData(data); // Initialize editable form with AI guess
     } catch (error) {
       console.error("AI Parse failed:", error);
-      alert("AI extraction failed. Please ensure the backend is running.");
+      alert(`AI extraction failed:\n${error.message || "Unknown error"}`);
     }
     setIsAnalyzing(false);
   };
@@ -157,6 +157,34 @@ export default function SmartInput() {
       alert(`Failed to save:\n${msg}`);
     }
     setIsSaving(false);
+  };
+
+  // Helper for dynamic details
+  const updateDetail = (key, value) => {
+    if (!editData) return;
+    setEditData({
+      ...editData,
+      details: {
+        ...(editData.details || {}),
+        [key]: value
+      }
+    });
+  };
+
+  const removeDetail = (key) => {
+    if (!editData) return;
+    const newDetails = { ...(editData.details || {}) };
+    delete newDetails[key];
+    setEditData({
+      ...editData,
+      details: newDetails
+    });
+  };
+
+  const addDetail = () => {
+    if (!editData) return;
+    const newKey = `field_${Object.keys(editData.details || {}).length + 1}`;
+    updateDetail(newKey, "");
   };
 
   const fillTestData = () => {
@@ -461,6 +489,55 @@ export default function SmartInput() {
                             />
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* SHARED DYNAMIC DETAILS SECTION */}
+            {(editData.details || Object.keys(editData.details || {}).length > 0 || true) && (
+                <div className="mt-8 pt-8 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-4">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Extra Extracted Details</label>
+                        <button 
+                            onClick={addDetail}
+                            className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                        >
+                            <Plus className="w-3 h-3" /> Add Detail
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        {Object.entries(editData.details || {}).map(([key, value]) => (
+                            <div key={key} className="flex items-end gap-2 group">
+                                <div className="flex-1">
+                                    <input 
+                                        className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-1 bg-transparent border-none outline-none focus:text-blue-500 w-full"
+                                        value={key}
+                                        onChange={(e) => {
+                                            const newKey = e.target.value;
+                                            const newDetails = { ...editData.details };
+                                            const val = newDetails[key];
+                                            delete newDetails[key];
+                                            newDetails[newKey] = val;
+                                            setEditData({...editData, details: newDetails});
+                                        }}
+                                    />
+                                    <input 
+                                        className="w-full font-medium text-slate-700 border-b border-dashed border-slate-200 focus:border-blue-400 focus:outline-none py-1 bg-transparent"
+                                        value={typeof value === 'object' ? JSON.stringify(value) : value}
+                                        onChange={(e) => updateDetail(key, e.target.value)}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={() => removeDetail(key)}
+                                    className="p-1.5 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    {Object.keys(editData.details || {}).length === 0 && (
+                        <p className="text-[11px] text-slate-400 italic">No extra clinical or contact details detected. Add some manually if needed.</p>
+                    )}
                 </div>
             )}
 

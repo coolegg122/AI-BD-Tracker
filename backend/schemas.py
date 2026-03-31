@@ -28,6 +28,7 @@ class ProjectBase(BaseModel):
     stage: str = "Initial Contact"
     nextFollowUp: Optional[str] = ""
     tasks: List[TaskCreate] = []
+    details: dict = {}
 
 class ProjectCreate(ProjectBase):
     pass
@@ -70,6 +71,7 @@ class ContactBase(BaseModel):
     phone: str
     profile: str
     metAt: List[str] = []
+    details: dict = {}
 
 class ContactCreate(ContactBase):
     careerHistory: List[CareerHistoryCreate] = []

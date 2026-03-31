@@ -1,6 +1,9 @@
 import os
 import json
 from google import genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def extract_universal(text: str, target_type: str = "project") -> dict:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -36,50 +39,76 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
             }
         
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-2.5-flash"
+    model_id = "gemini-3-flash-preview"
     
     prompts = {
         "project": """
             You are a professional BioPharma BD assistant. Extract BD project information from the user's communication record.
-            You MUST return a single valid JSON object matching this exact schema, with no extra text:
+            Be extremely thorough. Look for drug names (meds), combination therapies, clinical targets (e.g. HER2, Claudin18.2), and phase of development.
+            Also extract ANY people mentioned with their roles or contact info.
+            
+            You MUST return a single valid JSON object matching this exact schema:
             {
               "company": "Company Name",
               "pipeline": "Pipeline or Asset Name",
-              "stage": "Initial Contact",
+              "stage": "Clinical Stage (e.g. Phase I, Phase II, Pre-clinical, Marketed)",
               "nextFollowUp": "YYYY-MM-DD",
               "tasks": [
                 { "type": "meeting", "desc": "Specific to-do description", "date": "Date or TBD", "status": "pending" }
-              ]
+              ],
+              "details": {
+                "medications": ["Drug A", "Drug B"],
+                "target": "Target protein/mechanism",
+                "indication": "Therapeutic area/indication",
+                "people_mentioned": [{"name": "Name", "role": "Role", "email": "Email"}],
+                "trial_id": "ClinicalTrial.gov ID if any",
+                "any_other_notes": "Other critical facts found in text"
+              }
             }
         """,
         "contact": """
-            You are a professional BioPharma BD assistant. Extract executive contact info and career history from communication records or business cards.
-            You MUST return a single valid JSON object matching this exact schema, with no extra text:
+            You are a professional BioPharma BD assistant. Extract executive contact info and career history.
+            Look for all communication channels (email, phone, linkedin) and functional expertise.
+            
+            You MUST return a single valid JSON object matching this exact schema:
             {
               "name": "Full Name",
               "currentCompany": "Current Company",
               "currentTitle": "Current Title",
               "functionArea": "Functional Area (e.g. Oncology, BD, CMC)",
-              "location": "City",
-              "email": "Email (if available)",
-              "linkedin": "LinkedIn URL (if available)",
-              "phone": "Phone (if available)",
+              "location": "City/Country",
+              "email": "Primary Email",
+              "linkedin": "LinkedIn URL",
+              "phone": "Phone Number",
               "profile": "Short bio (under 20 words)",
+              "details": {
+                "extra_emails": ["secondary@email.com"],
+                "associated_drugs": ["Drug A"],
+                "education": "University/Degree",
+                "languages": ["English", "Chinese"]
+              },
               "careerHistory": [
                 { "company": "Company", "title": "Title", "dateRange": "20XX-20XX", "isCurrent": true }
               ]
             }
         """,
         "meeting_note": """
-            You are a professional BioPharma BD assistant. Extract key takeaways from meeting summaries or communication records.
-            Since these notes must be linked to a BD project, try to guess which company or asset this note relates to (suspected_project_name).
-            You MUST return a single valid JSON object matching this exact schema, with no extra text:
+            You are a professional BioPharma BD assistant. Extract key takeaways.
+            Summarize core conclusions, next steps, and "vibe" of the discussion.
+            
+            You MUST return a single valid JSON object matching this exact schema:
             {
               "type": "meeting/email/call",
               "title": "Short note title",
-              "date": "YYYY-MM-DD (meeting date)",
+              "date": "YYYY-MM-DD",
               "desc": "Core conclusion or progress (under 50 words)",
-              "suspected_project_name": "Most likely company name or asset name (for project matching)"
+              "suspected_project_name": "Company or asset name for matching",
+              "details": {
+                "attendees": ["Person A", "Person B"],
+                "decisions_made": ["Decision 1"],
+                "sentiment": "Neutral/Positive/Negative",
+                "unresolved_issues": ["Issue A"]
+              }
             }
         """
     }
@@ -145,7 +174,7 @@ def generate_company_intelligence(company_name: str) -> dict:
 
     # If API key is present, call the real model:
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-2.5-flash"
+    model_id = "gemini-3-flash-preview"
     
     system_instruction = f"""
     You are an expert BioPharma BD Strategy Analyst.

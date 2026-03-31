@@ -285,6 +285,6 @@
 
 - **邮箱账号**: `bdtracker212@zohomail.com`（凭据在本地 `.env`，Vercel Environment Variables 中单独配置）。
 - **去重逻辑**: 基于 `sender + subject`。如需更精确，可考虑改为 Message-ID 去重。
-- **当前状态**: ✅ **Phase 23 已上线并通过端对端测试**。用户可将 BD 邮件发至（或密送至）机器人邮箱，在 Smart Input 的 AI Inbox 中一键同步并审核入库。
+- **当前状态**: ✅ **Phase 23 已全面上线并通过生产环境验证**。用户可将 BD 邮件发送至机器人邮箱，在 Vercel 部署的前端 AI Inbox 一键同步并成功入库（Supabase）。针对 Pydantic 校验和 HTTP/2 报错的 Hotfix 也已验证生效。
 
 ---

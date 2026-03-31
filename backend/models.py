@@ -26,6 +26,7 @@ class Project(Base):
     
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="projects")
+    details = Column(JSON, default=dict) # NEW: Flexible storage for AI-extracted details
 
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
     history = relationship("ProjectHistory", back_populates="project", cascade="all, delete-orphan")
@@ -82,6 +83,7 @@ class Contact(Base):
     phone = Column(String)
     profile = Column(String)
     metAt = Column(JSON, default=list) # Array of strings
+    details = Column(JSON, default=dict) # NEW: Flexible storage for AI-extracted details
 
     careerHistory = relationship("CareerHistory", back_populates="contact", cascade="all, delete-orphan")
 

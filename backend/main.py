@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv() # Load .env before other imports
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
@@ -95,6 +98,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(databas
         stage=project.stage,
         nextFollowUp=project.nextFollowUp,
         lastContactDate=datetime.now().strftime('%Y-%m-%d'),
+        details=project.details,
         status="active"
     )
     db.add(db_project)
