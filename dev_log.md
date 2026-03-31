@@ -171,3 +171,21 @@
   - **Vercel 环境变量智能读取**: 修改了 `backend/database.py`，代码目前会智能轮询读取 `DATABASE_URL`, `POSTGRES_URL` (Supabase Vercel 插件默认提供), 以及 `POSTGRES_URL_NON_POOLING`，全方位保证不回退到 SQLite 从而引发 Vercel 容器只读报错。
   - **SQLAdmin 后台云端穿透**: 修改了 `vercel.json` 路由规则，新增了对 `/admin` 及 `/admin/(.*)` 的精确规则，保证了 FastAPI 内置的后台管理界面能在生产环境被正确代理打开。
   - **构建防错**: 清理了被工具误加到根目录下的 `package.json`，确保 Vercel 构建系统能够准确识别当前为 Python 后端，并根据 `requirements.txt` 打包依赖。
+
+---
+
+## [2026-03-31] 环境打通：完成 Phase 18 (GitHub & Supabase Production Sync)
+
+### Phase 18: 代码与数据全量云端对齐
+
+为了正式完成部署闭环，我们在本地与云端（GitHub/Supabase）之间建立了稳定的同步链路。
+
+- **核心变更记录**:
+  - **GitHub 权限激活**: 在根目录下重新初始化了本地 Git 仓库，并通过用户提供的 GitHub PAT (ghp_...) 建立了与 `coolegg122/AI-BD-Tracker` 的远程连接。
+  - **全量代码推送**: 成功将包含 Phase 17（Vercel 运行时优化）在内的所有代码强制推送（Force Push）至 `main` 分支，确保 Vercel 的自动构建源为最新状态。
+  - **Supabase 脚本修复**: 修改了 `scripts/migrate_to_supabase.py`，解决了由于目录结构调整导致的 `ModuleNotFoundError: No module named 'database'` 导入错误，使迁移工具能够正确加载 `backend.models`。
+  - **数据迁移触达**: 使用 IPv4 Pooler 代理地址 (`aws-1-ap-southeast-2.pooler.supabase.com:6543`) 成功完成数据同步，将本地最新的项目、人脉及 AI 竞争情报全量迁移至 Supabase 云端数据库。
+
+**当前状态**: ✅ **基础设施全面就绪**。建立了双机同步标准操作程序 (SOP)，已在根目录生成 `SYNC_SOP.md` 并在 `.agent/workflows/sync.md` 配置了 AI 指令系统。
+
+---
