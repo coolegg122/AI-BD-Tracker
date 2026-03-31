@@ -141,15 +141,34 @@ vercel --prod
 2. 确保 Supabase 数据库已创建
 3. 运行数据库迁移
 
-## 数据库迁移
+## 数据库初始化
 
-部署后首次运行，需要创建数据库表：
+### Supabase 数据库设置
 
-```python
-# 在 Vercel Serverless Function 中
-# 首次访问时会自动创建表
-# 确保 models.py 和 database.py 配置正确
-```
+**重要：在部署前必须先在 Supabase 中创建数据库表！**
+
+1. 登录 [Supabase Dashboard](https://supabase.com/dashboard)
+2. 选择你的项目
+3. 进入 SQL Editor
+4. 复制 `supabase_init.sql` 文件内容
+5. 点击 Run 执行 SQL
+
+### 默认管理员账户
+
+初始化脚本会创建一个默认管理员账户：
+- Email: `admin@example.com`
+- Password: `admin123`
+
+**请登录后立即修改密码！**
+
+### 数据库连接字符串
+
+在 Supabase Dashboard → Settings → Database 中获取连接字符串：
+
+- **Transaction Pooler** (推荐用于 Serverless): `postgresql://...@aws-0-[region].pooler.supabase.com:6543/postgres`
+- **Session Pooler** (用于长连接): `postgresql://...@aws-0-[region].pooler.supabase.com:5432/postgres`
+
+**注意：使用 Transaction Pooler (端口 6543) 以避免 Vercel 冷启动超时。**
 
 ## 测试 API
 
