@@ -1,14 +1,14 @@
 const API_BASE_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api/v1' : '/api/v1';
 
 export const api = {
-  // Extract project data from raw text using AI Engine
-  extractProjects: async (raw_text) => {
+  // Universal extraction from raw text using AI Engine
+  extractInfo: async (raw_text, type = "project") => {
     const response = await fetch(`${API_BASE_URL}/extract`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ raw_text }),
+      body: JSON.stringify({ raw_text, type }),
     });
     
     if (!response.ok) {
@@ -61,6 +61,20 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`);
     if (!response.ok) {
         throw new Error(`Failed to fetch project history: ${response.statusText}`);
+    }
+    return response.json();
+  },
+  
+  createProjectHistory: async (projectId, historyData) => {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(historyData),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to create project history: ${response.statusText}`);
     }
     return response.json();
   },

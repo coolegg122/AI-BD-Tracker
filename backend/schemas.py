@@ -103,6 +103,7 @@ class IntelligenceResponse(IntelligenceBase):
 
 class AIParsingRequest(BaseModel):
     raw_text: str
+    type: str = "project" # project, contact, or meeting_note
 
 class ProjectHistoryBase(BaseModel):
     type: str

@@ -5,7 +5,7 @@ from typing import List
 from datetime import datetime
 
 import models, schemas, database
-from ai_engine import extract_project_info
+from ai_engine import extract_universal
 from sqladmin import Admin, ModelView
 
 # Avoid running DDL (create_all) in serverless environments or pooler connections
@@ -72,13 +72,13 @@ app.add_middleware(
 def read_root():
     return {"status": "ok", "message": "AI-BD Tracker Backend is running"}
 
-@app.post("/api/v1/extract", response_model=schemas.ProjectCreate)
+@app.post("/api/v1/extract", response_model=dict)
 def ai_extract_bd_data(request: schemas.AIParsingRequest):
     """
-    接收长文本，调用大模型提取结构化数据
+    接收长文本，根据类型 (Project, Contact, Meeting Note) 调用大模型提取结构化数据
     """
     try:
-        parsed_data = extract_project_info(request.raw_text)
+        parsed_data = extract_universal(request.raw_text, request.type)
         return parsed_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI extraction failed: {str(e)}")

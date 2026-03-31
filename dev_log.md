@@ -219,9 +219,24 @@
 
 ---
 
-### **给下一个接手 AI 的关键上下文提示 (Context for Dual-Machine Sync)**
+## [2026-03-31] 业务闭环：完成 Phase 21 (Data Feedback Loop & AI Re-ingestion)
 
-- **同步 SOP**: 现已在根目录部署 `SYNC_SOP.md` 和 `SYNC_GUIDE.md`。每次开工前请务必 `git pull`，完工后 `git push`。
-- **当前状态**: ✅ **Phase 19 & 20 已上线**。系统不仅拥有精美的可视化图表，同时实现了最核心的“历史轨迹”模块的全栈云端穿透。
+### Phase 21: 多维数据反哺与 AI 预判系统
+
+为了实现 BD 信息的全自动闭环，我们将“Smart Input”升级为通用的 BD 智能采集引擎。
+
+- **工作目录**: `backend/ai_engine.py`, `ai-bd-tracker/src/views/SmartInput.jsx`, `ai-bd-tracker/src/services/api.js`
+- **核心变更**:
+  - **通用提取引擎**: 升级了 AI 引擎，支持从一段非结构化文本中智能提取：**BD 项目 (Project)**、**高级人脉 (Contact)** 以及 **会议纪要/邮件 Takeaways (Meeting Note)**。
+  - **AI 智能关联**: 针对会议纪要，AI 会自动从语境中“猜”出它属于哪一个管线项目，并提供 `suspected_project_name`。
+  - **三合一预览工作流**: 重构了 Smart Input UI。AI 提取后，现在会先进入“人工审核模式”。管理员可以对 AI 识别的错误进行修正（如职位变动、项目归属等）。
+  - **关联入库**: 会议纪要现在可以精确地追溯到各个项目的 `ProjectHistory` 表中，形成了完整的 Deal Tracking 足迹。
+
+---
+
+### **给下一个接手 AI 的关键上下文提示 (Context for Data Ingestion)**
+
+- **Smart Input 架构**: 目前采用的是“AI 预判 -> 用户确认 -> 正式入库”的二级验证机制，有效规避了 AI 幻觉对生产数据库的污染。
+- **当前状态**: ✅ **Phase 19-21 已上线**。系统不仅具备精美的可视化和历史轨迹功能，更拥有了智能采集反哺能力，正式闭环。
 
 ---

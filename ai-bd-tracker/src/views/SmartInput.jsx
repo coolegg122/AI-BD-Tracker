@@ -1,164 +1,336 @@
-import React, { useState } from 'react';
-import { FileText, Wand2, Microscope } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 
 export default function SmartInput() {
-  const { addProject } = useStore();
+  const { projects, addProject, setProjects } = useStore();
   const [inputText, setInputText] = useState('');
+  const [extractType, setExtractType] = useState('project'); // project, contact, meeting_note
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [parsedResult, setParsedResult] = useState(null);
+  const [linkedProjectId, setLinkedProjectId] = useState('');
+
+  // Local state for editing the result before saving
+  const [editData, setEditData] = useState(null);
+
+  useEffect(() => {
+    // If we're on meeting_note, try to match suspected_project_name to an existing project
+    if (extractType === 'meeting_note' && parsedResult?.suspected_project_name) {
+        const matched = projects.find(p => 
+            p.company.toLowerCase().includes(parsedResult.suspected_project_name.toLowerCase()) ||
+            parsedResult.suspected_project_name.toLowerCase().includes(p.company.toLowerCase())
+        );
+        if (matched) setLinkedProjectId(matched.id);
+    }
+  }, [parsedResult, extractType, projects]);
 
   const handleAIParse = async () => {
     if (!inputText.trim()) return;
     setIsAnalyzing(true);
     setParsedResult(null);
+    setEditData(null);
 
     try {
-      // 1. Call Backend API to extract info
-      const extractedData = await api.extractProjects(inputText);
-      
-      // 2. Call Backend API to save project
-      const savedProject = await api.createProject(extractedData);
-      
-      setParsedResult(savedProject);
-      addProject(savedProject); // Use Zustand's built-in addProject method
-      
+      const data = await api.extractInfo(inputText, extractType);
+      setParsedResult(data);
+      setEditData(data); // Initialize editable form with AI guess
     } catch (error) {
       console.error("AI Parse failed:", error);
-      // Fallback for UI visualization if backend fails (dev mode only)
-      alert("Backend API is not reachable. Please start the FastAPI server.");
+      alert("AI extraction failed. Please ensure the backend is running.");
     }
-
     setIsAnalyzing(false);
-    setInputText('');
+  };
+
+  const handleConfirmSave = async () => {
+    setIsSaving(true);
+    try {
+      if (extractType === 'project') {
+        const saved = await api.createProject(editData);
+        addProject(saved);
+        alert("Project archived successfully!");
+      } else if (extractType === 'contact') {
+        await api.createContact(editData);
+        alert("Key Contact added to CRM!");
+      } else if (extractType === 'meeting_note') {
+        if (!linkedProjectId) {
+            alert("Please select a project to associate this note with.");
+            setIsSaving(false);
+            return;
+        }
+        await api.createProjectHistory(linkedProjectId, {
+            type: editData.type || 'meeting',
+            title: editData.title,
+            date: editData.date,
+            desc: editData.desc,
+            details: {}
+        });
+        alert("Meeting note synced to project history!");
+      }
+      // Reset after success
+      setParsedResult(null);
+      setEditData(null);
+      setInputText('');
+    } catch (error) {
+      console.error("Save failed:", error);
+      alert("Failed to save data. Please check console.");
+    }
+    setIsSaving(false);
   };
 
   const fillTestData = () => {
-    setInputText("FWD: Ipsen Pharma Discussion. \n\nHi team, just got off the call with Ipsen regarding the CABOMETYX® expansion study. They are very keen. We need to circulate the NDA for internal legal review by EOD Tuesday. Also, please update the deal model with the new Phase II patient enrollment figures they shared. Let's aim to close initial diligence in 3 days.");
+    if (extractType === 'project') {
+        setInputText("FWD: Ipsen Pharma Discussion. \n\nHi team, just got off the call with Ipsen regarding the expansion study. They are very keen. We need to circulate the NDA by Tuesday.");
+    } else if (extractType === 'contact') {
+        setInputText("Met Sarah Jenkins at JPM. She is the VP of BD at Novartis. Sarah.jenkins@novartis.com. Previously at Roche for 5 years.");
+    } else if (extractType === 'meeting_note') {
+        setInputText("Minutes from Pfizer meeting (Oct 12): Discussed the Phase III data readout. They had concerns about the toxicity profile in cohort B but agreed to proceed with the term sheet draft.");
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-300">
-      <div className="mb-8">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">Smart Input</h2>
-        <p className="text-slate-500 max-w-2xl text-sm leading-relaxed">Paste raw text from unstructured sources to automatically extract clinical trial data, deal terms, and follow-up tasks using our architectural AI.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">Smart Input</h2>
+            <p className="text-slate-500 max-w-xl text-sm leading-relaxed">Multi-entity extraction engine. Paste raw transcripts or notes and let AI structure your BD intelligence.</p>
+        </div>
+        
+        {/* Type Selector */}
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {[
+                { id: 'project', label: 'Project', icon: Microscope },
+                { id: 'contact', label: 'Contact', icon: UserPlus },
+                { id: 'meeting_note', label: 'Meeting Note', icon: MessageSquare }
+            ].map(t => (
+                <button 
+                    key={t.id}
+                    onClick={() => { setExtractType(t.id); setParsedResult(null); }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${extractType === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                    <t.icon className="w-3.5 h-3.5" />
+                    {t.label}
+                </button>
+            ))}
+        </div>
       </div>
 
       <section className="space-y-6">
         <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-orange-50 rounded-2xl blur opacity-40 transition duration-1000"></div>
-          <div className="relative bg-white rounded-xl shadow-sm overflow-hidden transition-all border border-slate-200">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-indigo-50 rounded-2xl blur opacity-40 transition duration-1000"></div>
+          <div className="relative bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Source Content</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Raw Input Source</span>
               </div>
-              <span className="text-[10px] text-slate-500 font-medium bg-slate-200 px-2 py-1 rounded">Markdown Supported</span>
+              <button 
+                onClick={fillTestData} 
+                className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
+               >
+                Fill Sample {extractType}
+              </button>
             </div>
             <textarea 
-              className="w-full h-56 p-6 bg-transparent border-none focus:ring-0 text-slate-800 resize-none placeholder:text-slate-400 leading-relaxed focus:outline-none" 
-              placeholder="Paste email threads, WeChat chat logs, or meeting minutes here..."
+              className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-slate-800 resize-none placeholder:text-slate-400 leading-relaxed focus:outline-none" 
+              placeholder={`Paste ${extractType} details here...`}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs font-bold text-slate-500 mr-2">QUICK TEST:</span>
-            <button onClick={fillTestData} className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-lg transition-colors border border-slate-200 shadow-sm">
-              J&J Minutes
-            </button>
-            <button onClick={fillTestData} className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-lg transition-colors border border-slate-200 shadow-sm">
-              Ipsen WeChat
-            </button>
-          </div>
+        <div className="flex justify-center">
           <button 
             onClick={handleAIParse}
             disabled={isAnalyzing || !inputText.trim()}
-            className="w-full md:w-auto flex items-center justify-center gap-2 bg-gradient-to-br from-blue-700 to-blue-600 text-white px-8 py-3.5 rounded-full font-bold shadow-lg shadow-blue-900/20 hover:scale-[0.98] transition-all disabled:opacity-70"
+            className="flex items-center gap-2 bg-slate-900 text-white px-10 py-3.5 rounded-full font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
           >
             <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            <span>{isAnalyzing ? 'Extracting via AI...' : 'AI One-click Extract & Archive'}</span>
+            <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
           </button>
         </div>
       </section>
 
-      {parsedResult && (
-        <section className="mt-12 animate-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center gap-3 mb-6">
-            <Wand2 className="w-5 h-5 text-orange-600" />
-            <h3 className="text-lg font-bold">Latest Extraction Preview</h3>
-            <div className="h-[1px] flex-1 bg-gradient-to-r from-slate-200 to-transparent ml-4"></div>
+      {/* REVIEW & CONFIRM SECTION */}
+      {parsedResult && editData && (
+        <section className="mt-12 animate-in slide-in-from-bottom-4 duration-500 pb-20">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+                <div className="bg-orange-100 p-2 rounded-full"><Wand2 className="w-4 h-4 text-orange-600" /></div>
+                <div>
+                   <h3 className="text-lg font-bold">AI Extraction Preview</h3>
+                   <p className="text-xs text-slate-500 font-medium italic">Please review and correct the AI's "guesses" before archiving.</p>
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <button onClick={() => setParsedResult(null)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 bg-white rounded-xl p-8 border border-blue-100 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-              <div className="flex items-start justify-between mb-8 relative z-10">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Target Organization</label>
-                  <h4 className="text-2xl font-extrabold text-blue-700">{parsedResult.company}</h4>
+          <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-xl shadow-orange-900/5 p-8 relative overflow-hidden">
+            {/* TYPE SPECIFIC FORMS */}
+            {extractType === 'project' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Company Name</label>
+                            <input 
+                                className="w-full text-xl font-extrabold text-blue-700 bg-blue-50/30 border-b-2 border-blue-100 focus:border-blue-500 focus:outline-none py-1"
+                                value={editData.company}
+                                onChange={(e) => setEditData({...editData, company: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pipeline Asset</label>
+                            <input 
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                value={editData.pipeline}
+                                onChange={(e) => setEditData({...editData, pipeline: e.target.value})}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Target Stage</label>
+                            <select 
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1 bg-transparent"
+                                value={editData.stage}
+                                onChange={(e) => setEditData({...editData, stage: e.target.value})}
+                            >
+                                <option>Initial Contact</option>
+                                <option>CDA Signed</option>
+                                <option>Due Diligence</option>
+                                <option>Term Sheet</option>
+                                <option>Negotiation</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Next Follow-up</label>
+                            <input 
+                                type="date"
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                value={editData.nextFollowUp}
+                                onChange={(e) => setEditData({...editData, nextFollowUp: e.target.value})}
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded text-[11px] font-bold uppercase tracking-wider">
-                  Phase IIb
+            )}
+
+            {extractType === 'contact' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Name</label>
+                            <input 
+                                className="w-full text-xl font-extrabold text-indigo-700 bg-indigo-50/30 border-b-2 border-indigo-100 focus:border-indigo-500 focus:outline-none py-1"
+                                value={editData.name}
+                                onChange={(e) => setEditData({...editData, name: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Current Organization</label>
+                            <input 
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 focus:outline-none py-1"
+                                value={editData.currentCompany}
+                                onChange={(e) => setEditData({...editData, currentCompany: e.target.value})}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Job Title</label>
+                            <input 
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 focus:outline-none py-1"
+                                value={editData.currentTitle}
+                                onChange={(e) => setEditData({...editData, currentTitle: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Email (Work)</label>
+                            <input 
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 focus:outline-none py-1"
+                                value={editData.email}
+                                onChange={(e) => setEditData({...editData, email: e.target.value})}
+                            />
+                        </div>
+                    </div>
                 </div>
-              </div>
-              
-              <div className="space-y-6 relative z-10">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Pipeline Project</label>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
-                      <Microscope className="w-5 h-5 text-blue-600" />
+            )}
+
+            {extractType === 'meeting_note' && (
+                <div className="space-y-6">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <p className="text-xs font-bold text-blue-900 uppercase tracking-tight">AI Association Guess</p>
+                            <p className="text-xs text-blue-700 mb-3">AI identified this note relates to: <span className="font-bold underline">"{parsedResult.suspected_project_name}"</span></p>
+                            
+                            <label className="text-[10px] font-bold text-blue-800 uppercase block mb-1">Link to Project</label>
+                            <div className="relative">
+                                <select 
+                                    className="w-full bg-white border border-blue-200 rounded-lg py-2 px-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                                    value={linkedProjectId}
+                                    onChange={(e) => setLinkedProjectId(e.target.value)}
+                                >
+                                    <option value="">-- Choose Project --</option>
+                                    {projects.map(p => (
+                                        <option key={p.id} value={p.id}>{p.company} ({p.pipeline})</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Summary Title</label>
+                            <input 
+                                className="w-full text-lg font-bold text-slate-900 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                value={editData.title}
+                                onChange={(e) => setEditData({...editData, title: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Interaction Date</label>
+                            <input 
+                                type="date"
+                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                value={editData.date}
+                                onChange={(e) => setEditData({...editData, date: e.target.value})}
+                            />
+                        </div>
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900">{parsedResult.pipeline}</p>
-                      <p className="text-xs text-slate-500">Oncology • Small Molecule</p>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Key Takeaways</label>
+                        <textarea 
+                            className="w-full h-24 p-3 bg-slate-50 rounded-lg border border-slate-200 focus:border-blue-500 focus:outline-none text-sm leading-relaxed"
+                            value={editData.desc}
+                            onChange={(e) => setEditData({...editData, desc: e.target.value})}
+                        />
                     </div>
-                  </div>
                 </div>
-                
-                <div className="pt-6 border-t border-slate-100">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Next Action Items</label>
-                  <ul className="space-y-3">
-                    {parsedResult.tasks?.map((task, idx) => (
-                      <li key={idx} className="flex items-start gap-3 group">
-                        <div className="mt-1 w-4 h-4 rounded-full border-2 border-blue-200 flex items-center justify-center"></div>
-                        <span className="text-sm text-slate-800">{task.desc}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
+            )}
 
-            <div className="space-y-6">
-              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Critical Deadline</label>
-                <div className="flex items-end gap-2">
-                  <span className="text-4xl font-black text-red-600">12</span>
-                  <div className="mb-1">
-                    <p className="text-xs font-bold leading-none">OCTOBER</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{parsedResult.nextFollowUp}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-slate-50 rounded-xl p-6 border border-slate-100">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Deal Progress</label>
-                <div className="relative h-2 bg-slate-200 rounded-full mb-6">
-                  <div className="absolute left-0 top-0 h-full bg-blue-600 rounded-full" style={{width: '20%'}}></div>
-                  <div className="absolute left-[20%] top-1/2 -translate-y-1/2 w-4 h-4 bg-blue-600 border-4 border-white rounded-full shadow-md"></div>
-                </div>
-                <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
-                  <span className="text-blue-600">CONTACT</span>
-                  <span>DUE DILIGENCE</span>
-                  <span>CLOSING</span>
-                </div>
-              </div>
+            {/* SHARED CONFIRM BUTTON */}
+            <div className="mt-10 pt-10 border-t border-slate-100 flex justify-end gap-3">
+                <button 
+                  onClick={() => setParsedResult(null)}
+                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800"
+                >
+                    Discard
+                </button>
+                <button 
+                    onClick={handleConfirmSave}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                    {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    <span>Confirm & Archive to Database</span>
+                </button>
             </div>
           </div>
         </section>

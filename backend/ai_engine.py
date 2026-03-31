@@ -2,40 +2,89 @@ import os
 import json
 import google.generativeai as genai
 
-def extract_project_info(text: str) -> dict:
+def extract_universal(text: str, target_type: str = "project") -> dict:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("Warning: GEMINI_API_KEY not set. Returning mock data for testing.")
-        return {
-          "company": "Mocked BioPharma Inc.",
-          "pipeline": "Auto-Generated Mock Pipeline Phase I",
-          "stage": "Due Diligence",
-          "nextFollowUp": "2026-11-01",
-          "tasks": [
-            { "type": "meeting", "desc": "Discuss early stage funding", "date": "TBD", "status": "pending" }
-          ]
-        }
+        print(f"Warning: GEMINI_API_KEY not set. Returning mock data for {target_type}.")
+        if target_type == "project":
+            return {
+                "company": "Mocked BioPharma Inc.",
+                "pipeline": "Auto-Generated Mock Pipeline Phase I",
+                "stage": "Due Diligence",
+                "nextFollowUp": "2026-11-01",
+                "tasks": [{ "type": "meeting", "desc": "Discuss early stage funding", "date": "TBD", "status": "pending" }]
+            }
+        elif target_type == "contact":
+            return {
+                "name": "Alex Rivier",
+                "currentCompany": "Novartis",
+                "currentTitle": "Head of BD",
+                "functionArea": "Oncology",
+                "email": "alex.rivier@novartis.com",
+                "careerHistory": [
+                    {"company": "Novartis", "title": "Head of BD", "dateRange": "2020 - Present", "isCurrent": True},
+                    {"company": "Roche", "title": "BD Manager", "dateRange": "2015 - 2020", "isCurrent": False}
+                ]
+            }
+        elif target_type == "meeting_note":
+            return {
+                "type": "meeting",
+                "title": "Discussion with Novartis on ADC",
+                "date": "2026-03-31",
+                "desc": "Next steps on data sharing.",
+                "suspected_project_name": "Novartis"
+            }
         
     genai.configure(api_key=api_key)
-    
-    # Use gemini-1.5-pro or flash depending on preference.
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-    system_instruction = """
-    你是一个专业的医药BD助手。请从用户输入的沟通记录中提取项目信息并进行数据脱敏。
-    请提取出管线名称（pipeline），阶段（stage），下次跟进时间（nextFollowUp），以及任务列表 tasks。
-    必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
-    {
-      "company": "公司名称",
-      "pipeline": "管线或资产名称",
-      "stage": "Initial Contact",
-      "nextFollowUp": "YYYY-MM-DD (提取或推断的跟进时间)",
-      "tasks": [
-        { "type": "meeting", "desc": "具体的待办事项描述", "date": "日期或 TBD", "status": "pending" }
-      ]
+    prompts = {
+        "project": """
+            你是一个专业的医药BD助手。请从用户输入的沟通记录中提取项目信息并进行数据脱敏。
+            必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
+            {
+              "company": "公司名称",
+              "pipeline": "管线或资产名称",
+              "stage": "Initial Contact",
+              "nextFollowUp": "YYYY-MM-DD",
+              "tasks": [
+                { "type": "meeting", "desc": "具体的待办事项描述", "date": "日期或 TBD", "status": "pending" }
+              ]
+            }
+        """,
+        "contact": """
+            你是一个专业的医药BD助手。请从沟通记录或名片信息中提取高管联系人及其履历。
+            必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
+            {
+              "name": "姓名",
+              "currentCompany": "当前所属公司",
+              "currentTitle": "当前职位",
+              "functionArea": "职能领域 (e.g. Oncology, BD, CMC)",
+              "location": "城市",
+              "email": "邮箱 (若有)",
+              "linkedin": "领英链接 (若有)",
+              "phone": "电话 (若有)",
+              "profile": "个人简介 (20字以内)",
+              "careerHistory": [
+                { "company": "公司名", "title": "职位", "dateRange": "20XX-20XX", "isCurrent": true/false }
+              ]
+            }
+        """,
+        "meeting_note": """
+            你是一个专业的医药BD助手。请从会议摘要或沟通记录中提取核心Takeaways。
+            由于这些纪要必须关联到一个BD项目，请尝试基于上下文猜测该纪要对应哪家公司或哪项资产（suspected_project_name）。
+            必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
+            {
+              "type": "meeting/email/call",
+              "title": "简短的纪要标题",
+              "date": "YYYY-MM-DD (会议日期)",
+              "desc": "核心结论或进展 (50字以内)",
+              "suspected_project_name": "最可能的公司名称或资产名称 (用于匹配关联项目)"
+            }
+        """
     }
-    """
     
+    system_instruction = prompts.get(target_type, prompts["project"])
     prompt = f"{system_instruction}\n\nUser Input:\n{text}"
     
     try:
@@ -47,7 +96,7 @@ def extract_project_info(text: str) -> dict:
         )
         return json.loads(response.text)
     except Exception as e:
-        print(f"Error during AI extraction: {e}")
+        print(f"Error during AI extraction ({target_type}): {e}")
         raise
 
 def generate_company_intelligence(company_name: str) -> dict:
