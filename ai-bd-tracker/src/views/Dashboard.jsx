@@ -1,9 +1,11 @@
 import React from 'react';
-import { CalendarDays, Video, MoreHorizontal, Rocket, Microscope, Gavel, Zap, FileText, Mail, History, Phone, DoorOpen, Wand2, ChevronRight, Activity } from 'lucide-react';
+import { CalendarDays, Video, MoreHorizontal, Rocket, Microscope, Gavel, Zap, FileText, Mail, History, Phone, DoorOpen, Wand2, ChevronRight, Activity, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import ProjectSlideOver from '../components/ProjectSlideOver';
 import AIAnalysisModal from '../components/AIAnalysisModal';
+import ProjectFunnel from '../components/charts/ProjectFunnel';
+import PortfolioTrend from '../components/charts/PortfolioTrend';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -51,6 +53,25 @@ export default function Dashboard() {
               <div className="w-6 h-6 rounded-full bg-slate-300 border-2 border-white focus:outline-none"></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* PHASE 19: PIPELINE INTELLIGENCE VISUALIZATION */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <PieChartIcon className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-bold">Deal Funnel & Stages</h3>
+          </div>
+          <ProjectFunnel projects={projects} />
+        </div>
+        
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h3 className="text-lg font-bold">Portfolio Momentum</h3>
+          </div>
+          <PortfolioTrend />
         </div>
       </div>
 
