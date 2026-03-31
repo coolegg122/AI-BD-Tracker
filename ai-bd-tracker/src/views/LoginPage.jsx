@@ -120,9 +120,13 @@ const LoginPage = () => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                <button
+                  type="button"
+                  onClick={() => alert('Please contact your system administrator to reset your password.')}
+                  className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer bg-transparent border-none"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
             </div>
 

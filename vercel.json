@@ -15,8 +15,15 @@
       "dest": "api/index.py"
     },
     {
+      "src": "/admin(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/ai-bd-tracker/$1"
+      "dest": "/ai-bd-tracker/index.html"
     }
   ]
 }

@@ -13,7 +13,6 @@ from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
 from sqladmin import Admin, ModelView
 from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash
-from passlib.context import CryptContext
 
 # Auto-create tables for LOCAL SQLite ONLY.
 # IMPORTANT (Phase 17): DO NOT run create_all or DDL against Supabase Transaction Pooler (port 6543).
