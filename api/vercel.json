@@ -1,0 +1,5 @@
+{
+  "runtime": "@vercel/python@3.0",
+  "memory": 1024,
+  "maxDuration": 30
+}
