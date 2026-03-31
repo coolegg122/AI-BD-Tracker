@@ -32,3 +32,5 @@ backend/sqlite.db
 # OS
 .DS_Store
 Thumbs.db
+
+.env

@@ -152,5 +152,14 @@ export const api = {
     });
     if (!response.ok) throw new Error('Failed to discard ingestion');
     return response.json();
+  },
+
+  // --- Phase 23: Zoho Mail Sync ---
+  syncIngestion: async () => {
+    const response = await fetch(`${API_BASE_URL}/ingestion/sync`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Mail sync failed');
+    return response.json();
   }
 };

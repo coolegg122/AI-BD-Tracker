@@ -17,6 +17,8 @@ export default function SmartInput() {
   const [pendingIngestions, setPendingIngestions] = useState([]);
   const [activeIngestionId, setActiveIngestionId] = useState(null);
   const [isLoadingInbox, setIsLoadingInbox] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
 
   // Local state for editing the result before saving
   const [editData, setEditData] = useState(null);
@@ -34,6 +36,20 @@ export default function SmartInput() {
       console.error("Failed to fetch inbox:", error);
     }
     setIsLoadingInbox(false);
+  };
+
+  const handleSyncMail = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const result = await api.syncIngestion();
+      setSyncResult(result);
+      // Refresh the list after sync
+      await fetchPendingInbox();
+    } catch (error) {
+      setSyncResult({ error: error.message });
+    }
+    setIsSyncing(false);
   };
 
   useEffect(() => {
@@ -252,7 +268,17 @@ export default function SmartInput() {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between px-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{pendingIngestions.length} Pending Records</span>
-                        <button onClick={fetchPendingInbox} className="text-xs font-bold text-blue-600 hover:underline">Refresh</button>
+                        <div className="flex items-center gap-3">
+                            <button onClick={fetchPendingInbox} className="text-xs font-bold text-slate-500 hover:text-slate-800">Refresh</button>
+                            <button
+                                onClick={handleSyncMail}
+                                disabled={isSyncing}
+                                className="flex items-center gap-1.5 bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                            >
+                                <Mail className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse' : ''}`} />
+                                {isSyncing ? 'Syncing...' : 'Sync Zoho Mail'}
+                            </button>
+                        </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                         {pendingIngestions.map(item => (

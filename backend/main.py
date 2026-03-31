@@ -6,6 +6,7 @@ from datetime import datetime
 
 import models, schemas, database
 from ai_engine import extract_universal
+from mail_poller import sync_zoho_inbox
 from sqladmin import Admin, ModelView
 
 # Avoid running DDL (create_all) in serverless environments or pooler connections
@@ -207,6 +208,14 @@ def discard_ingestion(id: int, db: Session = Depends(database.get_db)):
     db.delete(db_item)
     db.commit()
     return {"status": "success"}
+
+@app.post("/api/v1/ingestion/sync")
+def sync_mail_inbox(db: Session = Depends(database.get_db)):
+    """Trigger a manual Zoho IMAP sync and push new emails into PendingIngestion"""
+    result = sync_zoho_inbox(db, extract_universal)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
 
 @app.get("/api/v1/contacts", response_model=List[schemas.ContactResponse])
 def get_contacts(db: Session = Depends(database.get_db)):
