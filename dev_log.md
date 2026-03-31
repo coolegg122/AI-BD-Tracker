@@ -255,3 +255,36 @@
 - **当前状态**: ✅ **全业务链路已闭环**。AI-BD Tracker 现已进化为集：决策仪表盘 (Phase 19) -> 历史足迹跟踪 (Phase 20) -> 智能结构化抽取 (Phase 21) -> 多元异步采集 (Phase 22) 于一体的自动化系统。
 
 ---
+
+## [2026-03-31] 直连采集：完成 Phase 23 (Zoho Mail Direct IMAP Integration)
+
+### Phase 23: Zoho Mail 直连同步模块
+
+为了彻底省去 Cloudmailin 等中间服务，实现"发邮件 → 系统直接感知"的最简流程，我们直接用 IMAP 协议登录 `bdtracker212@zohomail.com` 进行主动拉取。
+
+- **工作目录**: `backend/mail_poller.py`, `backend/main.py`, `ai-bd-tracker/src/views/SmartInput.jsx`, `ai-bd-tracker/src/services/api.js`, `.env`
+- **核心变更**:
+  - **[NEW] `backend/mail_poller.py`**: 完整的 IMAP 拉取模块。支持多部分邮件解析（纯文本 + HTML 降级），自动提取附件名，调用 AI 引擎初审，写入 `PendingIngestion`。
+  - **去重逻辑**: 按 `sender_email + subject` 去重，避免重复点击同步时产生重复记录。
+  - **API 触发**: 新增 `POST /api/v1/ingestion/sync` 接口，供前端"一键同步"。
+  - **前端按钮**: `SmartInput.jsx` 的 AI Inbox 标签下新增 **"Sync Zoho Mail"** 按钮，并将其从条件渲染区域提升至顶部工具栏（**永远可见**，修复 UX Bug）。
+  - **同步结果反馈**: 按钮旁新增绿色/红色的同步结果 Toast 提示。
+  - **凭据安全**: Zoho 账号/密码存储于本地 `.env`，已加入 `.gitignore`，不入库。
+
+### Phase 23 Hotfix: Schema 校验 & 错误提示优化
+
+- **问题**: 在 Vercel 生产环境中，AI 无法保证始终提取出 `nextFollowUp` 字段，导致后端 Pydantic 422 验证失败，前端只显示无意义的 "Failed to save" 提示。
+- **修复**:
+  - `backend/schemas.py`: 将 `ProjectBase.nextFollowUp` 和 `pipeline` 改为 `Optional[str] = ""`，不再强制要求 AI 必须提供。
+  - `api.js`: `createProject` 现在会读取后端返回的完整错误 JSON body 并抛出，而非仅抛出 HTTP 状态码。
+  - `SmartInput.jsx`: 错误弹窗升级为显示后端真实错误详情，大幅提升了生产环境可调试性。
+
+---
+
+### **给下一个接手 AI 的关键上下文提示 (Context for Phase 23)**
+
+- **邮箱账号**: `bdtracker212@zohomail.com`（凭据在本地 `.env`，Vercel Environment Variables 中单独配置）。
+- **去重逻辑**: 基于 `sender + subject`。如需更精确，可考虑改为 Message-ID 去重。
+- **当前状态**: ✅ **Phase 23 已上线并通过端对端测试**。用户可将 BD 邮件发至（或密送至）机器人邮箱，在 Smart Input 的 AI Inbox 中一键同步并审核入库。
+
+---
