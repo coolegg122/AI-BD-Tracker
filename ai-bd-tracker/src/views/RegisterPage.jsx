@@ -37,12 +37,21 @@ const RegisterPage = () => {
       return;
     }
 
+    // Validate initials length
+    if (formData.initials.length < 1 || formData.initials.length > 3) {
+      setError('Initials must be 1-3 characters');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const { password, confirmPassword, ...userData } = formData;
-      const result = await register({ ...userData, password });
+      console.log('Submitting registration:', userData);
       
+      const result = await register({ ...userData, password });
+      console.log('Registration result:', result);
+
       if (result.success) {
         alert('Registration successful! Please log in.');
         navigate('/login');
@@ -50,6 +59,7 @@ const RegisterPage = () => {
         setError(result.message || 'Registration failed');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.message || 'An error occurred during registration');
     } finally {
       setIsLoading(false);
