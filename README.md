@@ -125,3 +125,83 @@ AI-BD Tracker 特别适合：
 3. **改善协作**: 支持团队成员间的实时协作
 4. **降低风险**: 自动跟踪关键截止日期和里程碑
 5. **数据驱动**: 基于数据的决策支持系统
+
+## 部署
+
+### 环境要求
+- Node.js (前端开发)
+- Python 3.8+ (后端开发)
+- Google Gemini API Key (AI功能)
+- Zoho邮箱账户 (邮件同步功能)
+
+### 本地开发设置
+
+#### 1. 克隆仓库
+```bash
+git clone https://github.com/coolegg122/AI-BD-Tracker.git
+cd AI-BD-Tracker
+```
+
+#### 2. 设置后端 (FastAPI)
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+创建 `.env` 文件并配置以下环境变量：
+```env
+GEMINI_API_KEY=your_google_gemini_api_key
+ZOHO_EMAIL=your_zoho_email
+ZOHO_PASSWORD=your_zoho_password
+ZOHO_IMAP_SERVER=imap.zoho.com
+ZOHO_IMAP_PORT=993
+DATABASE_URL=sqlite:///./sql_app.db
+```
+
+#### 3. 设置前端 (React/Vite)
+```bash
+cd ai-bd-tracker
+npm install
+```
+
+#### 4. 运行项目
+分别在两个终端中运行：
+
+后端：
+```bash
+cd backend
+uvicorn main:app --reload
+```
+
+前端：
+```bash
+cd ai-bd-tracker
+npm run dev
+```
+
+### Vercel云部署
+
+该项目已配置为可在Vercel上一键部署：
+
+1. 将代码推送到GitHub仓库
+2. 在Vercel仪表板中导入项目
+3. 配置环境变量：
+   - `GEMINI_API_KEY`: Google Gemini API密钥
+   - `ZOHO_EMAIL`: Zoho邮箱地址
+   - `ZOHO_PASSWORD`: Zoho邮箱密码
+   - `DATABASE_URL`: PostgreSQL数据库URL (Supabase)
+4. 部署完成后即可访问应用
+
+### 数据库配置
+
+项目支持SQLite(开发)和PostgreSQL(生产)：
+- 本地开发：使用SQLite数据库 (`sql_app.db`)
+- 生产环境：推荐使用Supabase PostgreSQL数据库
+
+## 贡献
+
+欢迎提交Issue和Pull Request来改进项目。对于重大更改，请先开Issue讨论您想要更改的内容。
+
+## 许可证
+
+此项目按照MIT许可证发布。
