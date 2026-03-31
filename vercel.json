@@ -3,12 +3,18 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.11"
+      }
     },
     {
       "src": "ai-bd-tracker/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "config": { 
+        "distDir": "dist",
+        "buildCommand": "npm run build"
+      }
     }
   ],
   "rewrites": [
@@ -28,5 +34,8 @@
       "source": "/(.*)",
       "destination": "/ai-bd-tracker/$1"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONPATH": "backend"
+  }
 }

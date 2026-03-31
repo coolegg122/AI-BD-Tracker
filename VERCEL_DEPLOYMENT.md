@@ -61,6 +61,41 @@ vercel --prod
 
 ## 常见问题排查
 
+### "Unexpected token 'A', 'A server e'... is not valid JSON"
+
+**症状**: 前端调用 API 时返回此错误
+
+**原因**: Vercel 返回了 HTML 错误页面而不是 JSON
+
+**解决方案**:
+
+1. **检查环境变量是否设置**
+   ```
+   在 Vercel Dashboard → Settings → Environment Variables
+   确保设置了:
+   - SECRET_KEY
+   - GEMINI_API_KEY  
+   - POSTGRES_URL (或 DATABASE_URL)
+   ```
+
+2. **检查构建日志**
+   ```
+   Vercel Dashboard → Deployments → 点击最新部署 → View Build Logs
+   查找是否有 Python 依赖安装错误
+   ```
+
+3. **检查函数日志**
+   ```bash
+   vercel logs <your-deployment-url>
+   ```
+
+4. **强制重新部署**
+   ```bash
+   # 添加 [force deploy] 到提交信息
+   git commit -m "fix: [force deploy]"
+   git push
+   ```
+
 ### 注册/登录失败
 
 **症状**: 点击 "Sign Up" 或 "Login" 后报错

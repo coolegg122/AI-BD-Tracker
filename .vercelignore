@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env.local
+.env.*.local
+
+# Backend specific (not needed for Vercel)
+backend/sql_app.db
+backend/*.db
+
+# Frontend node_modules (handled by static-build)
+ai-bd-tracker/node_modules/
