@@ -148,7 +148,14 @@ export default function SmartInput() {
       setInputText('');
     } catch (error) {
       console.error("Save failed:", error);
-      alert("Failed to save data. Please check console.");
+      // Try to extract a meaningful error message from the response
+      let msg = error.message || "Unknown error";
+      try {
+        // Some APIs return JSON error bodies
+        const errData = JSON.parse(error.message);
+        msg = errData.detail || errData.message || msg;
+      } catch (_) { /* not JSON, use raw message */ }
+      alert(`Failed to save:\n${msg}`);
     }
     setIsSaving(false);
   };

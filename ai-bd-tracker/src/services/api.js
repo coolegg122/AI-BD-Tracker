@@ -36,7 +36,12 @@ export const api = {
       body: JSON.stringify(projectData),
     });
     if (!response.ok) {
-        throw new Error(`Failed to create project: ${response.statusText}`);
+      let detail = response.statusText;
+      try {
+        const errBody = await response.json();
+        detail = JSON.stringify(errBody.detail || errBody);
+      } catch (_) {}
+      throw new Error(detail);
     }
     return response.json();
   },

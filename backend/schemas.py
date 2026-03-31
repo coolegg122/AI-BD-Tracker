@@ -24,9 +24,9 @@ class OwnerBase(BaseModel):
 
 class ProjectBase(BaseModel):
     company: str
-    pipeline: str
+    pipeline: str = ""
     stage: str = "Initial Contact"
-    nextFollowUp: str
+    nextFollowUp: Optional[str] = ""
     tasks: List[TaskCreate] = []
 
 class ProjectCreate(ProjectBase):
