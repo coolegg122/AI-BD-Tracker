@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 
 class TaskBase(BaseModel):
@@ -46,7 +46,12 @@ class ProjectBase(BaseModel):
     nextFollowUp: Optional[str] = ""
     tasks: List[TaskCreate] = []
     attachments: List[AttachmentCreate] = []
-    details: dict = {}
+    details: Optional[dict] = {}
+
+    @field_validator('details', mode='before')
+    @classmethod
+    def details_default(cls, v):
+        return v if v is not None else {}
 
 class ProjectCreate(ProjectBase):
     pass
@@ -89,8 +94,18 @@ class ContactBase(BaseModel):
     linkedin: str
     phone: str
     profile: str
-    metAt: List[str] = []
-    details: dict = {}
+    metAt: Optional[List[str]] = []
+    details: Optional[dict] = {}
+
+    @field_validator('metAt', mode='before')
+    @classmethod
+    def metAt_default(cls, v):
+        return v if v is not None else []
+
+    @field_validator('details', mode='before')
+    @classmethod
+    def details_default(cls, v):
+        return v if v is not None else {}
 
 class ContactCreate(ContactBase):
     careerHistory: List[CareerHistoryCreate] = []
@@ -131,7 +146,12 @@ class ProjectHistoryBase(BaseModel):
     title: str
     date: str
     desc: str
-    details: dict = {}
+    details: Optional[dict] = {}
+
+    @field_validator('details', mode='before')
+    @classmethod
+    def details_default(cls, v):
+        return v if v is not None else {}
 
 class ProjectHistoryCreate(ProjectHistoryBase):
     pass
@@ -148,11 +168,21 @@ class PendingIngestionBase(BaseModel):
     sender_email: str
     subject: Optional[str] = None
     raw_content: str
-    attachments: List[str] = []
-    ai_extracted_payload: dict = {}
+    attachments: Optional[List[str]] = []
+    ai_extracted_payload: Optional[dict] = {}
     entity_type: Optional[str] = None
     status: str = "pending"
     created_at: str
+
+    @field_validator('attachments', mode='before')
+    @classmethod
+    def attachments_default(cls, v):
+        return v if v is not None else []
+
+    @field_validator('ai_extracted_payload', mode='before')
+    @classmethod
+    def payload_default(cls, v):
+        return v if v is not None else {}
 
 class PendingIngestionResponse(PendingIngestionBase):
     id: int
