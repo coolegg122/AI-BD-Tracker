@@ -37,6 +37,16 @@ export default function ProjectSlideOver() {
     }
   };
 
+  const fetchAttachments = async (projectId) => {
+    try {
+      const data = await api.getProjectAttachments(projectId);
+      setAttachments(data);
+    } catch (err) {
+      console.error("Failed to load attachments:", err);
+      setAttachments([]);
+    }
+  };
+
   if (!selectedOverviewProject && !isVisible) return null;
 
   const project = selectedOverviewProject || {};

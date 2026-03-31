@@ -189,5 +189,12 @@ export const api = {
     });
     if (!response.ok) throw new Error('Mail sync failed');
     return response.json();
+  },
+
+  // --- Phase 26: Project Attachments ---
+  getProjectAttachments: async (projectId) => {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/attachments`);
+    if (!response.ok) throw new Error(`Failed to fetch attachments for project ${projectId}`);
+    return response.json();
   }
 };
