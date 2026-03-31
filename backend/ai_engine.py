@@ -1,6 +1,6 @@
 import os
 import json
-import google.generativeai as genai
+from google import genai
 
 def extract_universal(text: str, target_type: str = "project") -> dict:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -35,51 +35,51 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
                 "suspected_project_name": "Novartis"
             }
         
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    client = genai.Client(api_key=api_key)
+    model_id = "gemini-2.5-flash"
     
     prompts = {
         "project": """
-            你是一个专业的医药BD助手。请从用户输入的沟通记录中提取项目信息并进行数据脱敏。
-            必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
+            You are a professional BioPharma BD assistant. Extract BD project information from the user's communication record.
+            You MUST return a single valid JSON object matching this exact schema, with no extra text:
             {
-              "company": "公司名称",
-              "pipeline": "管线或资产名称",
+              "company": "Company Name",
+              "pipeline": "Pipeline or Asset Name",
               "stage": "Initial Contact",
               "nextFollowUp": "YYYY-MM-DD",
               "tasks": [
-                { "type": "meeting", "desc": "具体的待办事项描述", "date": "日期或 TBD", "status": "pending" }
+                { "type": "meeting", "desc": "Specific to-do description", "date": "Date or TBD", "status": "pending" }
               ]
             }
         """,
         "contact": """
-            你是一个专业的医药BD助手。请从沟通记录或名片信息中提取高管联系人及其履历。
-            必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
+            You are a professional BioPharma BD assistant. Extract executive contact info and career history from communication records or business cards.
+            You MUST return a single valid JSON object matching this exact schema, with no extra text:
             {
-              "name": "姓名",
-              "currentCompany": "当前所属公司",
-              "currentTitle": "当前职位",
-              "functionArea": "职能领域 (e.g. Oncology, BD, CMC)",
-              "location": "城市",
-              "email": "邮箱 (若有)",
-              "linkedin": "领英链接 (若有)",
-              "phone": "电话 (若有)",
-              "profile": "个人简介 (20字以内)",
+              "name": "Full Name",
+              "currentCompany": "Current Company",
+              "currentTitle": "Current Title",
+              "functionArea": "Functional Area (e.g. Oncology, BD, CMC)",
+              "location": "City",
+              "email": "Email (if available)",
+              "linkedin": "LinkedIn URL (if available)",
+              "phone": "Phone (if available)",
+              "profile": "Short bio (under 20 words)",
               "careerHistory": [
-                { "company": "公司名", "title": "职位", "dateRange": "20XX-20XX", "isCurrent": true/false }
+                { "company": "Company", "title": "Title", "dateRange": "20XX-20XX", "isCurrent": true }
               ]
             }
         """,
         "meeting_note": """
-            你是一个专业的医药BD助手。请从会议摘要或沟通记录中提取核心Takeaways。
-            由于这些纪要必须关联到一个BD项目，请尝试基于上下文猜测该纪要对应哪家公司或哪项资产（suspected_project_name）。
-            必须只返回一个符合以下结构的JSON对象，绝对不要有任何markdown包裹：
+            You are a professional BioPharma BD assistant. Extract key takeaways from meeting summaries or communication records.
+            Since these notes must be linked to a BD project, try to guess which company or asset this note relates to (suspected_project_name).
+            You MUST return a single valid JSON object matching this exact schema, with no extra text:
             {
               "type": "meeting/email/call",
-              "title": "简短的纪要标题",
-              "date": "YYYY-MM-DD (会议日期)",
-              "desc": "核心结论或进展 (50字以内)",
-              "suspected_project_name": "最可能的公司名称或资产名称 (用于匹配关联项目)"
+              "title": "Short note title",
+              "date": "YYYY-MM-DD (meeting date)",
+              "desc": "Core conclusion or progress (under 50 words)",
+              "suspected_project_name": "Most likely company name or asset name (for project matching)"
             }
         """
     }
@@ -88,11 +88,12 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
     prompt = f"{system_instruction}\n\nUser Input:\n{text}"
     
     try:
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json"
-            )
+        response = client.models.generate_content(
+            model=model_id,
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json"
+            }
         )
         return json.loads(response.text)
     except Exception as e:
@@ -103,8 +104,7 @@ def generate_company_intelligence(company_name: str) -> dict:
     import datetime
     api_key = os.getenv("GEMINI_API_KEY")
     
-    # We provide a highly customized mock if no API key is present,
-    # or to guarantee speed and quality for demo purposes on these top-tier companies.
+    # We provide a highly customized mock if no API key is present
     normalized = company_name.lower().strip()
     
     if not api_key:
@@ -124,7 +124,6 @@ def generate_company_intelligence(company_name: str) -> dict:
             "last_updated": datetime.datetime.now().strftime('%Y-%m-%d')
         }
         
-        # Give Merck & Novartis specific mock data if requested
         if 'merck' in normalized:
             mock_data["focus_areas"] = ["Oncology (I-O Combos)", "Vaccines", "Cardiometabolic"]
             mock_data["bd_strategy"] = "Heavily reliant on Keytruda. Frantically looking for combo partners or novel I-O mechanisms (e.g., TIGIT, LAG-3) to extend Keytruda's lifecycle. High threshold for early-stage risk."
@@ -144,9 +143,9 @@ def generate_company_intelligence(company_name: str) -> dict:
 
         return mock_data
 
-    # If API key is present, actually call the model:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # If API key is present, call the real model:
+    client = genai.Client(api_key=api_key)
+    model_id = "gemini-2.5-flash"
     
     system_instruction = f"""
     You are an expert BioPharma BD Strategy Analyst.
@@ -165,11 +164,12 @@ def generate_company_intelligence(company_name: str) -> dict:
     """
     
     try:
-        response = model.generate_content(
-            system_instruction,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json"
-            )
+        response = client.models.generate_content(
+            model=model_id,
+            contents=system_instruction,
+            config={
+                "response_mime_type": "application/json"
+            }
         )
         return json.loads(response.text)
     except Exception as e:
