@@ -1,0 +1,273 @@
+import React, { useEffect, useState } from 'react';
+import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, Users, History, ChevronDown, ChevronUp, Link, Download } from 'lucide-react';
+import { useStore } from '../store/useStore';
+
+export default function ProjectSlideOver() {
+  const { selectedOverviewProject, closeProjectOverview } = useStore();
+  const [isVisible, setIsVisible] = useState(false);
+  const [expandedEventId, setExpandedEventId] = useState(null);
+
+  useEffect(() => {
+    if (selectedOverviewProject) {
+      setTimeout(() => setIsVisible(true), 10);
+      setExpandedEventId(null); // Reset expansion on open
+    } else {
+      setIsVisible(false);
+    }
+  }, [selectedOverviewProject]);
+
+  if (!selectedOverviewProject && !isVisible) return null;
+
+  const project = selectedOverviewProject || {};
+
+  // Rich historical data payload to simulate file/email drill-downs
+  const mockHistory = [
+    { 
+      id: 1, type: 'meeting', title: 'Initial Connect & Synergies', date: 'Sept 14, 2026', desc: 'Introduced our portfolio synergy and clinical platform capabilities.', icon: <VideoIcon/>,
+      details: {
+        attendees: "Dr. Sarah Chen (Chief Medical Officer), Mark Johnson (VP BD, Partner)",
+        minutes: "- Partner expressed high interest in the safety profile of our Ph2 asset.\n- Action Item: Send non-confidential teaser deck.\n- Action Item: Schedule follow-up CDMO review.",
+        link: "Zoom Recording (Passcode: 9x$2pq)"
+      }
+    },
+    { 
+      id: 2, type: 'document', title: 'CDA Executed', date: 'Sept 20, 2026', desc: 'Mutual Non-Disclosure Agreement countersigned by both legal teams.', icon: <FileText className="w-4 h-4"/>,
+      details: {
+        docId: "DOC-2026-0920-CDA",
+        signatories: "Alex Mercer (Our CEO), Dr. Elena Rostova (Partner EVP)",
+        expiryDate: "Sept 20, 2028 (2 Years Validity)",
+        status: "Active & Enforced",
+        link: "SharePoint/Legal/CDA_Executed.pdf"
+      }
+    },
+    { 
+      id: 3, type: 'email', title: 'Data Room Access Granted', date: 'Oct 02, 2026', desc: 'Sent VDR credential links to their core diligence team.', icon: <Mail className="w-4 h-4"/>,
+      details: {
+        from: "bd-admin@ourcompany.com",
+        to: "diligence-team@partner.com",
+        subject: "[Secure] VDR Credentials for Project Evaluation",
+        body: "Dear Diligence Team,\n\nPlease use the unique links below to access the secure Virtual Data Room. All document downloads are watermarked and tracked. Access will automatically expire in 30 days unless extended by the deal lead.\n\nBest,\nExternal Innovation Team"
+      }
+    },
+    { 
+      id: 4, type: 'call', title: 'Management Q&A Session', date: 'Oct 15, 2026', desc: 'Detailed dive into Phase 2b secondary endpoints.', icon: <Phone className="w-4 h-4"/>,
+      details: {
+        attendees: "Clinical Lead Team (Both sides)",
+        minutes: "- Cleared up concerns regarding arm B dropout rates.\n- Requested additional cuts of the demographic data.\n- Proceeding to commercial valuation modeling next week.",
+        link: "Read Full Transcript"
+      }
+    }
+  ];
+
+  const handleToggleExpand = (id) => {
+    setExpandedEventId(prev => prev === id ? null : id);
+  };
+
+  return (
+    <>
+      <div 
+        className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+        onClick={closeProjectOverview}
+      ></div>
+      
+      <div className={`fixed inset-y-0 right-0 w-full md:w-[500px] bg-white shadow-2xl border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${isVisible ? 'translate-x-0' : 'translate-x-full'}`}>
+        
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex justify-between items-start shrink-0">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-[10px] uppercase font-bold tracking-wider rounded-md">
+                {project.stage || 'Pipeline'}
+              </span>
+              <span className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md ${project.status === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                {project.status === 'overdue' ? 'Stalled / Action Req.' : 'Active'}
+              </span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-900">{project.company}</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1">{project.pipeline}</p>
+          </div>
+          <button onClick={closeProjectOverview} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content Scroll */}
+        <div className="flex-1 overflow-y-auto p-6 bg-[#f7f9fb]">
+          
+          <div className="mb-8">
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-orange-500" />
+              Future Milestones
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-sm relative overflow-hidden ring-1 ring-blue-500/10 hover:shadow-md transition-shadow cursor-pointer">
+                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{project.tasks && project.tasks.length > 0 ? project.tasks[0].desc : 'Determine Next Action'}</h4>
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">Next Step</span>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
+                  <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Target: {project.nextFollowUp || 'TBD'}
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded">
+                    <Users className="w-3.5 h-3.5" />
+                    Responsibility: Deal Team
+                  </div>
+                </div>
+              </div>
+
+              {project.tasks && project.tasks.slice(1).map((t, i) => (
+                <div key={i} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm relative pl-4 opacity-70">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-slate-300 rounded-l-xl"></div>
+                  <div className="flex justify-between items-center mb-1">
+                    <h4 className="font-bold text-xs text-slate-800 line-clamp-1">{t.desc}</h4>
+                    <span className="text-[9px] font-bold text-slate-400">{t.date}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium uppercase">{t.type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <History className="w-4 h-4 text-slate-400" />
+              Historical Footprints
+            </h3>
+            
+            <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
+              
+              <div className="relative pb-2">
+                <div className="absolute -left-[1.35rem] top-1 w-2.5 h-2.5 rounded-full border-2 border-green-500 bg-white shadow-[0_0_0_4px_white]"></div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{project.lastContactDate || 'Recently'}</span>
+                <div className="mt-1 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                  <h4 className="font-bold text-xs text-slate-800">Latest CRM Sync Entry</h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">System tracked an update via AI Intake module.</p>
+                </div>
+              </div>
+
+              {mockHistory.map((item) => {
+                const isExpanded = expandedEventId === item.id;
+                
+                return (
+                  <div key={item.id} className="relative">
+                    <div className="absolute -left-[1.35rem] top-1 w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center -translate-x-1.5 shadow-[0_0_0_4px_white] z-10">
+                      {item.icon}
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">{item.date}</span>
+                    
+                    <div 
+                      className={`bg-white rounded-xl border ${isExpanded ? 'border-blue-300 shadow-md ring-1 ring-blue-500/10' : 'border-slate-200 shadow-sm opacity-90 hover:opacity-100 hover:border-slate-300'} transition-all cursor-pointer overflow-hidden`}
+                      onClick={() => handleToggleExpand(item.id)}
+                    >
+                      <div className="p-3.5 flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-xs text-slate-800">{item.title}</h4>
+                          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{item.desc}</p>
+                        </div>
+                        <div className="text-slate-300 ml-3 shrink-0">
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+
+                      {/* Deep Dive Expansion Component */}
+                      {isExpanded && (
+                        <div className="bg-slate-50 border-t border-slate-100 p-4 text-xs animate-in slide-in-from-top-2 fade-in duration-200">
+                          
+                          {/* 1. EMAIL VIEWER */}
+                          {item.type === 'email' && (
+                            <div className="space-y-3">
+                              <div className="bg-white border border-slate-200 rounded p-2">
+                                <div className="text-[10px] text-slate-500 mb-1"><span className="font-bold text-slate-700">From:</span> {item.details.from}</div>
+                                <div className="text-[10px] text-slate-500 mb-1"><span className="font-bold text-slate-700">To:</span> {item.details.to}</div>
+                                <div className="text-[10px] text-slate-500"><span className="font-bold text-slate-700">Subject:</span> {item.details.subject}</div>
+                              </div>
+                              <div className="text-slate-700 whitespace-pre-line leading-relaxed italic border-l-2 border-indigo-200 pl-3">
+                                {item.details.body}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 2. DOCUMENT / CDA VIEWER */}
+                          {item.type === 'document' && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between bg-red-50 text-red-700 px-3 py-2 rounded border border-red-100">
+                                <span className="font-bold">Expiry Date</span>
+                                <span className="font-extrabold">{item.details.expiryDate}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                <div className="bg-white p-2 rounded border border-slate-200">
+                                  <span className="text-slate-400 block mb-0.5">Document ID</span>
+                                  <span className="font-bold text-slate-700">{item.details.docId}</span>
+                                </div>
+                                <div className="bg-white p-2 rounded border border-slate-200">
+                                  <span className="text-slate-400 block mb-0.5">Legal Status</span>
+                                  <span className="font-bold text-green-700">{item.details.status}</span>
+                                </div>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-slate-200 text-[10px]">
+                                <span className="text-slate-400 block mb-0.5">Signatories</span>
+                                <span className="font-bold text-slate-700">{item.details.signatories}</span>
+                              </div>
+                              <button className="w-full flex items-center justify-center gap-2 mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-sm transition-colors">
+                                <Download className="w-3.5 h-3.5" /> Download Original PDF
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 3. MEETING MINUTES VIEWER */}
+                          {(item.type === 'meeting' || item.type === 'call') && (
+                            <div className="space-y-3">
+                              <div className="bg-white p-2.5 rounded border border-slate-200">
+                                <div className="flex items-center gap-1.5 text-blue-700 font-bold mb-1 border-b border-slate-100 pb-1.5">
+                                  <Users className="w-3.5 h-3.5" /> Attendees
+                                </div>
+                                <div className="text-[10px] text-slate-600 tracking-tight">{item.details.attendees}</div>
+                              </div>
+                              <div className="bg-yellow-50 p-2.5 rounded border border-yellow-200/50">
+                                <div className="font-bold text-yellow-800 mb-1 flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Key Takeaways
+                                </div>
+                                <div className="text-[11px] text-yellow-900/80 whitespace-pre-line leading-relaxed">
+                                  {item.details.minutes}
+                                </div>
+                              </div>
+                              {item.details.link && (
+                                <button className="text-blue-600 hover:text-blue-800 font-bold text-[10px] flex items-center gap-1 mt-1 transition-colors">
+                                  <Link className="w-3.5 h-3.5" /> {item.details.link}
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              <div className="relative pt-2">
+                <div className="absolute -left-[1.35rem] top-3 w-2.5 h-2.5 rounded-full border-2 border-slate-300 bg-white"></div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Inception</span>
+                <p className="text-[11px] font-bold text-slate-600 mt-0.5">Project Created via DB Scan</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}
+
+// Simple fallback icon component
+function VideoIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+  );
+}
