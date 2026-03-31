@@ -2,7 +2,9 @@ import os
 import sys
 
 # Ensure backend modules can be imported
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+base_dir = os.path.join(os.path.dirname(__file__), '..')
+sys.path.append(base_dir)
+sys.path.append(os.path.join(base_dir, 'backend'))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
