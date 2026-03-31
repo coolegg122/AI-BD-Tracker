@@ -13,9 +13,8 @@ from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
 from sqladmin import Admin, ModelView
 
-# Auto-create tables for SQLite (safe for local dev). Skipped for Supabase/Postgres.
-if (os.getenv("DATABASE_URL") or "sqlite").startswith("sqlite"):
-    models.Base.metadata.create_all(bind=database.engine)
+# Auto-create tables for both SQLite and PostgreSQL (Create if not exists)
+models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
 
@@ -54,11 +53,25 @@ class ProjectHistoryAdmin(ModelView, model=models.ProjectHistory):
     name_plural = "Project Histories"
     icon = "fa-solid fa-clock-rotate-left"
 
+class AttachmentAdmin(ModelView, model=models.Attachment):
+    column_list = [models.Attachment.id, models.Attachment.project_id, models.Attachment.name, models.Attachment.file_type, models.Attachment.category]
+    name = "Project Document"
+    name_plural = "Project Documents"
+    icon = "fa-solid fa-file-pdf"
+
+class CareerHistoryAdmin(ModelView, model=models.CareerHistory):
+    column_list = [models.CareerHistory.id, models.CareerHistory.contact_id, models.CareerHistory.company, models.CareerHistory.title]
+    name = "Career Track"
+    name_plural = "Career Tracks"
+    icon = "fa-solid fa-graduation-cap"
+
 admin.add_view(ProjectAdmin)
 admin.add_view(TaskAdmin)
 admin.add_view(CatalystAdmin)
 admin.add_view(ContactAdmin)
 admin.add_view(ProjectHistoryAdmin)
+admin.add_view(AttachmentAdmin)
+admin.add_view(CareerHistoryAdmin)
 
 # Simplified CORS for trouble-shooting local dev issues
 app.add_middleware(
