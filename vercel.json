@@ -2,7 +2,10 @@
   "builds": [
     {
       "src": "ai-bd-tracker/package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
       "src": "api/index.py",
@@ -23,7 +26,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/ai-bd-tracker/index.html"
+      "dest": "/index.html"
     }
   ]
 }
