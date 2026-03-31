@@ -1,40 +1,22 @@
 {
-  "version": 2,
   "builds": [
     {
       "src": "ai-bd-tracker/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "buildCommand": "npm run build"
-      }
+      "use": "@vercel/static-build"
     },
     {
-      "src": "api/**/*.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/v1/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/admin",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/admin/(.*)",
+      "src": "/api/(.*)",
       "dest": "api/index.py"
     },
     {
       "src": "/(.*)",
       "dest": "/ai-bd-tracker/$1"
     }
-  ],
-  "functions": {
-    "api/index.py": {
-      "runtime": "@vercel/python@3.0"
-    }
-  }
+  ]
 }
