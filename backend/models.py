@@ -8,8 +8,11 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     firebase_uid = Column(String, unique=True, index=True)
     name = Column(String)
+    email = Column(String, unique=True, index=True)
     role = Column(String)
     initials = Column(String)
+    hashed_password = Column(String)  # For local authentication
+    is_active = Column(Integer, default=1)  # 1 for active, 0 for inactive
 
     projects = relationship("Project", back_populates="owner")
 

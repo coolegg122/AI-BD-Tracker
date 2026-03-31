@@ -1,17 +1,19 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 load_dotenv() # Load .env before other imports
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 import models, schemas, database
 from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
 from sqladmin import Admin, ModelView
+from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash
+from passlib.context import CryptContext
 
 # Auto-create tables for LOCAL SQLite ONLY.
 # IMPORTANT (Phase 17): DO NOT run create_all or DDL against Supabase Transaction Pooler (port 6543).
@@ -410,4 +412,88 @@ def get_mock_notifications():
         { "id": "n2", "title": "Meeting Reminder", "desc": "Novartis Licensing in 15 mins.", "time": "1h ago", "read": False },
         { "id": "n3", "title": "Portfolio Update", "desc": "Q3 Targets reviewed.", "time": "1d ago", "read": True }
     ]
+
+# Authentication routes
+@app.post("/api/v1/auth/register", response_model=schemas.UserResponse)
+def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+    """Register a new user with email and password."""
+    # Check if user already exists
+    existing_user = db.query(models.User).filter(
+        (models.User.email == user.email) | (models.User.name == user.name)
+    ).first()
+    
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email or name already exists"
+        )
+    
+    # Hash the password
+    hashed_password = get_password_hash(user.password)
+    
+    # Create new user
+    db_user = models.User(
+        name=user.name,
+        email=user.email,
+        role=user.role,
+        initials=user.initials,
+        hashed_password=hashed_password
+    )
+    
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user
+
+@app.post("/api/v1/auth/login", response_model=schemas.Token)
+def login_user(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
+    """Authenticate user and return access token."""
+    user = authenticate_user(db, user_credentials.email, user_credentials.password)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if user.is_active == 0:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user account",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=30)  # Could be configurable
+    access_token = create_access_token(
+        data={"sub": str(user.id)},  # Using user.id as subject
+        expires_delta=access_token_expires
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/v1/users/me", response_model=schemas.UserResponse)
+def read_users_me(current_user: models.User = Depends(get_current_active_user)):
+    """Get current authenticated user's information."""
+    return current_user
+
+@app.patch("/api/v1/users/me", response_model=schemas.UserResponse)
+def update_user_profile(
+    user_update: schemas.UserUpdate, 
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(database.get_db)
+):
+    """Update current user's profile information."""
+    # Update only the fields that were provided
+    update_data = user_update.dict(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
 

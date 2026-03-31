@@ -2,17 +2,36 @@
 // In production (Vercel), /api/* routes to serverless functions natively.
 const API_BASE_URL = '/api/v1';
 
+// Helper function to get the auth token from localStorage
+const getAuthToken = () => {
+  return localStorage.getItem('token');
+};
+
+// Helper function to add auth header to requests
+const getAuthHeaders = (includeContentType = true) => {
+  const token = getAuthToken();
+  const headers = {};
+  
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
+
 export const api = {
   // Universal extraction from raw text using AI Engine
   extractInfo: async (raw_text, type = "project") => {
     const response = await fetch(`${API_BASE_URL}/extract`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ raw_text, type }),
     });
-    
+
     if (!response.ok) {
         throw new Error(`AI Extraction failed: ${response.statusText}`);
     }
@@ -21,7 +40,9 @@ export const api = {
 
   // Get all projects
   getProjects: async () => {
-    const response = await fetch(`${API_BASE_URL}/projects`);
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) {
         throw new Error(`Failed to fetch projects: ${response.statusText}`);
     }
@@ -32,7 +53,7 @@ export const api = {
   createProject: async (projectData) => {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(projectData),
     });
     if (!response.ok) {
@@ -55,9 +76,7 @@ export const api = {
   updateProjectStage: async (projectId, stage) => {
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ stage }),
     });
     if (!response.ok) {
@@ -68,19 +87,19 @@ export const api = {
 
   // Get project history
   getProjectHistory: async (projectId) => {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`);
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) {
         throw new Error(`Failed to fetch project history: ${response.statusText}`);
     }
     return response.json();
   },
-  
+
   createProjectHistory: async (projectId, historyData) => {
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(historyData),
     });
     if (!response.ok) {
@@ -91,7 +110,9 @@ export const api = {
 
   // --- Phase 13: Contacts ---
   getContacts: async () => {
-    const response = await fetch(`${API_BASE_URL}/contacts`);
+    const response = await fetch(`${API_BASE_URL}/contacts`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) {
         throw new Error(`Failed to fetch contacts: ${response.statusText}`);
     }
@@ -101,7 +122,7 @@ export const api = {
   createContact: async (contactData) => {
     const response = await fetch(`${API_BASE_URL}/contacts`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(contactData),
     });
     if (!response.ok) {
@@ -123,7 +144,9 @@ export const api = {
   // --- Phase 14: Competitive Intelligence ---
   getCompanyIntelligence: async (companyName) => {
     // URL encode the company name to handle spaces / special characters safely
-    const response = await fetch(`${API_BASE_URL}/intelligence/${encodeURIComponent(companyName)}`);
+    const response = await fetch(`${API_BASE_URL}/intelligence/${encodeURIComponent(companyName)}`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) {
         throw new Error(`Failed to fetch intelligence for ${companyName}: ${response.statusText}`);
     }
@@ -132,32 +155,43 @@ export const api = {
 
   // --- Phase 5: Mock UI Endpoints ---
   getDashboardMock: async () => {
-    const response = await fetch(`${API_BASE_URL}/mock/dashboard`);
+    const response = await fetch(`${API_BASE_URL}/mock/dashboard`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) throw new Error('Failed to fetch dashboard mock');
     return response.json();
   },
 
   getScheduleMock: async () => {
-    const response = await fetch(`${API_BASE_URL}/mock/schedule`);
+    const response = await fetch(`${API_BASE_URL}/mock/schedule`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) throw new Error('Failed to fetch schedule mock');
     return response.json();
   },
 
   getNotificationsMock: async () => {
-    const response = await fetch(`${API_BASE_URL}/mock/notifications`);
+    const response = await fetch(`${API_BASE_URL}/mock/notifications`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) throw new Error('Failed to fetch notifications mock');
     return response.json();
   },
 
   // --- Phase 22: Inbound Ingestion Inbox ---
   getPendingIngestions: async () => {
-    const response = await fetch(`${API_BASE_URL}/ingestion/pending`);
+    const response = await fetch(`${API_BASE_URL}/ingestion/pending`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) throw new Error('Failed to fetch pending ingestions');
     return response.json();
   },
 
   processIngestion: async (id) => {
-    const response = await fetch(`${API_BASE_URL}/ingestion/${id}/process`, { method: 'POST' });
+    const response = await fetch(`${API_BASE_URL}/ingestion/${id}/process`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       let detail = `HTTP ${response.status}`;
       try {
@@ -176,7 +210,8 @@ export const api = {
 
   deleteIngestion: async (id) => {
     const response = await fetch(`${API_BASE_URL}/ingestion/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to discard ingestion');
     return response.json();
@@ -185,7 +220,8 @@ export const api = {
   // --- Phase 23: Zoho Mail Sync ---
   syncIngestion: async () => {
     const response = await fetch(`${API_BASE_URL}/ingestion/sync`, {
-      method: 'POST'
+      method: 'POST',
+      headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Mail sync failed');
     return response.json();
@@ -193,7 +229,9 @@ export const api = {
 
   // --- Phase 26: Project Attachments ---
   getProjectAttachments: async (projectId) => {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/attachments`);
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/attachments`, {
+      headers: getAuthHeaders(false) // Don't include content-type for GET requests
+    });
     if (!response.ok) throw new Error(`Failed to fetch attachments for project ${projectId}`);
     return response.json();
   }

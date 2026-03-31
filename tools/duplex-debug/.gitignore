@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Debug reports (optional - can be committed if needed)
+# debug_reports/*.md
+
+# Keep the directory but ignore contents
+debug_reports/*.md
+!debug_reports/.gitkeep

@@ -156,6 +156,7 @@ ZOHO_PASSWORD=your_zoho_password
 ZOHO_IMAP_SERVER=imap.zoho.com
 ZOHO_IMAP_PORT=993
 DATABASE_URL=sqlite:///./sql_app.db
+SECRET_KEY=your-secret-key-change-in-production
 ```
 
 #### 3. 设置前端 (React/Vite)
@@ -190,6 +191,7 @@ npm run dev
    - `ZOHO_EMAIL`: Zoho邮箱地址
    - `ZOHO_PASSWORD`: Zoho邮箱密码
    - `DATABASE_URL`: PostgreSQL数据库URL (Supabase)
+   - `SECRET_KEY`: 用于JWT签名的安全密钥
 4. 部署完成后即可访问应用
 
 ### 数据库配置
@@ -198,10 +200,50 @@ npm run dev
 - 本地开发：使用SQLite数据库 (`sql_app.db`)
 - 生产环境：推荐使用Supabase PostgreSQL数据库
 
+## 认证功能
+
+AI-BD Tracker现在包含了完整的用户认证系统：
+
+### 功能特性
+- **用户注册**: 新用户可以注册账户
+- **用户登录**: 现有用户可以使用电子邮件和密码登录
+- **JWT令牌**: 使用JSON Web Tokens进行身份验证
+- **受保护路由**: 只有认证用户才能访问某些功能
+- **用户资料管理**: 用户可以更新个人资料信息
+
+### API端点
+- `POST /api/v1/auth/register` - 用户注册
+- `POST /api/v1/auth/login` - 用户登录
+- `GET /api/v1/users/me` - 获取当前用户信息
+- `PATCH /api/v1/users/me` - 更新用户资料
+
+### 前端组件
+- 登录页面 (`/login`)
+- 注册页面 (`/register`)
+- 认证上下文管理
+- 自动令牌管理（存储在localStorage中）
+
 ## 贡献
 
-欢迎提交Issue和Pull Request来改进项目。对于重大更改，请先开Issue讨论您想要更改的内容。
+
+## 工具
+
+### 双工 Debug (Duplex Debug)
+
+本项目使用双工 Debug 系统进行代码审查。
+
+> **注意**: 此工具**仅适用于 Qwen Code**，不适用于 Antigravity 或 Claude Code。
+
+详细说明请查看：`tools/duplex-debug/README.md`
+
+```bash
+# 进入工具目录
+cd tools/duplex-debug
+
+# 运行审查
+python3 duplex_debug.py <文件路径>
+```
 
 ## 许可证
 
-此项目按照MIT许可证发布。
+此项目按照 MIT 许可证发布。

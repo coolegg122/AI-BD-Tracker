@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from typing import List, Optional
 
 class TaskBase(BaseModel):
@@ -190,3 +190,37 @@ class PendingIngestionResponse(PendingIngestionBase):
 
     class Config:
         from_attributes = True
+
+# User-related schemas
+class UserBase(BaseModel):
+    name: str
+    email: EmailStr
+    role: str
+    initials: str
+
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+    initials: Optional[str] = None
+
+class UserResponse(UserBase):
+    id: int
+    is_active: int
+
+    class Config:
+        from_attributes = True
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None

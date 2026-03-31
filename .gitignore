@@ -34,3 +34,6 @@ backend/sqlite.db
 Thumbs.db
 
 .env
+
+# Duplex Debug Reports (stored in tools/duplex-debug/debug_reports/)
+tools/duplex-debug/debug_reports/*.md
