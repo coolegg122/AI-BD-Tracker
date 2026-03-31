@@ -135,9 +135,14 @@ export default function SmartInput() {
         alert("Meeting note synced to project history!");
       }
 
-      // If this came from the inbox, mark as processed
+      // If this came from the inbox, mark as processed (non-blocking: don't fail the whole save if this call fails)
       if (activeIngestionId) {
-        await api.processIngestion(activeIngestionId);
+        try {
+          await api.processIngestion(activeIngestionId);
+        } catch (processErr) {
+          // Log but don't block success - project was saved, just inbox cleanup failed
+          console.warn("Could not mark ingestion as processed:", processErr.message);
+        }
         setPendingIngestions(prev => prev.filter(item => item.id !== activeIngestionId));
         setActiveIngestionId(null);
       }
@@ -148,13 +153,7 @@ export default function SmartInput() {
       setInputText('');
     } catch (error) {
       console.error("Save failed:", error);
-      // Try to extract a meaningful error message from the response
-      let msg = error.message || "Unknown error";
-      try {
-        // Some APIs return JSON error bodies
-        const errData = JSON.parse(error.message);
-        msg = errData.detail || errData.message || msg;
-      } catch (_) { /* not JSON, use raw message */ }
+      const msg = error.message || "Unknown error";
       alert(`Failed to save:\n${msg}`);
     }
     setIsSaving(false);

@@ -96,13 +96,13 @@ export const api = {
   createContact: async (contactData) => {
     const response = await fetch(`${API_BASE_URL}/contacts`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contactData),
     });
     if (!response.ok) {
-        throw new Error(`Failed to create contact: ${response.statusText}`);
+      let detail = response.statusText;
+      try { const e = await response.json(); detail = JSON.stringify(e.detail || e); } catch (_) {}
+      throw new Error(detail);
     }
     return response.json();
   },
@@ -144,10 +144,12 @@ export const api = {
   },
 
   processIngestion: async (id) => {
-    const response = await fetch(`${API_BASE_URL}/ingestion/${id}/process`, {
-      method: 'POST'
-    });
-    if (!response.ok) throw new Error('Failed to mark ingestion as processed');
+    const response = await fetch(`${API_BASE_URL}/ingestion/${id}/process`, { method: 'POST' });
+    if (!response.ok) {
+      let detail = response.statusText;
+      try { const e = await response.json(); detail = JSON.stringify(e.detail || e); } catch (_) {}
+      throw new Error(`processIngestion failed: ${detail}`);
+    }
     return response.json();
   },
 
