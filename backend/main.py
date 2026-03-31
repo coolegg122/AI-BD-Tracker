@@ -13,19 +13,13 @@ from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
 from sqladmin import Admin, ModelView
 
-# Auto-create tables for both SQLite and PostgreSQL (Create if not exists)
-models.Base.metadata.create_all(bind=database.engine)
+# Auto-create tables for LOCAL SQLite ONLY.
+# IMPORTANT (Phase 17): DO NOT run create_all or DDL against Supabase Transaction Pooler (port 6543).
+# It causes Vercel 10s timeout crashes on cold start. Cloud schema is managed via Supabase dashboard.
+_db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_URL_NON_POOLING") or "sqlite"
+if _db_url.startswith("sqlite"):
+    models.Base.metadata.create_all(bind=database.engine)
 
-# Phase 26: Structural Migration (Add missing 'details' columns to existing tables in Cloud)
-if not (os.getenv("DATABASE_URL") or "sqlite").startswith("sqlite"):
-    from sqlalchemy import text
-    with database.engine.connect() as conn:
-        try:
-            conn.execute(text("ALTER TABLE projects ADD COLUMN IF NOT EXISTS details JSON;"))
-            conn.execute(text("ALTER TABLE contacts ADD COLUMN IF NOT EXISTS details JSON;"))
-            conn.commit()
-        except Exception as e:
-            print(f"Cloud migration info: {e}")
 
 app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
 
