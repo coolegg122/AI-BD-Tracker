@@ -129,5 +129,28 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/mock/notifications`);
     if (!response.ok) throw new Error('Failed to fetch notifications mock');
     return response.json();
+  },
+
+  // --- Phase 22: Inbound Ingestion Inbox ---
+  getPendingIngestions: async () => {
+    const response = await fetch(`${API_BASE_URL}/ingestion/pending`);
+    if (!response.ok) throw new Error('Failed to fetch pending ingestions');
+    return response.json();
+  },
+
+  processIngestion: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/ingestion/${id}/process`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to mark ingestion as processed');
+    return response.json();
+  },
+
+  deleteIngestion: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/ingestion/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to discard ingestion');
+    return response.json();
   }
 };

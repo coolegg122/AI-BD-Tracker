@@ -108,3 +108,16 @@ class CompanyIntelligence(Base):
     recent_deals = Column(JSON, default=list) # Array of dicts
     last_updated = Column(String) # Date string
 
+class PendingIngestion(Base):
+    __tablename__ = "pending_ingestion"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_type = Column(String, default="email")
+    sender_email = Column(String, index=True)
+    subject = Column(String)
+    raw_content = Column(String)
+    attachments = Column(JSON, default=list) # List of filenames
+    ai_extracted_payload = Column(JSON, default=dict) # The first guess by AI
+    entity_type = Column(String) # project, contact, or meeting_note
+    status = Column(String, default="pending") # pending, processed, discarded
+    created_at = Column(String) # YYYY-MM-DD HH:MM

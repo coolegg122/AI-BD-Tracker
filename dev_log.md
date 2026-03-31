@@ -234,9 +234,24 @@
 
 ---
 
-### **给下一个接手 AI 的关键上下文提示 (Context for Data Ingestion)**
+## [2026-03-31] 深度采集：完成 Phase 22 (AI Inbound Inbox & Review System)
 
-- **Smart Input 架构**: 目前采用的是“AI 预判 -> 用户确认 -> 正式入库”的二级验证机制，有效规避了 AI 幻觉对生产数据库的污染。
-- **当前状态**: ✅ **Phase 19-21 已上线**。系统不仅具备精美的可视化和历史轨迹功能，更拥有了智能采集反哺能力，正式闭环。
+### Phase 22: 智能化全自动异步采集通道
+
+为了支持邮件 BCC 密送采集及外部 Webhook 对接，我们将 Smart Input 升级为异步“AI 收件箱”模式。
+
+- **工作目录**: `backend/models.py`, `backend/main.py`, `ai-bd-tracker/src/views/SmartInput.jsx`, `ai-bd-tracker/src/services/api.js`
+- **核心变更**:
+  - **待审收件箱 (Pending Inbox)**: 在后端新增 `pending_ingestion` 表及管理接口。支持通过 Email 转发或 Webhook 直接向系统推送原始文本。
+  - **元数据抽取**: 系统现在能自动记录邮件发件人（用于 Owner 归属逻辑）、邮件主题以及原始附件列表（📎 PDF/PPT 等）。
+  - **异步预判逻辑**: 邮件到达瞬间，AI 会同步在后台完成“初审”并将结构化草稿存入 Pending 状态。
+  - **二级确认 UI**: Smart Input 新增“Review Inbox”标签页。用户可以查看所有待处理邮件，一键加载 AI 预判结果，修正后点击 Archive 正式转存至生产库。
+
+---
+
+### **给下一个接手 AI 的关键上下文提示 (Context for Inbound Data)**
+
+- **Smart Input 架构**: 具备同步（剪贴板粘贴）与异步（邮件收件箱）双通道。所有非手动录入的数据必须经过 `PendingIngestion` 暂存审核区。
+- **当前状态**: ✅ **全业务链路已闭环**。AI-BD Tracker 现已进化为集：决策仪表盘 (Phase 19) -> 历史足迹跟踪 (Phase 20) -> 智能结构化抽取 (Phase 21) -> 多元异步采集 (Phase 22) 于一体的自动化系统。
 
 ---

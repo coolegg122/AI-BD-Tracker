@@ -1,19 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown } from 'lucide-react';
+import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown, Inbox, Trash2, Paperclip, Mail } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 
 export default function SmartInput() {
-  const { projects, addProject, setProjects } = useStore();
+  const { projects, addProject } = useStore();
+  const [activeTab, setActiveTab] = useState('manual'); // 'manual' or 'inbox'
   const [inputText, setInputText] = useState('');
   const [extractType, setExtractType] = useState('project'); // project, contact, meeting_note
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [parsedResult, setParsedResult] = useState(null);
   const [linkedProjectId, setLinkedProjectId] = useState('');
+  
+  // Pending Inbox State
+  const [pendingIngestions, setPendingIngestions] = useState([]);
+  const [activeIngestionId, setActiveIngestionId] = useState(null);
+  const [isLoadingInbox, setIsLoadingInbox] = useState(false);
 
   // Local state for editing the result before saving
   const [editData, setEditData] = useState(null);
+
+  useEffect(() => {
+    fetchPendingInbox();
+  }, []);
+
+  const fetchPendingInbox = async () => {
+    setIsLoadingInbox(true);
+    try {
+      const data = await api.getPendingIngestions();
+      setPendingIngestions(data);
+    } catch (error) {
+      console.error("Failed to fetch inbox:", error);
+    }
+    setIsLoadingInbox(false);
+  };
 
   useEffect(() => {
     // If we're on meeting_note, try to match suspected_project_name to an existing project
@@ -31,6 +52,7 @@ export default function SmartInput() {
     setIsAnalyzing(true);
     setParsedResult(null);
     setEditData(null);
+    setActiveIngestionId(null);
 
     try {
       const data = await api.extractInfo(inputText, extractType);
@@ -41,6 +63,34 @@ export default function SmartInput() {
       alert("AI extraction failed. Please ensure the backend is running.");
     }
     setIsAnalyzing(false);
+  };
+
+  const handleReviewInboxItem = (item) => {
+    setActiveTab('manual');
+    setExtractType(item.entity_type || 'project');
+    setParsedResult(item.ai_extracted_payload);
+    setEditData(item.ai_extracted_payload);
+    setActiveIngestionId(item.id);
+    setInputText(item.raw_content);
+    
+    // Auto-scroll to review form
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+  };
+
+  const handleDeleteIngestion = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Discard this item?")) return;
+    try {
+      await api.deleteIngestion(id);
+      setPendingIngestions(prev => prev.filter(item => item.id !== id));
+      if (activeIngestionId === id) {
+        setParsedResult(null);
+        setEditData(null);
+        setActiveIngestionId(null);
+      }
+    } catch (error) {
+      alert("Discard failed");
+    }
   };
 
   const handleConfirmSave = async () => {
@@ -68,6 +118,14 @@ export default function SmartInput() {
         });
         alert("Meeting note synced to project history!");
       }
+
+      // If this came from the inbox, mark as processed
+      if (activeIngestionId) {
+        await api.processIngestion(activeIngestionId);
+        setPendingIngestions(prev => prev.filter(item => item.id !== activeIngestionId));
+        setActiveIngestionId(null);
+      }
+
       // Reset after success
       setParsedResult(null);
       setEditData(null);
@@ -97,61 +155,154 @@ export default function SmartInput() {
             <p className="text-slate-500 max-w-xl text-sm leading-relaxed">Multi-entity extraction engine. Paste raw transcripts or notes and let AI structure your BD intelligence.</p>
         </div>
         
-        {/* Type Selector */}
+        {/* Tab Switcher */}
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-            {[
-                { id: 'project', label: 'Project', icon: Microscope },
-                { id: 'contact', label: 'Contact', icon: UserPlus },
-                { id: 'meeting_note', label: 'Meeting Note', icon: MessageSquare }
-            ].map(t => (
-                <button 
-                    key={t.id}
-                    onClick={() => { setExtractType(t.id); setParsedResult(null); }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${extractType === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                >
-                    <t.icon className="w-3.5 h-3.5" />
-                    {t.label}
-                </button>
-            ))}
+            <button 
+                onClick={() => setActiveTab('manual')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+                <FileText className="w-4 h-4" />
+                Manual Extract
+            </button>
+            <button 
+                onClick={() => setActiveTab('inbox')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all relative ${activeTab === 'inbox' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+                <Inbox className="w-4 h-4" />
+                AI Inbox
+                {pendingIngestions.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-bounce-slow">
+                        {pendingIngestions.length}
+                    </span>
+                )}
+            </button>
         </div>
       </div>
 
-      <section className="space-y-6">
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-indigo-50 rounded-2xl blur opacity-40 transition duration-1000"></div>
-          <div className="relative bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-            <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Raw Input Source</span>
-              </div>
-              <button 
-                onClick={fillTestData} 
-                className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
-               >
-                Fill Sample {extractType}
-              </button>
-            </div>
-            <textarea 
-              className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-slate-800 resize-none placeholder:text-slate-400 leading-relaxed focus:outline-none" 
-              placeholder={`Paste ${extractType} details here...`}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-            />
+      {activeTab === 'manual' ? (
+        <section className="space-y-6">
+          <div className="flex items-center justify-between mb-2">
+                 {/* Type Selector */}
+                <div className="flex bg-slate-200/50 p-1 rounded-lg">
+                    {[
+                        { id: 'project', label: 'Project', icon: Microscope },
+                        { id: 'contact', label: 'Contact', icon: UserPlus },
+                        { id: 'meeting_note', label: 'Meeting Note', icon: MessageSquare }
+                    ].map(t => (
+                        <button 
+                            key={t.id}
+                            onClick={() => { setExtractType(t.id); setParsedResult(null); }}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${extractType === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            <t.icon className="w-3 h-3" />
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
           </div>
-        </div>
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-indigo-50 rounded-2xl blur opacity-40 transition duration-1000"></div>
+            <div className="relative bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+              <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Raw Input Source</span>
+                </div>
+                <button 
+                  onClick={fillTestData} 
+                  className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
+                >
+                  Fill Sample {extractType}
+                </button>
+              </div>
+              <textarea 
+                className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-slate-800 resize-none placeholder:text-slate-400 leading-relaxed focus:outline-none" 
+                placeholder={`Paste ${extractType} details here...`}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+              />
+            </div>
+          </div>
 
-        <div className="flex justify-center">
-          <button 
-            onClick={handleAIParse}
-            disabled={isAnalyzing || !inputText.trim()}
-            className="flex items-center gap-2 bg-slate-900 text-white px-10 py-3.5 rounded-full font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
-          >
-            <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
-          </button>
-        </div>
-      </section>
+          <div className="flex justify-center">
+            <button 
+              onClick={handleAIParse}
+              disabled={isAnalyzing || !inputText.trim()}
+              className="flex items-center gap-2 bg-slate-900 text-white px-10 py-3.5 rounded-full font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+            >
+              <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+              <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section className="animate-in slide-in-from-right-4 duration-300">
+             {isLoadingInbox ? (
+                <div className="bg-white rounded-2xl border border-slate-200 p-20 flex flex-col items-center justify-center text-slate-400">
+                    <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                    <p className="font-bold">Syncing AI Inbox...</p>
+                </div>
+             ) : pendingIngestions.length === 0 ? (
+                <div className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-20 flex flex-col items-center justify-center text-slate-400">
+                    <Inbox className="w-12 h-12 mb-4 opacity-20" />
+                    <p className="font-bold">No items awaiting review.</p>
+                    <p className="text-xs mt-1">Incoming emails or webhooks will appear here.</p>
+                </div>
+             ) : (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{pendingIngestions.length} Pending Records</span>
+                        <button onClick={fetchPendingInbox} className="text-xs font-bold text-blue-600 hover:underline">Refresh</button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                        {pendingIngestions.map(item => (
+                            <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-blue-300 transition-colors group shadow-sm">
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-blue-50 p-3 rounded-xl">
+                                        {item.source_type === 'email' ? <Mail className="w-6 h-6 text-blue-600" /> : <Wand2 className="w-6 h-6 text-blue-600" />}
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-700">{item.entity_type || 'project'}</span>
+                                            <span className="text-xs text-slate-400 font-medium">{item.created_at}</span>
+                                        </div>
+                                        <h4 className="font-bold text-slate-900 mb-1">{item.subject || 'Automated Catch-all'}</h4>
+                                        <p className="text-xs text-slate-500 line-clamp-1 mb-2">From: <span className="font-bold text-slate-700">{item.sender_email}</span></p>
+                                        
+                                        {item.attachments && item.attachments.length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {item.attachments.map((file, idx) => (
+                                                    <span key={idx} className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md border border-slate-200">
+                                                        <Paperclip className="w-2.5 h-2.5" />
+                                                        {file}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button 
+                                        onClick={(e) => handleDeleteIngestion(item.id, e)}
+                                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleReviewInboxItem(item)}
+                                        className="bg-slate-900 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-600 transition-all flex items-center gap-2"
+                                    >
+                                        Review & Confirm
+                                        <Check className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+             )}
+        </section>
+      )}
 
       {/* REVIEW & CONFIRM SECTION */}
       {parsedResult && editData && (
@@ -165,11 +316,21 @@ export default function SmartInput() {
                 </div>
             </div>
             <div className="flex gap-2">
-                <button onClick={() => setParsedResult(null)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
+                <button onClick={() => { setParsedResult(null); setActiveIngestionId(null); }} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-xl shadow-orange-900/5 p-8 relative overflow-hidden">
+            {activeIngestionId && (
+                <div className="mb-8 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-orange-600" />
+                        <span className="text-xs font-bold text-orange-800 uppercase tracking-tight">Processing Inbox Item #{activeIngestionId}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-orange-400 italic">Confirmation will clear this from your inbox</span>
+                </div>
+            )}
+            
             {/* TYPE SPECIFIC FORMS */}
             {extractType === 'project' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -211,7 +372,7 @@ export default function SmartInput() {
                             <input 
                                 type="date"
                                 className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
-                                value={editData.nextFollowUp}
+                                value={editData.nextFollowUp || ''}
                                 onChange={(e) => setEditData({...editData, nextFollowUp: e.target.value})}
                             />
                         </div>
@@ -299,7 +460,7 @@ export default function SmartInput() {
                             <input 
                                 type="date"
                                 className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
-                                value={editData.date}
+                                value={editData.date || ''}
                                 onChange={(e) => setEditData({...editData, date: e.target.value})}
                             />
                         </div>
@@ -318,7 +479,7 @@ export default function SmartInput() {
             {/* SHARED CONFIRM BUTTON */}
             <div className="mt-10 pt-10 border-t border-slate-100 flex justify-end gap-3">
                 <button 
-                  onClick={() => setParsedResult(null)}
+                  onClick={() => { setParsedResult(null); setActiveIngestionId(null); }}
                   className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800"
                 >
                     Discard

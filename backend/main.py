@@ -146,41 +146,67 @@ def create_project_history(project_id: int, history_entry: schemas.ProjectHistor
 def webhook_ingest_data(payload: dict, db: Session = Depends(database.get_db)):
     """
     Webhook endpoint for enterprise automation (e.g. forward from Email/Lark/DingTalk).
-    Expects a JSON payload containing 'text' or 'content'.
-    Automatically runs AI extraction and saves to the database.
     """
-    raw_text = payload.get("text") or payload.get("content") or payload.get("msg")
+    # Cloudmailin / Generic Webhook mapping
+    raw_text = payload.get("plain") or payload.get("text") or payload.get("content") or payload.get("msg")
+    sender = payload.get("from", "unknown@robot.ai")
+    subject = payload.get("subject", "No Subject")
+    attachments = payload.get("attachments", []) # List of attachment objects/filenames
+    attachment_names = [a.get("file_name") for a in attachments if isinstance(a, dict)]
+    
     if not raw_text:
-        raise HTTPException(status_code=400, detail="Missing 'text' or 'content' in payload")
+        raise HTTPException(status_code=400, detail="Missing text content in payload")
         
     try:
-        # 1. Run inference
-        parsed_data = extract_project_info(raw_text)
+        # 1. Background Inference (Guess Type and Extract)
+        # We guess the type first (default to project)
+        # Optimization: AI could guess the type, but for now we default to project for extraction
+        parsed_data = extract_universal(raw_text, "project") 
         
-        # 2. Re-use schema validation
-        project_create = schemas.ProjectCreate(**parsed_data)
-        
-        # 3. Direct DB insert
-        db_project = models.Project(
-            company=project_create.company,
-            pipeline=project_create.pipeline,
-            stage=project_create.stage,
-            nextFollowUp=project_create.nextFollowUp,
-            lastContactDate=datetime.now().strftime('%Y-%m-%d'),
-            status="active"
+        # 2. Save to Pending Inbox for Admin Review
+        db_pending = models.PendingIngestion(
+            source_type="email" if "from" in payload else "webhook",
+            sender_email=sender,
+            subject=subject,
+            raw_content=raw_text,
+            attachments=attachment_names,
+            ai_extracted_payload=parsed_data,
+            entity_type="project", # AI's guess
+            status="pending",
+            created_at=datetime.now().strftime('%Y-%m-%d %H:%M')
         )
-        db.add(db_project)
+        db.add(db_pending)
         db.commit()
-        db.refresh(db_project)
+        db.refresh(db_pending)
         
-        for task in project_create.tasks:
-            db_task = models.Task(**task.model_dump(), project_id=db_project.id)
-            db.add(db_task)
-        db.commit()
-        
-        return {"status": "success", "message": "Automated ingestion complete", "project_id": db_project.id}
+        return {"status": "success", "message": "Queued for review", "ingestion_id": db_pending.id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/ingestion/pending", response_model=List[schemas.PendingIngestionResponse])
+def get_pending_ingestions(db: Session = Depends(database.get_db)):
+    """获取所有待审核的自动化采集项"""
+    return db.query(models.PendingIngestion).filter(models.PendingIngestion.status == "pending").all()
+
+@app.post("/api/v1/ingestion/{id}/process")
+def mark_ingestion_processed(id: int, db: Session = Depends(database.get_db)):
+    """审核通过后，将采集项标记为已处理"""
+    db_item = db.query(models.PendingIngestion).filter(models.PendingIngestion.id == id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db_item.status = "processed"
+    db.commit()
+    return {"status": "success"}
+
+@app.delete("/api/v1/ingestion/{id}")
+def discard_ingestion(id: int, db: Session = Depends(database.get_db)):
+    """丢弃无用的自动化采集项"""
+    db_item = db.query(models.PendingIngestion).filter(models.PendingIngestion.id == id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.delete(db_item)
+    db.commit()
+    return {"status": "success"}
 
 @app.get("/api/v1/contacts", response_model=List[schemas.ContactResponse])
 def get_contacts(db: Session = Depends(database.get_db)):

@@ -121,3 +121,20 @@ class ProjectHistoryResponse(ProjectHistoryBase):
 
     class Config:
         from_attributes = True
+
+class PendingIngestionBase(BaseModel):
+    source_type: str
+    sender_email: str
+    subject: Optional[str] = None
+    raw_content: str
+    attachments: List[str] = []
+    ai_extracted_payload: dict = {}
+    entity_type: Optional[str] = None
+    status: str = "pending"
+    created_at: str
+
+class PendingIngestionResponse(PendingIngestionBase):
+    id: int
+
+    class Config:
+        from_attributes = True
