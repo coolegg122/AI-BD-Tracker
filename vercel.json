@@ -2,8 +2,8 @@
   "buildCommand": "cd ai-bd-tracker && npm install && npm run build",
   "outputDirectory": "ai-bd-tracker/dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py" },
-    { "source": "/admin(.*)", "destination": "/api/index.py" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/:path*", "destination": "/api/index.py" },
+    { "source": "/admin:path*", "destination": "/api/index.py" },
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
