@@ -34,7 +34,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/ai-bd-tracker/$1"
+      "dest": "/index.html"
     }
   ]
 }
