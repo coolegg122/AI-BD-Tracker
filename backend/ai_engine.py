@@ -69,6 +69,12 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
               "attachments": [
                 { "name": "File Name (e.g. ClinicalSummary.pdf)", "file_type": "PDF/PPT/Image", "category": "Scientific/Legal/Financial/Other", "url": "", "uploaded_at": "2026-03-31" }
               ],
+              "primary_contact": {
+                "name": "Full Name (Optional)",
+                "email": "Primary Email (Optional)",
+                "currentTitle": "Title at their company",
+                "location": "City/Country"
+              },
               "details": {
                 "Scientific": { "target": "", "moa": "", "modality": "" },
                 "Clinical": { "phase": "", "indication": "", "trial_id": "" },

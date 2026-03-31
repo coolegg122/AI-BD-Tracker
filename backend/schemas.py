@@ -39,34 +39,6 @@ class OwnerBase(BaseModel):
     role: str
     initials: str
 
-class ProjectBase(BaseModel):
-    company: str
-    pipeline: str = ""
-    stage: str = "Initial Contact"
-    nextFollowUp: Optional[str] = ""
-    tasks: List[TaskCreate] = []
-    attachments: List[AttachmentCreate] = []
-    details: Optional[dict] = {}
-
-    @field_validator('details', mode='before')
-    @classmethod
-    def details_default(cls, v):
-        return v if v is not None else {}
-
-class ProjectCreate(ProjectBase):
-    pass
-
-class ProjectResponse(ProjectBase):
-    id: int
-    lastContactDate: str
-    status: str
-    owner: Optional[OwnerBase] = None
-    tasks: List[TaskResponse] = []
-    attachments: List[AttachmentResponse] = []
-
-    class Config:
-        from_attributes = True
-
 class CareerHistoryBase(BaseModel):
     company: str
     title: str
@@ -113,6 +85,35 @@ class ContactCreate(ContactBase):
 class ContactResponse(ContactBase):
     id: int
     careerHistory: List[CareerHistoryResponse] = []
+
+    class Config:
+        from_attributes = True
+
+class ProjectBase(BaseModel):
+    company: str
+    pipeline: str = ""
+    stage: str = "Initial Contact"
+    nextFollowUp: Optional[str] = ""
+    tasks: List[TaskCreate] = []
+    attachments: List[AttachmentCreate] = []
+    details: Optional[dict] = {}
+    primary_contact: Optional[ContactCreate] = None  # NEW: For auto-syncing contacts
+
+    @field_validator('details', mode='before')
+    @classmethod
+    def details_default(cls, v):
+        return v if v is not None else {}
+
+class ProjectCreate(ProjectBase):
+    pass
+
+class ProjectResponse(ProjectBase):
+    id: int
+    lastContactDate: str
+    status: str
+    owner: Optional[OwnerBase] = None
+    tasks: List[TaskResponse] = []
+    attachments: List[AttachmentResponse] = []
 
     class Config:
         from_attributes = True

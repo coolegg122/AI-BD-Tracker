@@ -125,7 +125,33 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(databas
     for att in project.attachments:
         db_att = models.Attachment(**att.model_dump(), project_id=db_project.id)
         db.add(db_att)
+
+    # Auto-sync primary contact if provided
+    if project.primary_contact and project.primary_contact.name:
+        pc = project.primary_contact
+        existing_contact = db.query(models.Contact).filter(models.Contact.email == pc.email).first() if pc.email else None
         
+        if existing_contact:
+            # Update existing contact
+            existing_contact.name = pc.name
+            existing_contact.currentCompany = pc.currentCompany or db_project.company
+            existing_contact.currentTitle = pc.currentTitle or existing_contact.currentTitle
+            if db_project.company not in (existing_contact.metAt or []):
+                new_met_at = (existing_contact.metAt or []) + [db_project.company]
+                existing_contact.metAt = new_met_at
+        else:
+            # Create new contact
+            db_contact = models.Contact(
+                name=pc.name,
+                email=pc.email,
+                currentCompany=pc.currentCompany or db_project.company,
+                currentTitle=pc.currentTitle,
+                location=pc.location,
+                metAt=[db_project.company],
+                details=pc.details or {}
+            )
+            db.add(db_contact)
+            
     db.commit()
     db.refresh(db_project)
     
