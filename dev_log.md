@@ -204,9 +204,24 @@
 
 ---
 
+## [2026-03-31] 后端增强：完成 Phase 20 (History Footprints DB Persistence)
+
+### Phase 20: 历史轨迹数据库持久化
+
+为了让项目的“足迹”模块从纯前端 Mock 转向真实的业务支撑，我们对后端架构进行了深度补全。
+
+- **工作目录**: `backend/models.py`, `backend/schemas.py`, `backend/main.py`, `ai-bd-tracker/src/components/ProjectSlideOver.jsx`
+- **核心变更**:
+  - **ORM 扩展**: 在 Supabase 中新增了 `project_history` 表，采用 JSONB 存储灵活的事件元数据（如 Zoom 链接、PDF 下载地址、参会人名单等）。
+  - **API 实现**: 新增了 `GET /api/v1/projects/{id}/history` 接口，支持按时间倒序拉取真实的跟进轨迹。
+  - **前端对接**: 重构了 `ProjectSlideOver.jsx`，移除了硬编码的 `mockHistory` 数组，引入了异步加载状态（Loading Pulse）和真实的后端数据绑定。
+  - **附件打通**: 在 `public/demo-assets/` 下建立了真实的附件下载锚点，确保 CDA 签署和会议纪要功能的交互闭环。
+
+---
+
 ### **给下一个接手 AI 的关键上下文提示 (Context for Dual-Machine Sync)**
 
 - **同步 SOP**: 现已在根目录部署 `SYNC_SOP.md` 和 `SYNC_GUIDE.md`。每次开工前请务必 `git pull`，完工后 `git push`。
-- **当前状态**: ✅ **Phase 19 已上线**。系统不仅具备 AI 提取、云端存储和自动化迁移能力，现在更拥有了生产级的业务洞察可视化面板。
+- **当前状态**: ✅ **Phase 19 & 20 已上线**。系统不仅拥有精美的可视化图表，同时实现了最核心的“历史轨迹”模块的全栈云端穿透。
 
 ---
