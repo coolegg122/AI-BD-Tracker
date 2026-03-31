@@ -3,14 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
+import os
 
 import models, schemas, database
 from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
 from sqladmin import Admin, ModelView
 
-# Avoid running DDL (create_all) in serverless environments or pooler connections
-# models.Base.metadata.create_all(bind=database.engine)
+# Auto-create tables for SQLite (safe for local dev). Skipped for Supabase/Postgres.
+if (os.getenv("DATABASE_URL") or "sqlite").startswith("sqlite"):
+    models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
 

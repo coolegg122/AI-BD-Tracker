@@ -72,6 +72,7 @@ def sync_zoho_inbox(db, ai_extract_fn) -> dict:
 
                 # Extract body and attachment names
                 plain_body = ""
+                html_body = ""
                 attachment_names = []
 
                 if msg.is_multipart():
@@ -90,6 +91,13 @@ def sync_zoho_inbox(db, ai_extract_fn) -> dict:
                                     part.get_content_charset() or "utf-8",
                                     errors="replace"
                                 )
+                        elif content_type == "text/html" and not html_body:
+                            payload = part.get_payload(decode=True)
+                            if payload:
+                                html_body = payload.decode(
+                                    part.get_content_charset() or "utf-8",
+                                    errors="replace"
+                                )
                 else:
                     payload = msg.get_payload(decode=True)
                     if payload:
@@ -97,6 +105,12 @@ def sync_zoho_inbox(db, ai_extract_fn) -> dict:
                             msg.get_content_charset() or "utf-8",
                             errors="replace"
                         )
+
+                # Fallback: strip HTML tags if no plain text body
+                if not plain_body.strip() and html_body:
+                    import re
+                    plain_body = re.sub(r'<[^>]+>', ' ', html_body)
+                    plain_body = re.sub(r'\s+', ' ', plain_body).strip()
 
                 if not plain_body.strip():
                     skipped += 1
@@ -109,12 +123,21 @@ def sync_zoho_inbox(db, ai_extract_fn) -> dict:
                     ai_payload = {}
                     errors.append(f"AI extraction failed for '{subject}': {ai_err}")
 
+                # Deduplication check: skip if same subject + sender already exists
+                existing = db.query(models.PendingIngestion).filter(
+                    models.PendingIngestion.sender_email == sender_email,
+                    models.PendingIngestion.subject == subject
+                ).first()
+                if existing:
+                    skipped += 1
+                    continue
+
                 # Save to PendingIngestion
                 db_pending = models.PendingIngestion(
                     source_type="email",
                     sender_email=sender_email,
                     subject=subject,
-                    raw_content=plain_body[:4000],  # Truncate to 4k chars
+                    raw_content=plain_body[:4000],
                     attachments=attachment_names,
                     ai_extracted_payload=ai_payload,
                     entity_type="project",
