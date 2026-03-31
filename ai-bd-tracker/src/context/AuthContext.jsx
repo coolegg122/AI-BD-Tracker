@@ -21,7 +21,11 @@ export const AuthProvider = ({ children }) => {
     if (storedToken) {
       setToken(storedToken);
       // Optionally fetch user details here
-      fetchUserDetails(storedToken);
+      fetchUserDetails(storedToken).catch(err => {
+        console.error('Error fetching user details:', err);
+        // Token might be invalid, clear it
+        logout();
+      });
     } else {
       setLoading(false);
     }
@@ -35,7 +39,7 @@ export const AuthProvider = ({ children }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
@@ -68,10 +72,10 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
       const authToken = data.access_token;
-      
+
       setToken(authToken);
       localStorage.setItem('token', authToken);
-      
+
       await fetchUserDetails(authToken);
       return { success: true };
     } catch (error) {
@@ -83,7 +87,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       console.log('Registering user:', userData);
-      
+
       const response = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: {
@@ -93,13 +97,15 @@ export const AuthProvider = ({ children }) => {
       });
 
       console.log('Response status:', response.status);
-      
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
 
       if (!response.ok) {
-        throw new Error(responseData.detail || 'Registration failed');
+        const errorData = await response.json();
+        console.log('Registration error response:', errorData);
+        throw new Error(errorData.detail || 'Registration failed');
       }
+
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
 
       return { success: true, user: responseData };
     } catch (error) {
