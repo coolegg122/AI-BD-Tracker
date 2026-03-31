@@ -42,10 +42,17 @@ class ContactAdmin(ModelView, model=models.Contact):
     name_plural = "Key Contacts"
     icon = "fa-solid fa-users"
 
+class ProjectHistoryAdmin(ModelView, model=models.ProjectHistory):
+    column_list = [models.ProjectHistory.id, models.ProjectHistory.project_id, models.ProjectHistory.type, models.ProjectHistory.title, models.ProjectHistory.date]
+    name = "Project History"
+    name_plural = "Project Histories"
+    icon = "fa-solid fa-clock-rotate-left"
+
 admin.add_view(ProjectAdmin)
 admin.add_view(TaskAdmin)
 admin.add_view(CatalystAdmin)
 admin.add_view(ContactAdmin)
+admin.add_view(ProjectHistoryAdmin)
 
 # Allow CORS for local React dev server
 app.add_middleware(
@@ -114,6 +121,27 @@ def update_project_stage(project_id: int, stage_update: dict, db: Session = Depe
     if "stage" in stage_update:
         db_project.stage = stage_update["stage"]
         db.commit()
+        db.refresh(db_project)
+    return db_project
+
+@app.get("/api/v1/projects/{project_id}/history", response_model=List[schemas.ProjectHistoryResponse])
+def get_project_history(project_id: int, db: Session = Depends(database.get_db)):
+    """获取指定项目的历史追踪足迹"""
+    history = db.query(models.ProjectHistory).filter(models.ProjectHistory.project_id == project_id).order_by(models.ProjectHistory.id.desc()).all()
+    return history
+
+@app.post("/api/v1/projects/{project_id}/history", response_model=schemas.ProjectHistoryResponse)
+def create_project_history(project_id: int, history_entry: schemas.ProjectHistoryCreate, db: Session = Depends(database.get_db)):
+    """新增一条项目历史追踪足迹"""
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    db_history = models.ProjectHistory(**history_entry.model_dump(), project_id=project_id)
+    db.add(db_history)
+    db.commit()
+    db.refresh(db_history)
+    return db_history
+
 @app.post("/api/v1/webhook/ingest")
 def webhook_ingest_data(payload: dict, db: Session = Depends(database.get_db)):
     """

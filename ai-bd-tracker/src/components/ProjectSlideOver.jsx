@@ -1,63 +1,51 @@
 import React, { useEffect, useState } from 'react';
 import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, Users, History, ChevronDown, ChevronUp, Link, Download } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { api } from '../services/api';
 
 export default function ProjectSlideOver() {
   const { selectedOverviewProject, closeProjectOverview } = useStore();
   const [isVisible, setIsVisible] = useState(false);
   const [expandedEventId, setExpandedEventId] = useState(null);
+  const [historyData, setHistoryData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (selectedOverviewProject) {
       setTimeout(() => setIsVisible(true), 10);
       setExpandedEventId(null); // Reset expansion on open
+      fetchHistory(selectedOverviewProject.id);
     } else {
       setIsVisible(false);
+      setHistoryData([]);
     }
   }, [selectedOverviewProject]);
+
+  const fetchHistory = async (projectId) => {
+    setIsLoading(true);
+    try {
+      const data = await api.getProjectHistory(projectId);
+      setHistoryData(data);
+    } catch (err) {
+      console.error("Failed to load project history:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!selectedOverviewProject && !isVisible) return null;
 
   const project = selectedOverviewProject || {};
 
-  // Rich historical data payload to simulate file/email drill-downs
-  const mockHistory = [
-    { 
-      id: 1, type: 'meeting', title: 'Initial Connect & Synergies', date: 'Sept 14, 2026', desc: 'Introduced our portfolio synergy and clinical platform capabilities.', icon: <VideoIcon/>,
-      details: {
-        attendees: "Dr. Sarah Chen (Chief Medical Officer), Mark Johnson (VP BD, Partner)",
-        minutes: "- Partner expressed high interest in the safety profile of our Ph2 asset.\n- Action Item: Send non-confidential teaser deck.\n- Action Item: Schedule follow-up CDMO review.",
-        link: "Zoom Recording (Passcode: 9x$2pq)"
-      }
-    },
-    { 
-      id: 2, type: 'document', title: 'CDA Executed', date: 'Sept 20, 2026', desc: 'Mutual Non-Disclosure Agreement countersigned by both legal teams.', icon: <FileText className="w-4 h-4"/>,
-      details: {
-        docId: "DOC-2026-0920-CDA",
-        signatories: "Alex Mercer (Our CEO), Dr. Elena Rostova (Partner EVP)",
-        expiryDate: "Sept 20, 2028 (2 Years Validity)",
-        status: "Active & Enforced",
-        link: "SharePoint/Legal/CDA_Executed.pdf"
-      }
-    },
-    { 
-      id: 3, type: 'email', title: 'Data Room Access Granted', date: 'Oct 02, 2026', desc: 'Sent VDR credential links to their core diligence team.', icon: <Mail className="w-4 h-4"/>,
-      details: {
-        from: "bd-admin@ourcompany.com",
-        to: "diligence-team@partner.com",
-        subject: "[Secure] VDR Credentials for Project Evaluation",
-        body: "Dear Diligence Team,\n\nPlease use the unique links below to access the secure Virtual Data Room. All document downloads are watermarked and tracked. Access will automatically expire in 30 days unless extended by the deal lead.\n\nBest,\nExternal Innovation Team"
-      }
-    },
-    { 
-      id: 4, type: 'call', title: 'Management Q&A Session', date: 'Oct 15, 2026', desc: 'Detailed dive into Phase 2b secondary endpoints.', icon: <Phone className="w-4 h-4"/>,
-      details: {
-        attendees: "Clinical Lead Team (Both sides)",
-        minutes: "- Cleared up concerns regarding arm B dropout rates.\n- Requested additional cuts of the demographic data.\n- Proceeding to commercial valuation modeling next week.",
-        link: "Read Full Transcript"
-      }
+  const getIcon = (type) => {
+    switch (type) {
+      case 'meeting': return <VideoIcon/>;
+      case 'document': return <FileText className="w-4 h-4"/>;
+      case 'email': return <Mail className="w-4 h-4"/>;
+      case 'call': return <Phone className="w-4 h-4"/>;
+      default: return <History className="w-4 h-4" />;
     }
-  ];
+  };
 
   const handleToggleExpand = (id) => {
     setExpandedEventId(prev => prev === id ? null : id);
@@ -149,13 +137,17 @@ export default function ProjectSlideOver() {
                 </div>
               </div>
 
-              {mockHistory.map((item) => {
+              {isLoading ? (
+                <div className="text-center py-4 text-xs font-bold text-slate-500 animate-pulse">Loading Footprints...</div>
+              ) : historyData.length === 0 ? (
+                <div className="text-center py-4 text-xs font-medium text-slate-400">No footprints recorded yet.</div>
+              ) : historyData.map((item) => {
                 const isExpanded = expandedEventId === item.id;
                 
                 return (
                   <div key={item.id} className="relative">
                     <div className="absolute -left-[1.35rem] top-1 w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center -translate-x-1.5 shadow-[0_0_0_4px_white] z-10">
-                      {item.icon}
+                      {getIcon(item.type)}
                     </div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">{item.date}</span>
                     
@@ -212,9 +204,9 @@ export default function ProjectSlideOver() {
                                 <span className="text-slate-400 block mb-0.5">Signatories</span>
                                 <span className="font-bold text-slate-700">{item.details.signatories}</span>
                               </div>
-                              <button className="w-full flex items-center justify-center gap-2 mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-sm transition-colors">
+                              <a href={item.details.url || "#"} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 mt-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-sm transition-colors cursor-pointer">
                                 <Download className="w-3.5 h-3.5" /> Download Original PDF
-                              </button>
+                              </a>
                             </div>
                           )}
 
@@ -236,9 +228,9 @@ export default function ProjectSlideOver() {
                                 </div>
                               </div>
                               {item.details.link && (
-                                <button className="text-blue-600 hover:text-blue-800 font-bold text-[10px] flex items-center gap-1 mt-1 transition-colors">
+                                <a href={item.details.url || "#"} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 font-bold text-[10px] flex items-center gap-1 mt-1 transition-colors cursor-pointer">
                                   <Link className="w-3.5 h-3.5" /> {item.details.link}
-                                </button>
+                                </a>
                               )}
                             </div>
                           )}

@@ -103,3 +103,20 @@ class IntelligenceResponse(IntelligenceBase):
 
 class AIParsingRequest(BaseModel):
     raw_text: str
+
+class ProjectHistoryBase(BaseModel):
+    type: str
+    title: str
+    date: str
+    desc: str
+    details: dict = {}
+
+class ProjectHistoryCreate(ProjectHistoryBase):
+    pass
+
+class ProjectHistoryResponse(ProjectHistoryBase):
+    id: int
+    project_id: int
+
+    class Config:
+        from_attributes = True

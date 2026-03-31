@@ -28,6 +28,7 @@ class Project(Base):
     owner = relationship("User", back_populates="projects")
 
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+    history = relationship("ProjectHistory", back_populates="project", cascade="all, delete-orphan")
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -40,6 +41,19 @@ class Task(Base):
     status = Column(String) # pending, tentative, confirmed
 
     project = relationship("Project", back_populates="tasks")
+
+class ProjectHistory(Base):
+    __tablename__ = "project_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    type = Column(String) # email, call, document, meeting
+    title = Column(String)
+    date = Column(String)
+    desc = Column(String)
+    details = Column(JSON, default=dict) # To store flexible fields like docId, link, attendees, etc.
+
+    project = relationship("Project", back_populates="history")
 
 class Catalyst(Base):
     __tablename__ = "catalysts"

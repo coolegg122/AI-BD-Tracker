@@ -56,6 +56,15 @@ export const api = {
     return response.json();
   },
 
+  // Get project history
+  getProjectHistory: async (projectId) => {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch project history: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
   // --- Phase 13: Contacts ---
   getContacts: async () => {
     const response = await fetch(`${API_BASE_URL}/contacts`);
