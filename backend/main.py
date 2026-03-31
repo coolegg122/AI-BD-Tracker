@@ -60,16 +60,11 @@ admin.add_view(CatalystAdmin)
 admin.add_view(ContactAdmin)
 admin.add_view(ProjectHistoryAdmin)
 
-# Allow CORS for local React dev server
+# Simplified CORS for trouble-shooting local dev issues
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "http://127.0.0.1:5173", 
-        "https://*.vercel.app", # Trust Vercel subdomains
-        "*" 
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -108,10 +103,20 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(databas
     for task in project.tasks:
         db_task = models.Task(**task.model_dump(), project_id=db_project.id)
         db.add(db_task)
+    
+    for att in project.attachments:
+        db_att = models.Attachment(**att.model_dump(), project_id=db_project.id)
+        db.add(db_att)
+        
     db.commit()
     db.refresh(db_project)
     
     return db_project
+
+@app.get("/api/v1/projects/{project_id}/attachments", response_model=List[schemas.AttachmentResponse])
+def get_project_attachments(project_id: int, db: Session = Depends(database.get_db)):
+    """获取项目的全量附件与档案列表"""
+    return db.query(models.Attachment).filter(models.Attachment.project_id == project_id).all()
 
 @app.get("/api/v1/projects", response_model=List[schemas.ProjectResponse])
 def get_projects(db: Session = Depends(database.get_db)):

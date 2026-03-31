@@ -285,6 +285,38 @@
 
 - **邮箱账号**: `bdtracker212@zohomail.com`（凭据在本地 `.env`，Vercel Environment Variables 中单独配置）。
 - **去重逻辑**: 基于 `sender + subject`。如需更精确，可考虑改为 Message-ID 去重。
-- **当前状态**: ✅ **Phase 23 已全面上线并通过生产环境验证**。用户可将 BD 邮件发送至机器人邮箱，在 Vercel 部署的前端 AI Inbox 一键同步并成功入库（Supabase）。针对 Pydantic 校验和 HTTP/2 报错的 Hotfix 也已验证生效。
+---
+
+## [2026-03-31] 模型与架构升级：完成 Phase 24 与 Phase 25 (Unrestricted AI Data)
+
+### Phase 24: Gemini 模型升级与 SDK 迁移
+
+为了提升 AI 提取的精度与速度，并适应最新的开发标准，我们对 AI 引擎进行了底层重构。
+
+- **核心变更记录**:
+  - **SDK 迁移**: 将已过时的 `google-generativeai` 库完全迁移至 Google 官方最新的 `google-genai` SDK，采用更简洁的 `Client` 初始化模式。
+  - **模型升级**: 从 `gemini-1.5-flash` 升级至 **`gemini-3-flash-preview`**，显著提升了在医药 BD 隐晦语境下的语义理解能力。
+  - **环境健壮性**: 在 `main.py` 和 `ai_engine.py` 中强制执行 `load_dotenv()`，确保本地 `.env` 中的 API Key 优先级。
+
+### Phase 25: AI 提取深度化与数据库灵活性扩展 (Unrestricted Data Strategy)
+
+解决了系统此前“固定数据库维度”的限制，使 AI-BD Tracker 进化为真正的非结构化情报引擎。
+
+- **核心变更记录**:
+  - **数据库扩展 (Schema Upgrade)**: 在 `models.py` 的 `Project` 和 `Contact` 模型中新增了 `details` (JSON) 字段。
+  - **数据库迁移 (Migration)**: 针对已有的 SQLite 数据库，开发并执行了 `migrate_add_details.py` 脚本，成功通过 `ALTER TABLE` 为存量数据补全了 JSONB 字段，解决了后端由于字段缺失导致的 500 崩溃。
+  - **AI Prompt 重构**: 重新设计了 `ai_engine.py` 中的提示词，强制要求 AI 寻找并归类：临床靶点、药物联用、具体人物角色、会议关键备注等，并自动封装入 `details` 对象。
+  - **CORS & Networking 彻底修复**:
+    - **Vite Proxy**: 在 `vite.config.js` 中配置了 `/api` -> `localhost:8000` 的本地代理转发，彻底解决了浏览器在 `127.0.0.1` vs `localhost` 以及 VPN 隧道环境下频发的 "Failed to fetch" 和 CORS 拦截问题。
+    - **API 路径扁平化**: 重构了 `api.js`，统一使用相对路径 `/api/v1`，实现了本地开发与 Vercel 生产环境的无缝切换。
+  - **UI 动态赋能**: 升级了 `SmartInput.jsx` 的预览界面。新增了“动态细节编辑区”，支持用户在保存前对 AI 提取的所有非结构化详情进行增删改查。
 
 ---
+
+### **给下一个接手 AI 的关键上下文提示 (Context for Phase 25)**
+
+- **数据库弹性**: 现在的架构已不再惧怕业务维度的变动。所有新增需求（如“要记录药物副作用”、“要记录联系人 LinkedIn”）均可直接存入 `details`，无需再动 `models.py`。
+- **本地开发环境**: 必须使用 **`127.0.0.1:5173`** 访问前端。Vite Proxy 已锁定转发至本地 `8000` 端口。
+- **迁移工具**: `backend/migrate_add_details.py` 可作为未来数据库字段热更新的参考模板。
+
+**当前状态**: ✅ **全业务链路已具备极强的容错性与扩展性**。后端能够处理万物，前端能够自由编辑，网络联调已由 Vite Proxy 彻底打通。

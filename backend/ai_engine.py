@@ -43,9 +43,19 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
     
     prompts = {
         "project": """
-            You are a professional BioPharma BD assistant. Extract BD project information from the user's communication record.
-            Be extremely thorough. Look for drug names (meds), combination therapies, clinical targets (e.g. HER2, Claudin18.2), and phase of development.
-            Also extract ANY people mentioned with their roles or contact info.
+            You are a professional BioPharma BD assistant. Your goal is to extract ALL relevant BD information into a highly structured format.
+            
+            ### CATEGORIZATION RULES:
+            1. **Scientific**: Target (e.g. Claudin18.2), MoA (e.g. ADC, RLT), Modality (e.g. Small Molecule, mAb), pre-clinical data summaries.
+            2. **Clinical**: Phase (Ph1, Ph2, etc.), Indication (e.g. mCRPC, NSCLC), Trial IDs (NCT numbers), Enrollment status, Primary Endpoints.
+            3. **Financial/Commercial**: Deal terms (upfront, milestones, royalties), Market size, Competitors mentioned, Funding status.
+            4. **Legal**: Patent status, LOE (Loss of Exclusivity) dates, Territory rights (Global, Ex-China, etc.).
+            
+            ### DYNAMIC CATEGORY CREATION:
+            If you find CRITICAL information that doesn't fit the above 4 buckets (e.g. Manufacturing, Ethics, Supply Chain, ESG), you MUST create a NEW top-level key in the "details" object with a descriptive name.
+            
+            ### DOCUMENT DETECTION:
+            Look for mentions of shared documents or files. For each file mentioned, add it to the "suggested_attachments" list in details.
             
             You MUST return a single valid JSON object matching this exact schema:
             {
@@ -54,15 +64,17 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
               "stage": "Clinical Stage (e.g. Phase I, Phase II, Pre-clinical, Marketed)",
               "nextFollowUp": "YYYY-MM-DD",
               "tasks": [
-                { "type": "meeting", "desc": "Specific to-do description", "date": "Date or TBD", "status": "pending" }
+                { "type": "meeting/email/follow_up", "desc": "Specific to-do", "date": "YYYY-MM-DD or TBD", "status": "pending" }
+              ],
+              "attachments": [
+                { "name": "File Name (e.g. ClinicalSummary.pdf)", "file_type": "PDF/PPT/Image", "category": "Scientific/Legal/Financial/Other", "url": "", "uploaded_at": "2026-03-31" }
               ],
               "details": {
-                "medications": ["Drug A", "Drug B"],
-                "target": "Target protein/mechanism",
-                "indication": "Therapeutic area/indication",
-                "people_mentioned": [{"name": "Name", "role": "Role", "email": "Email"}],
-                "trial_id": "ClinicalTrial.gov ID if any",
-                "any_other_notes": "Other critical facts found in text"
+                "Scientific": { "target": "", "moa": "", "modality": "" },
+                "Clinical": { "phase": "", "indication": "", "trial_id": "" },
+                "Financial": { "deal_value": "" },
+                "Legal": { "patent": "" },
+                "Any_Custom_Category": { "key": "value" }
               }
             }
         """,

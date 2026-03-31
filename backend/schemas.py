@@ -17,6 +17,23 @@ class TaskResponse(TaskBase):
     class Config:
         from_attributes = True
 
+class AttachmentBase(BaseModel):
+    name: str
+    file_type: str
+    category: str
+    url: str
+    uploaded_at: str
+
+class AttachmentCreate(AttachmentBase):
+    pass
+
+class AttachmentResponse(AttachmentBase):
+    id: int
+    project_id: int
+
+    class Config:
+        from_attributes = True
+
 class OwnerBase(BaseModel):
     name: str
     role: str
@@ -28,6 +45,7 @@ class ProjectBase(BaseModel):
     stage: str = "Initial Contact"
     nextFollowUp: Optional[str] = ""
     tasks: List[TaskCreate] = []
+    attachments: List[AttachmentCreate] = []
     details: dict = {}
 
 class ProjectCreate(ProjectBase):
@@ -39,6 +57,7 @@ class ProjectResponse(ProjectBase):
     status: str
     owner: Optional[OwnerBase] = None
     tasks: List[TaskResponse] = []
+    attachments: List[AttachmentResponse] = []
 
     class Config:
         from_attributes = True

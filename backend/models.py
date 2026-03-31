@@ -30,6 +30,20 @@ class Project(Base):
 
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
     history = relationship("ProjectHistory", back_populates="project", cascade="all, delete-orphan")
+    attachments = relationship("Attachment", back_populates="project", cascade="all, delete-orphan")
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    name = Column(String)
+    file_type = Column(String) # pdf, ppt, image, etc.
+    category = Column(String)  # Scientific, Legal, Financial, etc.
+    url = Column(String)       # Path or URL to the file
+    uploaded_at = Column(String)
+
+    project = relationship("Project", back_populates="attachments")
 
 class Task(Base):
     __tablename__ = "tasks"

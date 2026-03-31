@@ -1,4 +1,6 @@
-const API_BASE_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api/v1' : '/api/v1';
+// In local dev, Vite proxy forwards /api/* to the Python backend (no CORS needed).
+// In production (Vercel), /api/* routes to serverless functions natively.
+const API_BASE_URL = '/api/v1';
 
 export const api = {
   // Universal extraction from raw text using AI Engine

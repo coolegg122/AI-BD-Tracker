@@ -492,52 +492,114 @@ export default function SmartInput() {
                 </div>
             )}
 
-            {/* SHARED DYNAMIC DETAILS SECTION */}
-            {(editData.details || Object.keys(editData.details || {}).length > 0 || true) && (
+            {/* SHARED DYNAMIC DETAILS SECTION - Grouped by AI categories */}
+            {editData.details && (
                 <div className="mt-8 pt-8 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Extra Extracted Details</label>
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Deep Intelligence Categories</label>
+                            <p className="text-[10px] text-slate-400 italic">AI has categorized these findings. You can edit keys, values, or add your own.</p>
+                        </div>
                         <button 
                             onClick={addDetail}
                             className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-md transition-colors"
                         >
-                            <Plus className="w-3 h-3" /> Add Detail
+                            <Plus className="w-3 h-3" /> Add Category/Field
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        {Object.entries(editData.details || {}).map(([key, value]) => (
-                            <div key={key} className="flex items-end gap-2 group">
-                                <div className="flex-1">
+
+                    <div className="space-y-8">
+                        {Object.entries(editData.details).map(([category, content]) => (
+                            <div key={category} className="bg-slate-50/50 rounded-xl p-4 border border-slate-100">
+                                <div className="flex items-center justify-between mb-3">
                                     <input 
-                                        className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-1 bg-transparent border-none outline-none focus:text-blue-500 w-full"
-                                        value={key}
+                                        className="text-xs font-black text-slate-900 uppercase tracking-tight bg-transparent border-none outline-none focus:text-blue-600 w-full"
+                                        value={category}
                                         onChange={(e) => {
                                             const newKey = e.target.value;
                                             const newDetails = { ...editData.details };
-                                            const val = newDetails[key];
-                                            delete newDetails[key];
+                                            const val = newDetails[category];
+                                            delete newDetails[category];
                                             newDetails[newKey] = val;
                                             setEditData({...editData, details: newDetails});
                                         }}
                                     />
-                                    <input 
-                                        className="w-full font-medium text-slate-700 border-b border-dashed border-slate-200 focus:border-blue-400 focus:outline-none py-1 bg-transparent"
-                                        value={typeof value === 'object' ? JSON.stringify(value) : value}
-                                        onChange={(e) => updateDetail(key, e.target.value)}
+                                    <button onClick={() => removeDetail(category)} className="text-slate-300 hover:text-red-400 p-1"><Trash2 className="w-3 h-3" /></button>
+                                </div>
+
+                                {typeof content === 'object' && content !== null ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {Object.entries(content).map(([subKey, subVal]) => (
+                                            <div key={subKey} className="group">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase block mb-0.5">{subKey.replace(/_/g, ' ')}</label>
+                                                <input 
+                                                    className="w-full text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded px-2 py-1 focus:border-blue-400 focus:outline-none"
+                                                    value={subVal}
+                                                    onChange={(e) => {
+                                                        const newDetails = { ...editData.details };
+                                                        newDetails[category][subKey] = e.target.value;
+                                                        setEditData({...editData, details: newDetails});
+                                                    }}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <textarea 
+                                        className="w-full text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded p-2 focus:border-blue-400 focus:outline-none"
+                                        value={content}
+                                        onChange={(e) => updateDetail(category, e.target.value)}
                                     />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {Object.keys(editData.details).length === 0 && (
+                        <p className="text-[11px] text-slate-400 italic">No extra categories detected. Add one manually to enrich the record.</p>
+                    )}
+                </div>
+            )}
+
+            {/* SUGGESTED ATTACHMENTS SECTION */}
+            {editData.attachments && editData.attachments.length > 0 && (
+                <div className="mt-8 pt-8 border-t border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4">AI Suggested Documents</label>
+                    <div className="space-y-2">
+                        {editData.attachments.map((att, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-xl hover:border-blue-200 transition-all">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${att.file_type === 'PDF' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                                        <Paperclip className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <input 
+                                            className="text-xs font-bold text-slate-800 bg-transparent border-none outline-none focus:underline w-full"
+                                            value={att.name}
+                                            onChange={(e) => {
+                                                const newAtts = [...editData.attachments];
+                                                newAtts[idx].name = e.target.value;
+                                                setEditData({...editData, attachments: newAtts});
+                                            }}
+                                        />
+                                        <div className="flex gap-2 mt-1">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase">{att.file_type}</span>
+                                            <span className="text-[9px] font-bold text-blue-500 uppercase px-1 rounded bg-blue-50">{att.category}</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <button 
-                                    onClick={() => removeDetail(key)}
-                                    className="p-1.5 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    onClick={() => {
+                                        const newAtts = editData.attachments.filter((_, i) => i !== idx);
+                                        setEditData({...editData, attachments: newAtts});
+                                    }}
+                                    className="p-1.5 text-slate-300 hover:text-red-400"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         ))}
                     </div>
-                    {Object.keys(editData.details || {}).length === 0 && (
-                        <p className="text-[11px] text-slate-400 italic">No extra clinical or contact details detected. Add some manually if needed.</p>
-                    )}
                 </div>
             )}
 
