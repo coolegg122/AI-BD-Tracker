@@ -69,12 +69,19 @@ try:
         name_plural = "Project Documents"
         icon = "fa-solid fa-file-pdf"
 
+    class UserAdmin(ModelView, model=models.User):
+        column_list = [models.User.id, models.User.name, models.User.email, models.User.role, models.User.is_active]
+        name = "User Account"
+        name_plural = "User Accounts"
+        icon = "fa-solid fa-user-gear"
+
     class CareerHistoryAdmin(ModelView, model=models.CareerHistory):
         column_list = [models.CareerHistory.id, models.CareerHistory.contact_id, models.CareerHistory.company, models.CareerHistory.title]
         name = "Career Track"
         name_plural = "Career Tracks"
         icon = "fa-solid fa-graduation-cap"
 
+    admin.add_view(UserAdmin)
     admin.add_view(ProjectAdmin)
     admin.add_view(TaskAdmin)
     admin.add_view(CatalystAdmin)
