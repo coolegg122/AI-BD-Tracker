@@ -359,3 +359,34 @@
 - **安全性**: `backend/auth.py` 中的 `SECRET_KEY` 在生产环境下必须从环境变量读取。
 
 **当前状态**: ✅ **系统安全性与可追溯性大幅增强**。已完成从“数据采集”到“安全管控”的全流程功能闭环。
+
+---
+
+## [2026-04-01] 体验与功能完备化：完成 Phase 28 (Placeholder Removal & UX Polish)
+
+### Phase 28: 补全占位功能、主题系统与设置中心
+
+为了将项目从“原型验证”推向“生产就绪”，我们彻底清除了所有 `alert()` 占位符，并补全了账号管理、全局搜索及个性化配置的核心链路。
+
+- **工作目录**: `backend/main.py`, `ai-bd-tracker/src/views/SettingsPage.jsx`, `ai-bd-tracker/src/components/Topbar.jsx`, `ai-bd-tracker/src/context/ThemeContext.jsx`
+- **核心变更记录**:
+  - **后端接口扩展**: 新增了改密 (`/auth/change-password`)、全局搜索 (`/search`) 及用户偏好设置 (`/users/me/preferences`) 三大端点，支持复杂业务逻辑。
+  - **数据库热更新**: 通过 `migrate_add_user_prefs.py` 脚本为 `users` 表新增了 `notification_prefs` (JSONB) 和 `theme` (VARCHAR) 字段，并兼容 SQLite 与 PostgreSQL。
+  - **全局主题引擎**: 基于 React Context 开发了 `ThemeContext`，结合 CSS Variables 与 Tailwind 4 `@theme` 实现了高表现力的深色/浅色模式热切换，且偏好设置随账号云同步。
+  - **设置中心 (Settings)**: 
+    - 实现了 4 个功能 Tab：个人资料修改、账号安全、通知开关（邮件/管线/会议/AI 情报）、界面主题。
+  - **Topbar 交互重构**: 
+    - **智能搜索**: 将原先的 alert 替换为实时查询后端数据库的下拉搜索框，支持分类索引项目与联系人。
+    - **用户中心**: 点击头像展开下拉菜单，集成设置入口、主题切换与退出登录。
+    - **情报汇总**: 点击 "AI Insights" 自动聚合来自 `Dashboard` 的最新高价值警报。
+  - **登录 UX 优化**: 将“找回密码”警告框重构为内联 Modal，增强了品牌专业度。
+
+---
+
+### **给下一个接手 AI 的关键上下文提示 (Context for UX & Settings)**
+
+- **深色模式**: 系统通过在 `<html>` 标签注入 `.dark` 类实现。CSS 变量定义在 `index.css` 的 `@layer base` 中。
+- **搜索策略**: 采用 `ILike` 模糊匹配。如需提升性能，未来可在 Supabase 开启 `pg_trgm` 索引。
+- **数据一致性**: 每次后端模型变更后，请务必运行对应的 `migrate_xxx.py` 脚本同步本地与线上数据库。
+
+**当前状态**: ✅ **全系统功能点已无占位符，具备完整的生产级交互体验。**
