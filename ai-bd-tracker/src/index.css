@@ -4,12 +4,13 @@
   --color-brand-primary: #2563eb;
   --color-brand-secondary: #4f46e5;
   
-  --color-ui-bg: #f8fafc;
-  --color-ui-card: #ffffff;
-  --color-ui-sidebar: #f1f5f9;
-  --color-ui-text: #0f172a;
-  --color-ui-text-muted: #64748b;
-  --color-ui-border: #e2e8f0;
+  --color-ui-bg: var(--ui-bg);
+  --color-ui-card: var(--ui-card);
+  --color-ui-sidebar: var(--ui-sidebar);
+  --color-ui-text: var(--ui-text);
+  --color-ui-text-muted: var(--ui-text-muted);
+  --color-ui-border: var(--ui-border);
+  --color-ui-hover: var(--ui-hover);
 }
 
 @layer base {

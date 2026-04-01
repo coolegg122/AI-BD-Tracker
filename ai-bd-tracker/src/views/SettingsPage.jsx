@@ -132,7 +132,7 @@ const SettingsPage = () => {
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col md:flex-row min-h-[500px]">
         {/* Sidebar Tabs */}
-        <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-700 p-4 space-y-1">
+        <div className="w-full md:w-64 bg-ui-sidebar border-r border-ui-border p-4 space-y-1 transition-colors">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -140,7 +140,7 @@ const SettingsPage = () => {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800'
+                  : 'text-ui-text-muted hover:bg-ui-hover'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -160,10 +160,10 @@ const SettingsPage = () => {
               <form onSubmit={handleProfileUpdate} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Full Name</label>
+                    <label className="text-xs font-bold text-ui-text-muted uppercase">Full Name</label>
                     <input
                       type="text"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                      className="w-full bg-ui-bg border border-ui-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-ui-text transition-colors"
                       value={profileData.name}
                       onChange={(e) => setProfileData({...profileData, name: e.target.value})}
                     />
@@ -189,10 +189,10 @@ const SettingsPage = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Role</label>
+                  <label className="text-xs font-bold text-ui-text-muted uppercase">Role</label>
                   <input
                     type="text"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                    className="w-full bg-ui-bg border border-ui-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-ui-text transition-colors"
                     value={profileData.role}
                     onChange={(e) => setProfileData({...profileData, role: e.target.value})}
                   />
@@ -339,8 +339,8 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <div className="mt-8 p-6 bg-slate-100 dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4 dark:text-slate-400">System Information</h4>
+      <div className="mt-8 p-6 bg-ui-card rounded-2xl border border-ui-border transition-colors">
+        <h4 className="text-xs font-bold text-ui-text-muted uppercase mb-4">System Information</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Version</p>

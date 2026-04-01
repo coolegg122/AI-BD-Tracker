@@ -57,19 +57,19 @@ export default function Pipeline() {
       <div className="mb-8 shrink-0">
         <div className="flex justify-between items-end mb-6">
           <div>
-            <nav className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest">
+            <nav className="flex items-center gap-1.5 text-[10px] font-bold text-ui-text-muted mb-2 uppercase tracking-widest">
               <span>Intelligence</span>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-blue-600">Pipeline Matrix</span>
+              <span className="text-blue-600 dark:text-blue-400">Pipeline Matrix</span>
             </nav>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Deal Tracker 360°</h2>
-            <p className="text-slate-500 text-sm mt-1">Multi-dimensional tracking of all external engagements.</p>
+            <h2 className="text-3xl font-extrabold text-ui-text tracking-tight">Deal Tracker 360°</h2>
+            <p className="text-ui-text-muted text-sm mt-1">Multi-dimensional tracking of all external engagements.</p>
           </div>
-          <div className="bg-slate-100 p-1 rounded-xl flex text-sm font-bold shadow-inner">
+          <div className="bg-ui-hover p-1 rounded-xl flex text-sm font-bold shadow-inner transition-colors">
             <button 
               onClick={() => setActiveTab('by_project')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 ${
-                activeTab === 'by_project' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                activeTab === 'by_project' ? 'bg-ui-card text-indigo-700 dark:text-indigo-400 shadow-sm' : 'text-ui-text-muted hover:text-ui-text'
               }`}
             >
               <Layers className="w-4 h-4" /> By Project Asset
@@ -77,7 +77,7 @@ export default function Pipeline() {
             <button 
               onClick={() => setActiveTab('by_company')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 ${
-                activeTab === 'by_company' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                activeTab === 'by_company' ? 'bg-ui-card text-indigo-700 dark:text-indigo-400 shadow-sm' : 'text-ui-text-muted hover:text-ui-text'
               }`}
             >
               <Building2 className="w-4 h-4" /> By External Partner
@@ -89,10 +89,10 @@ export default function Pipeline() {
       <div className="flex-1 overflow-y-auto pb-12 pr-2">
         
         {projects.length === 0 && (
-           <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-             <Network className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-             <h3 className="text-lg font-bold text-slate-700">No projects actively tracked</h3>
-             <p className="text-slate-500 text-sm mt-2">Extract BD memos via Smart Input to populate the matrix.</p>
+           <div className="text-center py-20 bg-ui-card rounded-2xl border border-ui-border shadow-sm transition-colors">
+             <Network className="w-12 h-12 text-ui-text-muted opacity-30 mx-auto mb-4" />
+             <h3 className="text-lg font-bold text-ui-text">No projects actively tracked</h3>
+             <p className="text-ui-text-muted text-sm mt-2">Extract BD memos via Smart Input to populate the matrix.</p>
            </div>
         )}
 
@@ -102,23 +102,23 @@ export default function Pipeline() {
         {activeTab === 'by_project' && Object.entries(groupedByProject).map(([pipelineName, projList]) => {
           const isOpen = openSections[`proj_${pipelineName}`] !== false; // default open
           return (
-            <div key={pipelineName} className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+            <div key={pipelineName} className="mb-6 bg-ui-card rounded-2xl border border-ui-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 transition-colors">
               <button 
                 onClick={() => toggleSection(`proj_${pipelineName}`)}
-                className="w-full flex items-center justify-between p-5 bg-slate-50 hover:bg-slate-100 transition-colors border-b border-slate-200"
+                className="w-full flex items-center justify-between p-5 bg-ui-bg hover:bg-ui-hover transition-colors border-b border-ui-border"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                     <Layers className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-lg font-extrabold text-slate-900">{pipelineName}</h3>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                    <h3 className="text-lg font-extrabold text-ui-text">{pipelineName}</h3>
+                    <p className="text-xs font-bold text-ui-text-muted uppercase tracking-widest mt-0.5">
                       Engaging {projList.length} Partner{projList.length > 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
-                {isOpen ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
+                {isOpen ? <ChevronDown className="w-5 h-5 text-ui-text-muted" /> : <ChevronRight className="w-5 h-5 text-ui-text-muted" />}
               </button>
 
               {isOpen && (
@@ -129,22 +129,22 @@ export default function Pipeline() {
                     
                     return (
                       <div key={stage.id} className="mb-8 last:mb-0 relative">
-                        <div className="flex items-center gap-3 mb-4 sticky top-0 bg-white z-10 py-1">
+                        <div className="flex items-center gap-3 mb-4 sticky top-0 bg-ui-card z-10 py-1 transition-colors">
                            <span className={`w-3 h-3 rounded-full ${stage.color} shadow-sm`}></span>
-                           <h4 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest">{stage.label}</h4>
-                           <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{stageProjects.length}</span>
+                           <h4 className="text-sm font-extrabold text-ui-text uppercase tracking-widest">{stage.label}</h4>
+                           <span className="text-[10px] font-bold text-ui-text-muted bg-ui-bg px-2 py-0.5 rounded-full">{stageProjects.length}</span>
                         </div>
                         
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                           {stageProjects.map(p => (
-                            <div key={p.id} className="flex gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group">
-                              <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center font-bold text-blue-700 shrink-0">
+                            <div key={p.id} className="flex gap-4 p-4 rounded-xl border border-ui-border bg-ui-bg/50 hover:bg-ui-card hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all group">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 border-2 border-ui-card shadow-sm flex items-center justify-center font-bold text-blue-700 dark:text-blue-400 shrink-0">
                                 {p.company?.substring(0,2).toUpperCase() || '??'}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start mb-1">
                                   <div className="flex items-center gap-3">
-                                    <h5 className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors truncate max-w-[120px]" title={p.company}>{p.company}</h5>
+                                    <h5 className="font-bold text-ui-text group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors truncate max-w-[120px]" title={p.company}>{p.company}</h5>
                                     <button 
                                       onClick={(e) => { e.stopPropagation(); setIntelligenceCompany(p.company); }}
                                       className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-md text-[9px] font-extrabold uppercase tracking-wider shadow-sm shadow-indigo-200 transition-all hover:scale-105 shrink-0"
@@ -152,11 +152,11 @@ export default function Pipeline() {
                                       <Sparkles className="w-3 h-3" /> AI Dossier
                                     </button>
                                   </div>
-                                  <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap ml-2"><Clock className="w-3 h-3 inline mr-1 -mt-0.5"/>{p.lastContactDate || 'Recently'}</span>
+                                  <span className="text-[10px] font-bold text-ui-text-muted whitespace-nowrap ml-2"><Clock className="w-3 h-3 inline mr-1 -mt-0.5"/>{p.lastContactDate || 'Recently'}</span>
                                 </div>
-                                <div className="flex items-start gap-2 mt-2 bg-white p-2.5 rounded-lg border border-slate-100">
+                                <div className="flex items-start gap-2 mt-2 bg-ui-card p-2.5 rounded-lg border border-ui-border transition-colors">
                                   <MessageSquare className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
-                                  <p className="text-xs font-medium text-slate-600 leading-relaxed italic line-clamp-2">
+                                  <p className="text-xs font-medium text-ui-text-muted leading-relaxed italic line-clamp-2">
                                     "{getFeedbackSummary(p)}"
                                   </p>
                                 </div>
@@ -180,10 +180,10 @@ export default function Pipeline() {
           const isOpen = openSections[`comp_${companyName}`] !== false; // default open
           
           return (
-            <div key={companyName} className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+            <div key={companyName} className="mb-6 bg-ui-card rounded-2xl border border-ui-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 transition-colors">
               <button 
                 onClick={() => toggleSection(`comp_${companyName}`)}
-                className="w-full flex items-center justify-between p-5 bg-blue-50/30 hover:bg-blue-50/60 transition-colors border-b border-blue-100"
+                className="w-full flex items-center justify-between p-5 bg-blue-50/20 dark:bg-blue-900/10 hover:bg-blue-50/40 dark:hover:bg-blue-900/20 transition-colors border-b border-blue-100 dark:border-blue-900"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-sm">
@@ -191,7 +191,7 @@ export default function Pipeline() {
                   </div>
                   <div className="text-left flex-1">
                     <div className="flex items-center gap-4">
-                      <h3 className="text-lg font-extrabold text-slate-900">{companyName}</h3>
+                      <h3 className="text-lg font-extrabold text-ui-text">{companyName}</h3>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setIntelligenceCompany(companyName); }}
                         className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[11px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-indigo-200/50 hover:scale-105 hover:shadow-lg"
@@ -211,28 +211,28 @@ export default function Pipeline() {
                 <div className="p-0">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      <tr className="bg-ui-bg border-b border-ui-border text-[10px] font-bold text-ui-text-muted uppercase tracking-widest transition-colors">
                         <th className="p-4 pl-6 w-1/4">Internal Asset</th>
                         <th className="p-4 w-1/5">Current Stage</th>
                         <th className="p-4 w-1/3">Latest Directives & Feedback</th>
                         <th className="p-4 pr-6 w-1/6">Next Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-ui-border transition-colors">
                       {projList.map(p => (
-                        <tr key={p.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <tr key={p.id} className="hover:bg-ui-hover transition-colors group">
                           <td className="p-4 pl-6 align-top">
-                            <div className="font-bold text-sm text-slate-800">{p.pipeline}</div>
-                            <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase">ID: PROJ-{p.id}</div>
+                            <div className="font-bold text-sm text-ui-text">{p.pipeline}</div>
+                            <div className="text-[10px] font-bold text-ui-text-muted mt-1 uppercase">ID: PROJ-{p.id}</div>
                           </td>
                           <td className="p-4 align-top">
                             <div className="flex items-center gap-2">
                               <span className={`w-2 h-2 rounded-full ${getStageColor(p.stage || 'Initial Contact')}`}></span>
-                              <span className="text-xs font-bold text-slate-700">{p.stage || 'Initial Contact'}</span>
+                              <span className="text-xs font-bold text-ui-text">{p.stage || 'Initial Contact'}</span>
                             </div>
                           </td>
                           <td className="p-4 align-top">
-                            <p className="text-xs font-medium text-slate-600 leading-relaxed bg-white p-2 border border-slate-200 rounded-md shadow-sm">
+                            <p className="text-xs font-medium text-ui-text-muted leading-relaxed bg-ui-card p-2 border border-ui-border rounded-md shadow-sm">
                               {getFeedbackSummary(p)}
                             </p>
                           </td>

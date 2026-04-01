@@ -36,7 +36,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900 flex flex-col border-r border-slate-200/60 dark:border-slate-800 z-20 transition-colors">
+    <aside className="w-64 flex-shrink-0 bg-ui-sidebar flex flex-col border-r border-ui-border z-20 transition-colors duration-300">
       <div className="flex flex-col h-full py-6">
         <div className="px-6 mb-8">
           <div className="flex items-center gap-3">
@@ -44,7 +44,7 @@ export default function Sidebar() {
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight tracking-tight">AI-BD Tracker</h1>
+              <h1 className="text-lg font-bold text-ui-text leading-tight tracking-tight">AI-BD Tracker</h1>
               <p className="text-[10px] uppercase tracking-widest text-blue-600 dark:text-blue-400 font-bold mt-0.5">Clinical Architect</p>
             </div>
           </div>
@@ -58,8 +58,8 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                   isActive
-                  ? 'bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 font-bold shadow-sm border-l-4 border-blue-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                  ? 'bg-ui-card text-blue-800 dark:text-blue-400 font-bold shadow-sm border-l-4 border-blue-700'
+                  : 'text-ui-text-muted hover:bg-ui-hover'
                 }`
               }
             >
@@ -102,7 +102,7 @@ export default function Sidebar() {
                       `w-full flex items-center gap-2 py-2 pr-4 pl-10 rounded-lg transition-all duration-200 text-[13px] relative ${
                         isActive
                         ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-extrabold shadow-sm'
-                        : 'text-slate-500 dark:text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-ui-text-muted hover:bg-ui-hover hover:text-ui-text'
                       }`
                     }
                   >
@@ -120,15 +120,15 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        <div className="mt-auto px-3 pt-6 border-t border-slate-200/50 dark:border-slate-800">
+        <div className="mt-auto px-3 pt-6 border-t border-ui-border">
           <button 
             onClick={() => navigate('/settings')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors text-sm font-medium"
+            className="w-full flex items-center gap-3 px-4 py-3 text-ui-text-muted hover:bg-ui-hover rounded-lg transition-colors text-sm font-medium"
           >
             <Settings className="w-5 h-5" />
             <span>Settings</span>
           </button>
-          <div className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors text-sm font-medium mt-1">
+          <div className="w-full flex items-center gap-3 px-4 py-3 text-ui-text-muted hover:bg-ui-hover rounded-lg transition-colors text-sm font-medium mt-1">
             <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold">
               {user.initials || user.name?.substring(0, 2)?.toUpperCase()}
             </div>
