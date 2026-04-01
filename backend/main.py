@@ -71,9 +71,18 @@ try:
 
     class UserAdmin(ModelView, model=models.User):
         column_list = [models.User.id, models.User.name, models.User.email, models.User.role, models.User.hashed_password, models.User.is_active]
+        form_columns = [models.User.name, models.User.email, models.User.role, models.User.hashed_password, models.User.is_active]
         name = "User Account"
         name_plural = "User Accounts"
         icon = "fa-solid fa-user-gear"
+
+        async def on_model_change(self, data, model, is_created, request):
+            """Automatically hash plain-text passwords entered via admin panel."""
+            if "hashed_password" in data and data["hashed_password"]:
+                # Check if it looks like a plain password (not an existing bcrypt hash)
+                if not data["hashed_password"].startswith("$2b$"):
+                    data["hashed_password"] = get_password_hash(data["hashed_password"])
+            return await super().on_model_change(data, model, is_created, request)
 
     class CareerHistoryAdmin(ModelView, model=models.CareerHistory):
         column_list = [models.CareerHistory.id, models.CareerHistory.contact_id, models.CareerHistory.company, models.CareerHistory.title]
