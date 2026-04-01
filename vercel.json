@@ -1,17 +1,8 @@
 {
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "ai-bd-tracker/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "ai-bd-tracker/dist"
-      }
-    }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install --prefix ai-bd-tracker",
+  "buildCommand": "npm run build --prefix ai-bd-tracker",
+  "outputDirectory": "dist",
   "routes": [
     {
       "src": "/api/v1/(.*)",

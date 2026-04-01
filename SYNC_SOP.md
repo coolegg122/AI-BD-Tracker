@@ -14,7 +14,7 @@ Before performing any code edits or database tasks, check the remote state.
 
 ### 2. 开发进行中 (Working Stage)
 - 保持 `dev_log.md` 的实时更新，记录当前所在的 Phase 阶段。
-- 本地调试通过后，确认 `backend/sql_app.db` 是否需要同步至 Supabase（运行 `scripts/migrate_to_supabase.py`）。
+- **强制同步**: 本地调试通过后，**必须**将 `backend/sql_app.db` 同步至 Supabase (运行 `scripts/migrate_to_supabase.py`)。严禁仅同步代码而忽略数据库，以免造成前后端不一致。
 
 ### 3. 工作结束前 (Push Stage)
 Before leaving the current session or switching computers.

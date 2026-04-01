@@ -1,6 +1,8 @@
 # Node
 node_modules/
-dist/
+# Root dist/ is Vite output for Vercel — do not ignore (some tooling treats gitignored paths like missing artifacts).
+# Ignore only legacy path if present:
+ai-bd-tracker/dist/
 build/
 .env.local
 .env.development.local

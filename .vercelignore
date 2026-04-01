@@ -8,7 +8,7 @@ venv/
 env/
 .venv/
 *.egg-info/
-dist/
+# Do not list dist/ here — Vite writes the SPA to repo-root dist/; ignoring it breaks deployment.
 build/
 
 # IDE

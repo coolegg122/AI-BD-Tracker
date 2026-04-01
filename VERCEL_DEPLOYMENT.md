@@ -29,6 +29,13 @@
 2. 在 Vercel → **Settings** → **Environment Variables** 中更新 `POSTGRES_URL` / `DATABASE_URL`，保存后**重新部署**。
 3. 仓库内连接诊断脚本仅使用环境变量（见 `scripts/verify_conn*.py`），勿再将真实密码写入代码。
 
+### Root Directory（必须核对）
+
+Vercel 项目的 **Root Directory** 请设为 **Git 仓库根目录**（留空或 `.`），**不要**设为 `ai-bd-tracker`。
+
+- `api/`、`vercel.json` 与根目录 `dist/`（Vite 将产物输出到仓库根的 `dist/`）都相对仓库根；若 Root 指到子目录，构建常报找不到名为 `dist` 的输出目录，且 `api/` 与路由会错位。
+- 若仍报找不到 `dist`，在 **Settings → Build & Development** 将 **Output Directory** 设为 **`dist`**，与根目录 `vercel.json` 的 `outputDirectory` 一致。
+
 ## 部署步骤
 
 ### 1. 连接 GitHub 仓库到 Vercel
