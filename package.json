@@ -2,8 +2,8 @@
   "name": "bd-project-management",
   "private": true,
   "scripts": {
-    "build": "npm run build --prefix ai-bd-tracker",
-    "install:frontend": "npm install --prefix ai-bd-tracker",
-    "vercel-build": "npm install --prefix ai-bd-tracker && npm run build --prefix ai-bd-tracker"
+    "build": "cd ai-bd-tracker && npm run build",
+    "install:frontend": "cd ai-bd-tracker && npm install",
+    "vercel-build": "cd ai-bd-tracker && npm ci && npm run build"
   }
 }

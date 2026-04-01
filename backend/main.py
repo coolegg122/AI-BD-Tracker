@@ -11,7 +11,7 @@ import os
 import models, schemas, database
 from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
-from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash
+from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash, verify_password
 
 # Auto-create tables for LOCAL SQLite ONLY.
 # IMPORTANT (Phase 17): DO NOT run create_all or DDL against Supabase Transaction Pooler (port 6543).
@@ -502,5 +502,81 @@ def update_user_profile(
     db.commit()
     db.refresh(current_user)
     
+    return current_user
+
+@app.post("/api/v1/auth/change-password")
+def change_password(
+    request: schemas.ChangePasswordRequest,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(database.get_db)
+):
+    """Change current user's password."""
+    if not verify_password(request.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password"
+        )
+    
+    current_user.hashed_password = get_password_hash(request.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}
+
+@app.get("/api/v1/search", response_model=List[schemas.SearchResultItem])
+def global_search(
+    q: str,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Global search for projects and contacts."""
+    if len(q) < 2:
+        return []
+
+    results = []
+    
+    # Search Projects
+    projects = db.query(models.Project).filter(
+        (models.Project.company.ilike(f"%{q}%")) | 
+        (models.Project.pipeline.ilike(f"%{q}%"))
+    ).limit(5).all()
+    
+    for p in projects:
+        results.append(schemas.SearchResultItem(
+            type="project",
+            id=p.id,
+            title=p.company,
+            subtitle=p.pipeline or "No pipeline"
+        ))
+
+    # Search Contacts
+    contacts = db.query(models.Contact).filter(
+        (models.Contact.name.ilike(f"%{q}%")) | 
+        (models.Contact.currentCompany.ilike(f"%{q}%"))
+    ).limit(5).all()
+    
+    for c in contacts:
+        results.append(schemas.SearchResultItem(
+            type="contact",
+            id=c.id,
+            title=c.name,
+            subtitle=c.currentCompany or "No company"
+        ))
+
+    return results
+
+@app.patch("/api/v1/users/me/preferences", response_model=schemas.UserResponse)
+def update_user_preferences(
+    prefs_update: schemas.UserPreferencesUpdate,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(database.get_db)
+):
+    """Update current user's preferences (notifications and theme)."""
+    if prefs_update.notification_prefs is not None:
+        current_user.notification_prefs = prefs_update.notification_prefs.model_dump()
+    
+    if prefs_update.theme is not None:
+        current_user.theme = prefs_update.theme
+    
+    db.commit()
+    db.refresh(current_user)
     return current_user
 

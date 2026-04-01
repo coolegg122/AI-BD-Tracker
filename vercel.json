@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm install --prefix ai-bd-tracker",
-  "buildCommand": "npm run build --prefix ai-bd-tracker",
-  "outputDirectory": "dist",
+  "installCommand": "cd ai-bd-tracker && npm ci",
+  "buildCommand": "cd ai-bd-tracker && npm run build",
+  "outputDirectory": "ai-bd-tracker/dist",
   "routes": [
     {
       "src": "/api/v1/(.*)",

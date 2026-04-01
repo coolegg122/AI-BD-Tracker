@@ -8,11 +8,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  // Repo-root dist/ matches Vercel’s default Output Directory name "dist" (Project root = Git repo root).
-  build: {
-    outDir: '../dist',
-    emptyOutDir: true,
-  },
   server: {
     proxy: {
       '/api': {

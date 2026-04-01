@@ -33,8 +33,8 @@
 
 Vercel 项目的 **Root Directory** 请设为 **Git 仓库根目录**（留空或 `.`），**不要**设为 `ai-bd-tracker`。
 
-- `api/`、`vercel.json` 与根目录 `dist/`（Vite 将产物输出到仓库根的 `dist/`）都相对仓库根；若 Root 指到子目录，构建常报找不到名为 `dist` 的输出目录，且 `api/` 与路由会错位。
-- 若仍报找不到 `dist`，在 **Settings → Build & Development** 将 **Output Directory** 设为 **`dist`**，与根目录 `vercel.json` 的 `outputDirectory` 一致。
+- `api/`、`vercel.json` 与 **`ai-bd-tracker/dist/`**（Vite 默认输出目录）都相对仓库根；若 Root 指到子目录，`api/` 与路由会错位，且 `../dist` 类路径会落在部署根之外。
+- 若仍报找不到输出目录：在 **Settings → Build & Development** 中，将 **Output Directory** 设为 **`ai-bd-tracker/dist`**（与根目录 `vercel.json` 一致），或删除 Dashboard 里的覆盖项以完全采用仓库内配置。不要只填 **`dist`**（除非 Root Directory 设为 `ai-bd-tracker`）。
 
 ## 部署步骤
 

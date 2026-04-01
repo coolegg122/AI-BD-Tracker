@@ -13,6 +13,8 @@ class User(Base):
     initials = Column(String)
     hashed_password = Column(String)  # For local authentication
     is_active = Column(Integer, default=1)  # 1 for active, 0 for inactive
+    notification_prefs = Column(JSON, default=dict) # NEW: Phase 28
+    theme = Column(String, default="light")          # NEW: Phase 28
 
     projects = relationship("Project", back_populates="owner")
 

@@ -207,9 +207,35 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     initials: Optional[str] = None
 
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+# Phase 28: New Schemas
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class SearchResultItem(BaseModel):
+    type: str # 'project' or 'contact'
+    id: int
+    title: str
+    subtitle: str
+
+class NotificationPreferences(BaseModel):
+    email_alerts: bool = True
+    pipeline_updates: bool = True
+    meeting_reminders: bool = True
+    ai_insights: bool = True
+
+class UserPreferencesUpdate(BaseModel):
+    notification_prefs: Optional[NotificationPreferences] = None
+    theme: Optional[str] = None # 'light' or 'dark'
+
 class UserResponse(UserBase):
     id: int
     is_active: int
+    notification_prefs: Optional[dict] = {}
+    theme: Optional[str] = "light"
 
     class Config:
         from_attributes = True

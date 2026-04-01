@@ -13,6 +13,7 @@ import Conferences from './views/Conferences';
 import Contacts from './views/Contacts';
 import LoginPage from './views/LoginPage';
 import RegisterPage from './views/RegisterPage';
+import SettingsPage from './views/SettingsPage';
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -144,6 +145,13 @@ export default function App() {
           <ProtectedRoute>
             <ProtectedLayout>
               <Contacts />
+            </ProtectedLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <SettingsPage />
             </ProtectedLayout>
           </ProtectedRoute>
         } />

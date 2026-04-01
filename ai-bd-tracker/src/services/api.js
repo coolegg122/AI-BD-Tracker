@@ -324,5 +324,54 @@ export const api = {
       console.error('GetProjectAttachments API error:', error);
       throw error;
     }
+  },
+
+  // --- Phase 28: Settings & Search ---
+  searchGlobal: async (query) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`, {
+        headers: getAuthHeaders(false)
+      });
+      if (!response.ok) throw new Error('Global search failed');
+      return response.json();
+    } catch (error) {
+      console.error('SearchGlobal API error:', error);
+      throw error;
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to change password');
+      }
+      return data;
+    } catch (error) {
+      console.error('ChangePassword API error:', error);
+      throw error;
+    }
+  },
+
+  updatePreferences: async (prefs) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(prefs),
+      });
+      
+      if (!response.ok) throw new Error('Failed to update preferences');
+      return response.json();
+    } catch (error) {
+      console.error('UpdatePreferences API error:', error);
+      throw error;
+    }
   }
 };

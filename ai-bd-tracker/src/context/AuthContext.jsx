@@ -2,6 +2,27 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+/** FastAPI often returns JSON; proxies may return HTML/plain text on 5xx — never assume JSON. */
+async function readJsonSafe(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text.trim().slice(0, 400) };
+  }
+}
+
+function detailFromBody(data) {
+  if (!data || data.detail == null) return null;
+  const d = data.detail;
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d)) {
+    return d.map((e) => (e && e.msg) ? e.msg : JSON.stringify(e)).join('; ');
+  }
+  return String(d);
+}
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -66,11 +87,11 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Login failed');
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || `Login failed (${response.status})`);
       }
 
-      const data = await response.json();
+      const data = await readJsonSafe(response);
       const authToken = data.access_token;
 
       setToken(authToken);
@@ -86,8 +107,6 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      console.log('Registering user:', userData);
-
       const response = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: {
@@ -96,16 +115,12 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData)
       });
 
-      console.log('Response status:', response.status);
-
       if (!response.ok) {
-        const errorData = await response.json();
-        console.log('Registration error response:', errorData);
-        throw new Error(errorData.detail || 'Registration failed');
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || `Registration failed (${response.status})`);
       }
 
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
+      const responseData = await readJsonSafe(response);
 
       return { success: true, user: responseData };
     } catch (error) {
@@ -136,11 +151,11 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to update profile');
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || `Update failed (${response.status})`);
       }
 
-      const updatedUser = await response.json();
+      const updatedUser = await readJsonSafe(response);
       setUser(updatedUser);
       return { success: true, user: updatedUser };
     } catch (error) {
