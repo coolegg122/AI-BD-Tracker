@@ -19,6 +19,16 @@
    - Supabase PostgreSQL 连接字符串
    - 格式：`postgresql://user:password@host:port/database`
 
+本地与文档对照清单见仓库根目录 [`.env.example`](.env.example)。
+
+### 凭据曾泄露时的处理（务必执行）
+
+若数据库连接串或密码曾出现在聊天、截图或旧提交中：
+
+1. 在 [Supabase Dashboard](https://supabase.com/dashboard) → **Project Settings** → **Database** 中**重置数据库密码**。
+2. 在 Vercel → **Settings** → **Environment Variables** 中更新 `POSTGRES_URL` / `DATABASE_URL`，保存后**重新部署**。
+3. 仓库内连接诊断脚本仅使用环境变量（见 `scripts/verify_conn*.py`），勿再将真实密码写入代码。
+
 ## 部署步骤
 
 ### 1. 连接 GitHub 仓库到 Vercel
@@ -169,6 +179,20 @@ vercel --prod
 - **Session Pooler** (用于长连接): `postgresql://...@aws-0-[region].pooler.supabase.com:5432/postgres`
 
 **注意：使用 Transaction Pooler (端口 6543) 以避免 Vercel 冷启动超时。**
+
+### 后续建议：时间轴演示数据
+
+若尚未跑过历史表迁移，可在**本机**已配置 `DATABASE_URL` 或 `POSTGRES_URL`（指向与线上一致的 Supabase）时执行：
+
+```bash
+python scripts/migrate_history_table.py
+```
+
+用于确保 `project_history` 表就绪，并在**数据库中第一个项目**上写入演示足迹，便于管线抽屉（`ProjectSlideOver`）时间轴展示真实接口数据。若表已由 `supabase_init.sql` 创建，脚本主要补齐种子数据（在无历史记录时）。
+
+### 后续建议：生产环境变量
+
+部署到 Vercel 时，务必在 **Settings → Environment Variables** 中配置 `SECRET_KEY`、`POSTGRES_URL`（或 `DATABASE_URL`）、`GEMINI_API_KEY` 等敏感项，勿提交到 Git；完整清单见仓库根目录 [`.env.example`](.env.example) 与本文档前文「必需的环境变量」。
 
 ## 测试 API
 

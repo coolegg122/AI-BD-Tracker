@@ -320,3 +320,42 @@
 - **迁移工具**: `backend/migrate_add_details.py` 可作为未来数据库字段热更新的参考模板。
 
 **当前状态**: ✅ **全业务链路已具备极强的容错性与扩展性**。后端能够处理万物，前端能够自由编辑，网络联调已由 Vite Proxy 彻底打通。
+
+---
+
+## [2026-04-01] 安全与追溯：完成 Phase 26 与 Phase 27
+
+### Phase 26: 全栈用户身份验证系统 (Authentication & User Management)
+
+为了满足企业级安全性要求，我们将系统从“无登录演示模式”升级为基于 JWT 的全栈身份验证架构。
+
+- **工作目录**: `backend/auth.py`, `backend/models.py`, `ai-bd-tracker/src/context/AuthContext.jsx`, `ai-bd-tracker/src/views/LoginPage.jsx`
+- **核心变更记录**:
+  - **后端安全引擎**: 引入了 `bcrypt` 进行密码哈希，通过 `PyJWT` 签发 30 分钟有效的访问令牌。
+  - **模型升级**: `User` 模型增加了 `email`, `hashed_password` 和 `is_active` 状态位。
+  - **注册逻辑**: 开通了统一的注册与登录接口，支持在登录时校验用户是否被禁用。
+  - **前端权限守卫**: 
+    - 封装了 `AuthContext` 统一管理 Token 的持久化（Local Storage）与用户信息解析。
+    - 在 `App.jsx` 中增加了 `ProtectedRoute` (路由守卫) 和 `PublicRoute` (重定向逻辑)，确保未授权用户无法访问管线数据。
+  - **API 增强**: 在 `api.js` 中全局注入 `Authorization: Bearer <Token>` 请求头，对接后端受保护路由。
+
+### Phase 27: 深度历史足迹持久化 (Persistent Footprints Expansion)
+
+将原本依赖前端模拟数组的“足迹”模块，彻底重构为基于数据库持久层的交互式系统。
+
+- **工作目录**: `backend/main.py`, `scripts/migrate_history_table.py`, `ai-bd-tracker/src/components/ProjectSlideOver.jsx`
+- **核心变更记录**:
+  - **专用表结构**: 正式建立了 `project_history` 表，通过 `project_id` 与主项目关联，支持存储会议纪要、邮件往来和档案变更记录。
+  - **接口打通**: 实现了历史记录的 `GET` (列表拉取) 与 `POST` (手动新增足迹) API。
+  - **UI 数据绑定**: 重构了侧滑抽屉 `ProjectSlideOver`，现在时间轴会实时拉取后端的历史事件，并展示对应的 Zoom 链接、附件预览等 JSON 详情。
+  - **自动迁移工具**: 开发了 `migrate_history_table.py` 脚本，可一键完成建表与模拟数据注入。
+
+---
+
+### **给下一个接手 AI 的关键上下文提示 (Context for Authentication & History)**
+
+- **身份验证**: 登录成功后 Token 存储在浏览器 `localStorage` 中。本地开发环境中，第一个初始用户需要通过 `auth/register` 手动创建或直接操作 DB。
+- **数据状态**: 如果发现历史足迹为空，请运行 `python scripts/migrate_history_table.py` 进行数据初始化。
+- **安全性**: `backend/auth.py` 中的 `SECRET_KEY` 在生产环境下必须从环境变量读取。
+
+**当前状态**: ✅ **系统安全性与可追溯性大幅增强**。已完成从“数据采集”到“安全管控”的全流程功能闭环。

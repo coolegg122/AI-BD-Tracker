@@ -70,6 +70,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return user
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
-    """Get the current active user (can be extended with is_active check)."""
-    # In the future, we can add an is_active field to the User model
+    """Get the current active user, raising an error if the account is disabled."""
+    if current_user.is_active == 0:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user account"
+        )
     return current_user

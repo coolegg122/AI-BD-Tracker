@@ -8,25 +8,27 @@ sys.path.append(os.path.join(base_dir, 'backend'))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from backend.models import Base, Project, Task, Contact, CareerHistory, CompanyIntelligence
+from backend.models import (
+    Base, User, Project, Task, Contact, CareerHistory, 
+    CompanyIntelligence, ProjectHistory, Attachment, Catalyst, PendingIngestion
+)
 
-# Connect to Local SQLite
-LOCAL_DB_URL = "sqlite:///./backend/sql_app.db"
+# Connect to Local SQLite (consistent with backend/database.py)
+local_db_path = os.path.join(base_dir, "backend", "sql_app.db")
+LOCAL_DB_URL = f"sqlite:///{local_db_path}"
 local_engine = create_engine(LOCAL_DB_URL)
 LocalSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=local_engine)
 
 # ==============================================================
 # IMPORTANT: Put the Supabase IPv4 Pooler connection string here
 # ==============================================================
-# e.g.: postgresql://postgres.wleslkkvwmuocqhhwgtd:PASSWORD@aws-0-xxxx.pooler.supabase.com:6543/postgres?sslmode=require
-CLOUD_DB_URL = os.getenv("SUPABASE_DB_URL") 
+CLOUD_DB_URL = os.getenv("SUPABASE_DB_URL") or os.getenv("DATABASE_URL")
 
 if not CLOUD_DB_URL:
     print("Error: Please set SUPABASE_DB_URL environment variable with the IPv4 Pooler URL.")
     sys.exit(1)
 
 # Connect to Supabase Postgres
-# Use pool_pre_ping=True to prevent stale connections
 cloud_engine = create_engine(CLOUD_DB_URL, pool_pre_ping=True)
 CloudSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=cloud_engine)
 
@@ -34,52 +36,46 @@ def migrate_data():
     print("🚀 Starting data migration from local SQLite to Supabase Postgres...")
 
     # 1. Create tables in Supabase if they don't exist
-    print("1. Creating schemas in Supabase...")
+    print("1. Creating schemas in Supabase (if missing)...")
     Base.metadata.create_all(bind=cloud_engine)
 
     local_db = LocalSessionLocal()
     cloud_db = CloudSessionLocal()
 
     try:
-        # 2. Query all local data
-        print("2. Reading local data...")
-        projects = local_db.query(Project).all()
-        tasks = local_db.query(Task).all()
-        contacts = local_db.query(Contact).all()
-        histories = local_db.query(CareerHistory).all()
-        intel = local_db.query(CompanyIntelligence).all()
-        
-        # 3. Insert into Supabase (Wiping first to avoid duplicates, though ID collisions may still occur if we aren't careful. For a clean slate, this is safe.)
-        
-        # Merge instead of insert to keep IDs the same
-        print(f"3. Migrating {len(projects)} Projects and {len(tasks)} Tasks...")
-        for p in projects:
-            # detach from local session
-            local_db.expunge(p)
-            cloud_db.merge(p)
-            
-        for t in tasks:
-            local_db.expunge(t)
-            cloud_db.merge(t)
-            
-        print(f"4. Migrating {len(contacts)} Contacts and {len(histories)} Career Histories...")
-        for c in contacts:
-            local_db.expunge(c)
-            cloud_db.merge(c)
-            
-        for h in histories:
-            local_db.expunge(h)
-            cloud_db.merge(h)
-            
-        print(f"5. Migrating {len(intel)} Company Intelligence records...")
-        for i in intel:
-            local_db.expunge(i)
-            cloud_db.merge(i)
+        # Define the models and their order (dependencies first)
+        models_to_migrate = [
+            (User, "Users"),
+            (Project, "Projects"),
+            (Task, "Tasks"),
+            (Contact, "Contacts"),
+            (CareerHistory, "Career Histories"),
+            (ProjectHistory, "Project Histories"),
+            (Attachment, "Attachments"),
+            (Catalyst, "Catalysts"),
+            (CompanyIntelligence, "AI Intelligence"),
+            (PendingIngestion, "AI Ingestions")
+        ]
 
-        # Commit to cloud
-        print("6. Committing to Supabase...")
+        # 2. Reading and Migrating local data
+        for model_class, description in models_to_migrate:
+            print(f"2. Pulling local {description}...")
+            records = local_db.query(model_class).all()
+            print(f"3. Migrating {len(records)} {description}...")
+            
+            for record in records:
+                # detach from local session
+                local_db.expunge(record)
+                # merge into cloud session (handles updates/inserts via PK)
+                cloud_db.merge(record)
+            
+            # Optional: commit after each table for large migrations
+            cloud_db.flush()
+
+        # 4. Final Commit to cloud
+        print("4. Committing all transactions to Supabase...")
         cloud_db.commit()
-        print("✅ Migration Completed Successfully!")
+        print("✅ Cloud Synchronization Completed Successfully!")
 
     except Exception as e:
         cloud_db.rollback()

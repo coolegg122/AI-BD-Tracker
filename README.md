@@ -186,13 +186,18 @@ npm run dev
 
 1. 将代码推送到GitHub仓库
 2. 在Vercel仪表板中导入项目
-3. 配置环境变量：
+3. 配置环境变量（完整说明见根目录 [`.env.example`](.env.example) 与 [`VERCEL_DEPLOYMENT.md`](VERCEL_DEPLOYMENT.md)）：
+   - `POSTGRES_URL` 或 `DATABASE_URL`: Supabase 连接串（Serverless 建议 Transaction Pooler **6543** 端口）
+   - `SECRET_KEY`: JWT 签名密钥（生产环境请使用 `openssl rand -hex 32` 生成）
    - `GEMINI_API_KEY`: Google Gemini API密钥
-   - `ZOHO_EMAIL`: Zoho邮箱地址
-   - `ZOHO_PASSWORD`: Zoho邮箱密码
-   - `DATABASE_URL`: PostgreSQL数据库URL (Supabase)
-   - `SECRET_KEY`: 用于JWT签名的安全密钥
+   - `ZOHO_EMAIL` / `ZOHO_PASSWORD`: 邮件同步（若使用）
 4. 部署完成后即可访问应用
+
+部署后可用脚本自检登录与用户接口（需有效账号）：
+
+```bash
+BASE_URL=https://你的域名.vercel.app SMOKE_EMAIL=你的邮箱 SMOKE_PASSWORD=你的密码 ./scripts/vercel-api-smoke.sh
+```
 
 ### 数据库配置
 

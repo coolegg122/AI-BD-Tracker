@@ -11,7 +11,6 @@ import os
 import models, schemas, database
 from ai_engine import extract_universal
 from mail_poller import sync_zoho_inbox
-from sqladmin import Admin, ModelView
 from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash
 
 # Auto-create tables for LOCAL SQLite ONLY.
@@ -26,58 +25,67 @@ app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
 
 # ==========================================
 # PHASE 7: SQLADMIN BACK-OFFICE PORTAL
+# Only enabled in local dev — sqladmin creates internal session tables via Admin(app, engine)
+# which causes Vercel cold-start timeouts against Supabase's transaction pooler (Phase 17).
 # ==========================================
-admin = Admin(app, database.engine)
+_is_vercel = bool(os.getenv("VERCEL"))
+if not _is_vercel:
+    try:
+        from sqladmin import Admin, ModelView
 
-class ProjectAdmin(ModelView, model=models.Project):
-    column_list = [models.Project.id, models.Project.company, models.Project.pipeline, models.Project.stage, models.Project.nextFollowUp, models.Project.status]
-    name = "BD Project"
-    name_plural = "BD Projects"
-    icon = "fa-solid fa-briefcase"
+        admin = Admin(app, database.engine)
 
-class TaskAdmin(ModelView, model=models.Task):
-    column_list = [models.Task.id, models.Task.project_id, models.Task.type, models.Task.desc, models.Task.date]
-    name = "Task / Event"
-    name_plural = "Tasks & Events"
-    icon = "fa-solid fa-list-check"
+        class ProjectAdmin(ModelView, model=models.Project):
+            column_list = [models.Project.id, models.Project.company, models.Project.pipeline, models.Project.stage, models.Project.nextFollowUp, models.Project.status]
+            name = "BD Project"
+            name_plural = "BD Projects"
+            icon = "fa-solid fa-briefcase"
 
-class CatalystAdmin(ModelView, model=models.Catalyst):
-    column_list = [models.Catalyst.id, models.Catalyst.competitor, models.Catalyst.asset, models.Catalyst.type, models.Catalyst.date, models.Catalyst.impact]
-    name = "Competitor Catalyst"
-    name_plural = "Competitor Catalysts"
-    icon = "fa-solid fa-microscope"
+        class TaskAdmin(ModelView, model=models.Task):
+            column_list = [models.Task.id, models.Task.project_id, models.Task.type, models.Task.desc, models.Task.date]
+            name = "Task / Event"
+            name_plural = "Tasks & Events"
+            icon = "fa-solid fa-list-check"
 
-class ContactAdmin(ModelView, model=models.Contact):
-    column_list = [models.Contact.id, models.Contact.name, models.Contact.currentCompany, models.Contact.currentTitle, models.Contact.email]
-    name = "Key Contact"
-    name_plural = "Key Contacts"
-    icon = "fa-solid fa-users"
+        class CatalystAdmin(ModelView, model=models.Catalyst):
+            column_list = [models.Catalyst.id, models.Catalyst.competitor, models.Catalyst.asset, models.Catalyst.type, models.Catalyst.date, models.Catalyst.impact]
+            name = "Competitor Catalyst"
+            name_plural = "Competitor Catalysts"
+            icon = "fa-solid fa-microscope"
 
-class ProjectHistoryAdmin(ModelView, model=models.ProjectHistory):
-    column_list = [models.ProjectHistory.id, models.ProjectHistory.project_id, models.ProjectHistory.type, models.ProjectHistory.title, models.ProjectHistory.date]
-    name = "Project History"
-    name_plural = "Project Histories"
-    icon = "fa-solid fa-clock-rotate-left"
+        class ContactAdmin(ModelView, model=models.Contact):
+            column_list = [models.Contact.id, models.Contact.name, models.Contact.currentCompany, models.Contact.currentTitle, models.Contact.email]
+            name = "Key Contact"
+            name_plural = "Key Contacts"
+            icon = "fa-solid fa-users"
 
-class AttachmentAdmin(ModelView, model=models.Attachment):
-    column_list = [models.Attachment.id, models.Attachment.project_id, models.Attachment.name, models.Attachment.file_type, models.Attachment.category]
-    name = "Project Document"
-    name_plural = "Project Documents"
-    icon = "fa-solid fa-file-pdf"
+        class ProjectHistoryAdmin(ModelView, model=models.ProjectHistory):
+            column_list = [models.ProjectHistory.id, models.ProjectHistory.project_id, models.ProjectHistory.type, models.ProjectHistory.title, models.ProjectHistory.date]
+            name = "Project History"
+            name_plural = "Project Histories"
+            icon = "fa-solid fa-clock-rotate-left"
 
-class CareerHistoryAdmin(ModelView, model=models.CareerHistory):
-    column_list = [models.CareerHistory.id, models.CareerHistory.contact_id, models.CareerHistory.company, models.CareerHistory.title]
-    name = "Career Track"
-    name_plural = "Career Tracks"
-    icon = "fa-solid fa-graduation-cap"
+        class AttachmentAdmin(ModelView, model=models.Attachment):
+            column_list = [models.Attachment.id, models.Attachment.project_id, models.Attachment.name, models.Attachment.file_type, models.Attachment.category]
+            name = "Project Document"
+            name_plural = "Project Documents"
+            icon = "fa-solid fa-file-pdf"
 
-admin.add_view(ProjectAdmin)
-admin.add_view(TaskAdmin)
-admin.add_view(CatalystAdmin)
-admin.add_view(ContactAdmin)
-admin.add_view(ProjectHistoryAdmin)
-admin.add_view(AttachmentAdmin)
-admin.add_view(CareerHistoryAdmin)
+        class CareerHistoryAdmin(ModelView, model=models.CareerHistory):
+            column_list = [models.CareerHistory.id, models.CareerHistory.contact_id, models.CareerHistory.company, models.CareerHistory.title]
+            name = "Career Track"
+            name_plural = "Career Tracks"
+            icon = "fa-solid fa-graduation-cap"
+
+        admin.add_view(ProjectAdmin)
+        admin.add_view(TaskAdmin)
+        admin.add_view(CatalystAdmin)
+        admin.add_view(ContactAdmin)
+        admin.add_view(ProjectHistoryAdmin)
+        admin.add_view(AttachmentAdmin)
+        admin.add_view(CareerHistoryAdmin)
+    except Exception as _sqladmin_err:
+        print(f"[Warning] sqladmin failed to initialize (non-critical): {_sqladmin_err}")
 
 # Simplified CORS for trouble-shooting local dev issues
 app.add_middleware(
