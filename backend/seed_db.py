@@ -7,6 +7,9 @@ db = database.SessionLocal()
 try:
     # Clear existing to start fresh (optional, but ensures clean demo)
     # WARNING: Don't do this in production. For demo, it's nice.
+    # Clear existing to start fresh (ordered by dependency)
+    db.query(models.Attachment).delete()
+    db.query(models.ProjectHistory).delete()
     db.query(models.Task).delete()
     db.query(models.Project).delete()
     db.query(models.CareerHistory).delete()
@@ -118,23 +121,87 @@ try:
 
     print("Successfully seeded diverse projects for demo!")
 
+    # Pipeline 3: Aurora Platform (continued in p_data loop)
+    # ... loop logic ...
+
+    # Add ProjectHistory for Pfizer (Project Helios)
+    pfizer_helios = db.query(models.Project).filter(models.Project.company == "Pfizer", models.Project.pipeline.contains("Helios")).first()
+    if pfizer_helios:
+        history_entries = [
+            {
+                "type": "meeting",
+                "title": "Clinical Strategy Sync",
+                "date": "2026-10-15",
+                "desc": "Detailed dive into Phase 2b clinical endpoints and patient stratification.",
+                "details": {
+                    "attendees": [
+                        {"name": "Dr. Sarah Jenkins", "title": "SVP, Global BD", "functionArea": "BD", "company": "Pfizer"},
+                        {"name": "Michael Chen", "title": "Clinical Lead", "functionArea": "Clinical", "company": "Pfizer"},
+                        {"name": "Internal Team", "title": "Various", "functionArea": "Clinical", "company": "Internal"}
+                    ],
+                    "minutes": "- Confirmed endpoint selection criteria.\n- Agreed on safety monitoring board composition.\n- Discussion on recruitment acceleration strategies."
+                }
+            },
+            {
+                "type": "call",
+                "title": "Governance Q&A",
+                "date": "2026-10-18",
+                "desc": "Short follow-up regarding the joint steering committee structure.",
+                "details": {
+                    "attendees": [
+                        {"name": "Dr. Sarah Jenkins", "title": "SVP, Global BD", "functionArea": "BD", "company": "Pfizer"}
+                    ],
+                    "minutes": "SVP clarified that Pfizer prefers a 3+3 structure for the JSC."
+                }
+            }
+        ]
+        for h_entry in history_entries:
+            db_h = models.ProjectHistory(
+                project_id=pfizer_helios.id,
+                type=h_entry["type"],
+                title=h_entry["title"],
+                date=h_entry["date"],
+                desc=h_entry["desc"],
+                details=h_entry["details"]
+            )
+            db.add(db_h)
+        db.commit()
+
+    print("Successfully seeded diverse projects and history for demo!")
+
     contacts_data = [
         {
             "name": "Dr. Sarah Jenkins",
             "currentCompany": "Pfizer",
             "currentTitle": "SVP, Global BD",
             "functionArea": "Licensing & M&A",
-            "photoUrl": "/logos/contact_sarah.png",
+            "photoUrl": "https://api.uifaces.co/our-content/donated/x_7-8-0_0.jpg",
             "location": "New York, NY",
             "email": "sarah.jenkins@pfizer.com",
             "linkedin": "linkedin.com/in/sjenkins-phd",
             "phone": "+1 (212) 733-1000",
             "profile": "Veteran deal-maker in the oncology space. Deeply analytical, relies heavily on clinical data integrity. Known for driving hard bargains on upfront payments but offers generous milestone structures.",
-            "metAt": ["JPM 2027", "ASCO 2024 (as AZ Delegate)"],
+            "metAt": ["JPM 2027", "ASCO 2024"],
             "careerHistory": [
                 {"company": "Pfizer", "title": "SVP, Global BD", "dateRange": "Jan 2025 - Present", "isCurrent": 1},
-                {"company": "AstraZeneca", "title": "VP, Oncology Search & Evaluation", "dateRange": "Mar 2019 - Dec 2024", "isCurrent": 0},
-                {"company": "McKinsey & Company", "title": "Engagement Manager (Life Sciences)", "dateRange": "2014 - 2019", "isCurrent": 0}
+                {"company": "AstraZeneca", "title": "VP, Oncology Search & Evaluation", "dateRange": "Mar 2019 - Dec 2024", "isCurrent": 0}
+            ]
+        },
+        {
+            "name": "Michael Chen",
+            "currentCompany": "Pfizer",
+            "currentTitle": "Director, Clinical Development",
+            "functionArea": "Clinical",
+            "photoUrl": "https://api.uifaces.co/our-content/donated/9e67_jvy.jpg",
+            "location": "Boston, MA",
+            "email": "michael.chen@pfizer.com",
+            "linkedin": "linkedin.com/in/mchen-clinical",
+            "phone": "+1 (617) 555-0123",
+            "profile": "Lead clinical strategist for early-stage oncology assets. Pragmatic, focused on 'killing' poor candidates early. Very supportive of our platform's mechanistic data.",
+            "metAt": ["Project Helios Sync", "ESMO 2026"],
+            "careerHistory": [
+                {"company": "Pfizer", "title": "Director, Clinical Development", "dateRange": "2023 - Present", "isCurrent": 1},
+                {"company": "Amgen", "title": "Sr. Medical Director", "dateRange": "2018 - 2023", "isCurrent": 0}
             ]
         },
         {
@@ -142,53 +209,31 @@ try:
             "currentCompany": "Sequoia Capital",
             "currentTitle": "General Partner",
             "functionArea": "Venture Capital",
-            "photoUrl": "/logos/contact_james.png",
+            "photoUrl": "https://api.uifaces.co/our-content/donated/Kt_Anm9m.jpg",
             "location": "Menlo Park, CA",
             "email": "jhenderson@sequoiacap.com",
             "linkedin": "linkedin.com/in/james-henderson-vc",
             "phone": "+1 (650) 854-3927",
-            "profile": "Lead investor for our Series A. Focuses on founder dynamics and platform extensibility. Prefers weekly high-level updates over granular data dumps.",
-            "metAt": ["JPM 2026", "Board Meeting (Monthly)"],
+            "profile": "Lead investor for our Series A. Focuses on founder dynamics and platform extensibility.",
+            "metAt": ["JPM 2026"],
             "careerHistory": [
-                {"company": "Sequoia Capital", "title": "General Partner", "dateRange": "2021 - Present", "isCurrent": 1},
-                {"company": "Sequoia Capital", "title": "Principal", "dateRange": "2017 - 2021", "isCurrent": 0},
-                {"company": "Goldman Sachs", "title": "VP, Healthcare Investment Banking", "dateRange": "2010 - 2017", "isCurrent": 0}
+                {"company": "Sequoia Capital", "title": "General Partner", "dateRange": "2021 - Present", "isCurrent": 1}
             ]
         },
         {
             "name": "Dr. Amanda Lewis",
             "currentCompany": "Merck & Co.",
             "currentTitle": "Global Clinical Lead",
-            "functionArea": "Clinical Development",
-            "photoUrl": "/logos/contact_amanda.png",
+            "functionArea": "Clinical",
+            "photoUrl": "https://api.uifaces.co/our-content/donated/o-vD_e6T.jpg",
             "location": "Rahway, NJ",
             "email": "amanda.lewis_clin@merck.com",
             "linkedin": "linkedin.com/in/alewis-md",
             "phone": "+1 (908) 740-4000",
-            "profile": "Key decision-maker for Keytruda combination trials. Extremely protective of the Keytruda combo rationale. Needs to see compelling mechanistic synergy before providing free drug supply.",
-            "metAt": ["ASCO 2027", "ESMO 2025"],
+            "profile": "Key decision-maker for Keytruda combination trials.",
+            "metAt": ["ASCO 2027"],
             "careerHistory": [
-                {"company": "Merck & Co.", "title": "Global Clinical Lead", "dateRange": "2023 - Present", "isCurrent": 1},
-                {"company": "Merck & Co.", "title": "Senior Medical Director", "dateRange": "2020 - 2023", "isCurrent": 0},
-                {"company": "Dana-Farber Cancer Institute", "title": "Attending Oncologist", "dateRange": "2012 - 2020", "isCurrent": 0}
-            ]
-        },
-        {
-            "name": "Dr. Klaus Richter",
-            "currentCompany": "Novartis",
-            "currentTitle": "Head of Solid Tumors",
-            "functionArea": "R&D / Strategy",
-            "photoUrl": "/logos/contact_klaus.png",
-            "location": "Basel, Switzerland",
-            "email": "klaus.richter@novartis.com",
-            "linkedin": "linkedin.com/in/krichter-basel",
-            "phone": "+41 61 324 11 11",
-            "profile": "Highly academic and rigorous European clinical leader. Dislikes aggressive sales pitches; responds best to peer-reviewed data and robust statistical analysis plans.",
-            "metAt": ["ESMO 2026"],
-            "careerHistory": [
-                {"company": "Novartis", "title": "Head of Solid Tumors", "dateRange": "2022 - Present", "isCurrent": 1},
-                {"company": "Roche", "title": "Global Medical Affairs Leader", "dateRange": "2016 - 2022", "isCurrent": 0},
-                {"company": "University Hospital Zurich", "title": "Professor of Oncology", "dateRange": "2008 - 2016", "isCurrent": 0}
+                {"company": "Merck & Co.", "title": "Global Clinical Lead", "dateRange": "2023 - Present", "isCurrent": 1}
             ]
         }
     ]
