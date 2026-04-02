@@ -114,6 +114,8 @@ class ProjectResponse(ProjectBase):
     owner: Optional[OwnerBase] = None
     tasks: List[TaskResponse] = []
     attachments: List[AttachmentResponse] = []
+    negotiation_prep: Optional[dict] = {}
+    prep_updated_at: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -250,3 +252,12 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+# Phase 28.1: AI Strategist Chat
+class ChatRequest(BaseModel):
+    message: str
+    history: List[dict] = [] # List of {"role": "user/ai", "content": "..."}
+
+class ChatResponse(BaseModel):
+    response: str
+    context_used: Optional[str] = None

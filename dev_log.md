@@ -414,3 +414,37 @@
     - **强制语义化**: 禁止在 React 组件中直接使用 Tailwind 的基础颜色类（如 `text-blue-500`），强制要求映射至 `ui-*` 变量。
     - **交互增强**: 优化了所有悬停 (`hover`)、激活 (`active`) 和焦点 (`focus`) 状态的 `ui-*` 透明度，提升微交互质感。
     - **产出一致性**: 确保了生产环境（Vercel）下的 UI 表现与本地开发环境的一致性，解决了部分 Vercel 部署后的视觉异常问题。
+
+---
+
+## [2026-04-02] AI 赋能升级：Phase 16 AI 谈判策略师 (Negotiation Strategist) 深度集成
+
+本阶段的核心任务是实现“AI 谈判策略师”功能，通过深度聚合项目历史、联系人画像及公司竞争情报，为 BD 团队提供实时、交互式的谈判准备支持。
+
+### Phase 16: AI 谈判策略师 (AI Negotiation Strategist)
+
+- **核心变更记录**:
+  - **后端能力增强 (`ai_engine.py`)**: 
+    - 引入 **Gemini 1.5 Pro** 模型，用于处理跨多个数据源（项目、联系人、情报、历史足迹）的长上下文推理。
+    - 实现了 `generate_negotiation_prep` 逻辑，自动提取“谈判杠杆”（Negotiation Levers）与“防脱靶 Q&A”。
+    - 实现了 `chat_with_strategist` 接口，支持用户针对项目背景进行深层次的策略问询。
+  - **数据库 schema 升级**:
+    - 在 `Project` 模型中新增了 `negotiation_prep` (JSONB) 与 `prep_updated_at` 字段。
+    - 通过 `migrate_add_prep.py` 同步了本地 SQLite 与 Supabase 云端数据库，确保字段一致性。
+  - **API 接口定义 (`main.py`)**:
+    - 新增 `GET /negotiation-prep`: 具备 4 小时缓存冷却逻辑，兼顾 API 成本与数据实时性，支持 `force=true` 强制刷新。
+    - 新增 `POST /strategist-chat`: 为每个项目提供独立的 AI 策略咨询对话框。
+  - **前端交互重构 (`ProjectSlideOver.jsx`)**:
+    - **新增 “AI Strategy” 标签页**: 采用磨砂玻璃质感设计，集成“执行简报”、“谈判杠杆”、“会议议程”与“QA Cheat Sheet”四类核心看板。
+    - **交互式 Chat 窗口**: 在侧栏内集成了 AI 策略对话框，支持实时输入与历史回溯。
+    - **刷新机制**: 底部集成“分析时间戳”与“重新生成”按钮，方便用户在录入新情报后更新策略。
+
+### **AI 策略师核心逻辑 (Strategic Insights Logic)**
+
+- **数据聚合**: 系统会自动将该公司的所有 `Contacts` 个人履历、`ProjectHistory` 最近沟通进展、以及 `CompanyIntelligence` 中的竞对动态（如专利悬崖或 M&A 偏好）喂给 AI。
+- **推荐策略**: 
+  - **Executive Summary**: 1-2 段核心战略判断。
+  - **Cheat Sheet**: 针对该项目的 3-5 个高频挑战性问题及其最优战术回答。
+  - **Agenda**: 建议的会议流程，确保己方资产与对方的 Patent Cliff 高度对齐。
+
+**当前状态**: ✅ **AI 从单纯的数据提取器进化为深度的决策支持工具。**

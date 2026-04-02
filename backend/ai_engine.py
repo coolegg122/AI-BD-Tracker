@@ -222,3 +222,102 @@ def generate_company_intelligence(company_name: str) -> dict:
     except Exception as e:
         print(f"Error during intelligence generation: {e}")
         raise
+
+def generate_negotiation_prep(context: dict) -> dict:
+    """
+    Synthesize project history, contacts, and company intelligence into a strategic briefing.
+    context: {
+        "project": {...},
+        "history": [...],
+        "contacts": [...],
+        "intelligence": {...}
+    }
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        # Mocking for local dev without key
+        return {
+            "executive_summary": "AI Strategist not configured (No API Key). Use this for testing UI layout.",
+            "contact_profiling": "Proceed with caution. Contacts seem focused on oncology.",
+            "product_catalyst_alignment": "Strong alignment with BDX-401 for Pfizer's ADC needs.",
+            "negotiation_levers": "They have a looming patent cliff in 2028; our asset is Phase II ready.",
+            "suggested_agenda": ["Intro", "Scientific Review", "Term Sheet Discussion"],
+            "cheat_sheet": [
+                {"question": "How does your asset compare to Seagen?", "suggested_response": "We have superior safety data in Ph1."}
+            ]
+        }
+    
+    client = genai.Client(api_key=api_key)
+    # Use Pro model for deep reasoning across multiple data sources
+    model_id = "gemini-1.5-pro" 
+    
+    system_instruction = """
+    You are a Senior BioPharma BD Negotiation Strategist. 
+    Analyze the provided context (Project, Communication History, Key Contacts, and Company Intel) to generate a high-level strategic briefing.
+    
+    ### GOAL:
+    Equip the user with the most important insights to win the next negotiation or meeting.
+    
+    ### OUTPUT FORMAT (JSON):
+    {
+      "executive_summary": "1-2 paragraph strategic overview.",
+      "contact_profiling": "Psychological/Strategic advice on specific contacts provided.",
+      "product_catalyst_alignment": "How our pipeline fits their specific needs/cliffs.",
+      "negotiation_levers": "Summary of our strengths (Levers) vs weaknesses.",
+      "suggested_agenda": ["Agenda Item 1", "Agenda Item 2"],
+      "cheat_sheet": [
+        { "question": "Anticipated tough question", "suggested_response": "The best way to answer given the context" }
+      ]
+    }
+    """
+    
+    prompt = f"{system_instruction}\n\nCONTEXT DATA:\n{json.dumps(context, indent=2)}"
+    
+    try:
+        response = client.models.generate_content(
+            model=model_id,
+            contents=prompt,
+            config={"response_mime_type": "application/json"}
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"Error during negotiation prep generation: {e}")
+        # Fallback to flash if pro fails or unavailable
+        try:
+           response = client.models.generate_content(model="gemini-3-flash-preview", contents=prompt, config={"response_mime_type": "application/json"})
+           return json.loads(response.text)
+        except Exception:
+           raise
+
+def chat_with_strategist(project_context: dict, prep_data: dict, user_message: str, chat_history: list = None) -> str:
+    """Conversational interface with the AI Strategist."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return "I am an AI Mock Strategist. I can't think deeply without an API key, but I'm here to listen!"
+    
+    client = genai.Client(api_key=api_key)
+    model_id = "gemini-1.5-pro"
+    
+    history_context = ""
+    if chat_history:
+        for msg in chat_history:
+            history_context += f"{msg['role'].upper()}: {msg['content']}\n"
+            
+    system_instruction = f"""
+    You are the AI BD Strategist. You have just produced the following Briefing for this project:
+    {json.dumps(prep_data, indent=2)}
+    
+    Project Context Details:
+    {json.dumps(project_context, indent=2)}
+    
+    Answer the user's specific questions about this negotiation. Be professional, strategic, and concise.
+    """
+    
+    prompt = f"{system_instruction}\n\nConversation History:\n{history_context}\nUSER: {user_message}"
+    
+    try:
+        response = client.models.generate_content(model=model_id, contents=prompt)
+        return response.text
+    except Exception as e:
+        print(f"Error during strategist chat: {e}")
+        return "Sorry, I had a strategic malfunction. Please try again."

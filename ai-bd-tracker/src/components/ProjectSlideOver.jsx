@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, Users, History, ChevronDown, ChevronUp, Link, Download, Microscope } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, Users, History, ChevronDown, ChevronUp, Link, Download, Microscope, Target, BrainCircuit, Sparkles, Send, ShieldAlert, ListChecks, MessageSquareQuote, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 
@@ -10,13 +10,22 @@ export default function ProjectSlideOver() {
   const [historyData, setHistoryData] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('timeline'); // timeline, details, documents
+  const [activeTab, setActiveTab] = useState('timeline'); // timeline, details, documents, prep
+  const [prepData, setPrepData] = useState(null);
+  const [isPrepLoading, setIsPrepLoading] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     if (selectedOverviewProject) {
       setTimeout(() => setIsVisible(true), 10);
       setExpandedEventId(null); 
       setActiveTab('timeline');
+      setPrepData(null);
+      setChatHistory([]);
+      setChatMessage('');
       fetchHistory(selectedOverviewProject.id);
       fetchAttachments(selectedOverviewProject.id);
     } else {
@@ -24,6 +33,10 @@ export default function ProjectSlideOver() {
       setHistoryData([]);
     }
   }, [selectedOverviewProject]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory, isSending]);
 
   const fetchHistory = async (projectId) => {
     setIsLoading(true);
@@ -44,6 +57,38 @@ export default function ProjectSlideOver() {
     } catch (err) {
       console.error("Failed to load attachments:", err);
       setAttachments([]);
+    }
+  };
+
+  const fetchPrep = async (force = false) => {
+    if (!selectedOverviewProject) return;
+    setIsPrepLoading(true);
+    try {
+      const data = await api.getNegotiationPrep(selectedOverviewProject.id, force);
+      setPrepData(data);
+    } catch (err) {
+      console.error("Failed to load prep:", err);
+    } finally {
+      setIsPrepLoading(false);
+    }
+  };
+
+  const handleChatSubmit = async (e) => {
+    e.preventDefault();
+    if (!chatMessage.trim() || isSending || !selectedOverviewProject) return;
+
+    const userMsg = { role: 'user', content: chatMessage };
+    setChatHistory(prev => [...prev, userMsg]);
+    setChatMessage('');
+    setIsSending(true);
+
+    try {
+      const res = await api.sendStrategistMessage(selectedOverviewProject.id, chatMessage, chatHistory);
+      setChatHistory(prev => [...prev, { role: 'ai', content: res.response }]);
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'ai', content: "Sorry, I lost my train of thought. Error connecting to strategist." }]);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -93,17 +138,22 @@ export default function ProjectSlideOver() {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex bg-ui-card px-6 border-b border-ui-border shrink-0 transition-colors">
           {[
             { id: 'timeline', label: 'Timeline', icon: History },
             { id: 'details', label: 'Deep Dive', icon: Microscope },
-            { id: 'documents', label: 'Documents', icon: FileText }
+            { id: 'documents', label: 'Docs', icon: FileText },
+            { id: 'prep', label: 'AI Strategy', icon: BrainCircuit }
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-4 text-xs font-bold transition-all border-b-2 -mb-[1px] ${activeTab === tab.id ? 'border-ui-accent text-ui-accent' : 'border-transparent text-ui-text-muted hover:text-ui-text'}`}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === 'prep' && !prepData) {
+                  fetchPrep();
+                }
+              }}
+              className={`flex items-center gap-2 px-3 py-4 text-[11px] font-bold transition-all border-b-2 -mb-[1px] whitespace-nowrap ${activeTab === tab.id ? 'border-ui-accent text-ui-accent' : 'border-transparent text-ui-text-muted hover:text-ui-text'}`}
             >
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
@@ -332,6 +382,166 @@ export default function ProjectSlideOver() {
                   ))}
                 </div>
                )}
+            </div>
+          )}
+
+          {activeTab === 'prep' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 pb-10">
+              {isPrepLoading && !prepData ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader2 className="w-10 h-10 text-ui-accent animate-spin mb-4" />
+                  <p className="text-sm font-bold text-ui-text">AI Strategist Sythesizing Context...</p>
+                  <p className="text-[11px] text-ui-text-muted mt-2">Correlating history, contacts, and intelligence.</p>
+                </div>
+              ) : prepData ? (
+                <>
+                  {/* Executive Summary */}
+                  <div className="bg-ui-accent/5 border border-ui-accent/20 rounded-2xl p-5 relative overflow-hidden transition-colors">
+                    <Sparkles className="absolute top-4 right-4 w-5 h-5 text-ui-accent/30" />
+                    <h4 className="text-[11px] font-black text-ui-accent uppercase tracking-widest mb-3 flex items-center gap-2">
+                       <Target className="w-4 h-4" /> Executive BD Briefing
+                    </h4>
+                    <p className="text-xs text-ui-text leading-relaxed font-medium">
+                      {prepData.executive_summary}
+                    </p>
+                  </div>
+
+                  {/* Contact Profiling */}
+                  {prepData.contact_profiling && (
+                    <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
+                       <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <Users className="w-4 h-4 text-ui-accent" /> Contact Profiling
+                       </h4>
+                       <p className="text-xs text-ui-text-muted font-medium leading-relaxed">
+                         {prepData.contact_profiling}
+                       </p>
+                    </div>
+                  )}
+
+                  {/* Product Catalyst Alignment */}
+                  {prepData.product_catalyst_alignment && (
+                    <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
+                       <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-ui-success" /> Product-Catalyst Alignment
+                       </h4>
+                       <p className="text-xs text-ui-text-muted font-medium leading-relaxed">
+                         {prepData.product_catalyst_alignment}
+                       </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-4">
+                     {/* Strategic Levers */}
+                     <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
+                        <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-4 flex items-center gap-2">
+                           <ShieldAlert className="w-4 h-4 text-ui-warning" /> Negotiation Levers
+                        </h4>
+                        <div className="text-xs text-ui-text-muted font-medium bg-ui-bg p-3 rounded-xl border border-ui-border/50 leading-relaxed italic">
+                           {prepData.negotiation_levers}
+                        </div>
+                     </div>
+
+                     {/* Suggested Agenda */}
+                     <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
+                        <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-4 flex items-center gap-2 text-ui-success">
+                           <ListChecks className="w-4 h-4" /> Proposed Meeting Agenda
+                        </h4>
+                        <ul className="space-y-2">
+                           {(prepData.suggested_agenda || []).map((item, i) => (
+                             <li key={i} className="flex items-center gap-3 text-xs font-bold text-ui-text transition-colors">
+                                <span className="w-5 h-5 rounded bg-ui-success/10 text-ui-success flex items-center justify-center text-[10px] shrink-0 border border-ui-success/20">{i+1}</span>
+                                {item}
+                             </li>
+                           ))}
+                        </ul>
+                     </div>
+                  </div>
+
+                  {/* Q&A Cheat Sheet */}
+                  <div className="bg-ui-sidebar rounded-2xl border border-ui-border p-5 transition-colors">
+                     <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-5 flex items-center gap-2 opacity-70">
+                        <MessageSquareQuote className="w-4 h-4" /> Anticipated Q&A Cheat Sheet
+                     </h4>
+                     <div className="space-y-4">
+                        {(prepData.cheat_sheet || []).map((qa, i) => (
+                          <div key={i} className="bg-ui-card rounded-xl p-4 border border-ui-border shadow-sm transition-colors">
+                             <p className="text-xs font-black text-ui-text mb-2 flex gap-2">
+                                <span className="text-ui-accent uppercase tracking-tighter shrink-0">Q:</span>
+                                {qa.question}
+                             </p>
+                             <div className="text-[11px] text-ui-text-muted font-medium pl-5 border-l-2 border-ui-accent/20">
+                                {qa.suggested_response}
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                  </div>
+
+                  {/* Strategist Chat */}
+                  <div className="bg-ui-card rounded-2xl border border-ui-border overflow-hidden shadow-xl transition-colors">
+                    <div className="bg-ui-sidebar p-4 border-b border-ui-border flex items-center gap-2 transition-colors">
+                       <BrainCircuit className="w-4 h-4 text-ui-accent" />
+                       <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest">Chat with Strategist</h4>
+                    </div>
+                    
+                    <div className="h-[250px] overflow-y-auto p-4 space-y-4 bg-ui-bg/50 transition-colors">
+                       {chatHistory.length === 0 && (
+                         <div className="text-center py-10 opacity-30">
+                            <MessageSquare className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-[10px] font-bold">Ask anything about this project...</p>
+                         </div>
+                       )}
+                       {chatHistory.map((msg, i) => (
+                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[11px] font-medium transition-colors ${msg.role === 'user' ? 'bg-ui-accent text-white rounded-tr-none' : 'bg-ui-sidebar border border-ui-border text-ui-text rounded-tl-none shadow-sm'}`}>
+                               {msg.content}
+                            </div>
+                         </div>
+                       ))}
+                       {isSending && (
+                         <div className="flex justify-start">
+                           <div className="bg-ui-sidebar border border-ui-border rounded-2xl rounded-tl-none px-3.5 py-2 transition-colors">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-ui-accent" />
+                           </div>
+                         </div>
+                       )}
+                       <div ref={chatEndRef} />
+                    </div>
+
+                    <form onSubmit={handleChatSubmit} className="p-3 bg-ui-sidebar border-t border-ui-border flex gap-2 transition-colors">
+                       <input 
+                         type="text" 
+                         value={chatMessage}
+                         onChange={(e) => setChatMessage(e.target.value)}
+                         placeholder="Deep dive suggestion..."
+                         className="flex-1 bg-ui-card border border-ui-border rounded-xl px-4 py-2 text-xs text-ui-text placeholder:text-ui-text-muted focus:ring-1 focus:ring-ui-accent focus:outline-none transition-all"
+                       />
+                       <button 
+                         type="submit"
+                         disabled={isSending || !chatMessage.trim()}
+                         className="p-2.5 bg-ui-accent text-white rounded-xl hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                       >
+                          <Send className="w-4 h-4" />
+                       </button>
+                    </form>
+                  </div>
+
+                  <button 
+                    onClick={() => fetchPrep(true)}
+                    disabled={isPrepLoading}
+                    className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-ui-text-muted hover:text-ui-accent transition-colors flex items-center justify-center gap-2 border border-dashed border-ui-border rounded-xl"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    Analysed: {prepData.updated_at || 'Recently'} • Refresh Strategic Analysis
+                  </button>
+                </>
+              ) : (
+                <div className="text-center py-20 bg-ui-card rounded-2xl border border-ui-border mt-8 transition-colors">
+                   <Target className="w-12 h-12 text-ui-text-muted opacity-20 mx-auto mb-4" />
+                   <p className="text-sm font-bold text-ui-text-muted">Strategist awaits orders.</p>
+                   <button onClick={() => fetchPrep()} className="mt-4 px-6 py-2 bg-ui-accent text-white text-[10px] font-bold uppercase rounded-lg shadow-sm">Initialize Analysis</button>
+                </div>
+              )}
             </div>
           )}
         </div>

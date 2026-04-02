@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import os
 
 import models, schemas, database
-from ai_engine import extract_universal
+from ai_engine import extract_universal, generate_negotiation_prep, chat_with_strategist
 from mail_poller import sync_zoho_inbox
 from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash, verify_password
 
@@ -294,6 +294,84 @@ def sync_mail_inbox(db: Session = Depends(database.get_db)):
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
+
+@app.get("/api/v1/projects/{project_id}/negotiation-prep")
+def get_project_negotiation_prep(project_id: int, force: bool = False, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_active_user)):
+    """Fetch or generate a strategic AI briefing for a project."""
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Cooldown Check (4 hours)
+    cooldown_hours = 4
+    can_use_cache = db_project.negotiation_prep and db_project.prep_updated_at
+    if can_use_cache and not force:
+        last_updated = datetime.strptime(db_project.prep_updated_at, '%Y-%m-%d %H:%M:%S')
+        if datetime.now() - last_updated < timedelta(hours=cooldown_hours):
+            return db_project.negotiation_prep
+
+    # 1. Gather all Context
+    history = db.query(models.ProjectHistory).filter(models.ProjectHistory.project_id == project_id).all()
+    contacts = db.query(models.Contact).filter(models.Contact.currentCompany.ilike(db_project.company)).all()
+    # Attempt to find intelligence
+    intel = db.query(models.CompanyIntelligence).filter(models.CompanyIntelligence.company_name.ilike(db_project.company)).first()
+    
+    # 2. Call specialized AI Strategist
+    context = {
+        "project": {
+            "company": db_project.company,
+            "pipeline": db_project.pipeline,
+            "stage": db_project.stage,
+            "details": db_project.details or {}
+        },
+        "history": [{"type": h.type, "title": h.title, "date": h.date, "desc": h.desc} for h in history],
+        "contacts": [{"name": c.name, "title": c.currentTitle, "profile": c.profile} for c in contacts],
+        "intelligence": {
+            "bd_strategy": intel.bd_strategy if intel else "Unknown",
+            "focus_areas": intel.focus_areas if intel else [],
+            "patent_cliffs": intel.patent_cliffs if intel else []
+        } if intel else {}
+    }
+
+    try:
+        prep_data = generate_negotiation_prep(context)
+        db_project.negotiation_prep = prep_data
+        db_project.prep_updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        db.commit()
+        return prep_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate strategist briefing: {str(e)}")
+
+@app.post("/api/v1/projects/{project_id}/strategist-chat", response_model=schemas.ChatResponse)
+def project_strategist_chat(
+    project_id: int, 
+    chat_req: schemas.ChatRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Chat with the AI Strategist about a specific project's negotiation."""
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if not db_project.negotiation_prep:
+        raise HTTPException(status_code=400, detail="Please generate the AI Prep briefing first.")
+
+    # Context for the chat
+    project_context = {
+        "company": db_project.company,
+        "pipeline": db_project.pipeline,
+        "stage": db_project.stage
+    }
+    
+    response_text = chat_with_strategist(
+        project_context,
+        db_project.negotiation_prep,
+        chat_req.message,
+        chat_req.history
+    )
+    
+    return schemas.ChatResponse(response=response_text)
 
 @app.get("/api/v1/contacts", response_model=List[schemas.ContactResponse])
 def get_contacts(db: Session = Depends(database.get_db)):

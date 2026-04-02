@@ -27,11 +27,15 @@ class Project(Base):
     stage = Column(String, default="Initial Contact")
     lastContactDate = Column(String)
     nextFollowUp = Column(String)
-    status = Column(String, default="active")
+    status = Column(String, default="active") # active, dormant, closed
     
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="projects")
-    details = Column(JSON, default=dict) # NEW: Flexible storage for AI-extracted details
+    details = Column(JSON, default=dict) # NEW (Phase 12): Flexible storage for AI-extracted details
+    
+    # NEW (Phase 16.1): AI Strategist Cache
+    negotiation_prep = Column(JSON, default=dict)
+    prep_updated_at = Column(String) 
 
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
     history = relationship("ProjectHistory", back_populates="project", cascade="all, delete-orphan")

@@ -373,5 +373,34 @@ export const api = {
       console.error('UpdatePreferences API error:', error);
       throw error;
     }
+  },
+
+  // --- Phase 28.1: AI Strategist ---
+  getNegotiationPrep: async (projectId, force = false) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/negotiation-prep?force=${force}`, {
+        headers: getAuthHeaders(false)
+      });
+      if (!response.ok) throw new Error('Failed to fetch negotiation prep');
+      return response.json();
+    } catch (error) {
+      console.error('GetNegotiationPrep API error:', error);
+      throw error;
+    }
+  },
+
+  sendStrategistMessage: async (projectId, message, history = []) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/strategist-chat`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ message, history }),
+      });
+      if (!response.ok) throw new Error('Failed to send strategist message');
+      return response.json();
+    } catch (error) {
+      console.error('SendStrategistMessage API error:', error);
+      throw error;
+    }
   }
 };
