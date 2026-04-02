@@ -1,17 +1,6 @@
 import { create } from 'zustand';
+import { STAGES } from '../mocks/demoData';
 
-const STAGES = [
-  { id: 'Initial Contact', label: 'Initial Contact', color: 'bg-slate-400' },
-  { id: 'CDA Signed', label: 'CDA Signed', color: 'bg-indigo-500' },
-  { id: 'Due Diligence', label: 'DD', color: 'bg-orange-500' },
-  { id: 'Term Sheet', label: 'Term Sheet', color: 'bg-blue-600' },
-  { id: 'Negotiation', label: 'Negotiation', color: 'bg-blue-800' }
-];
-
-const initialCatalysts = [
-  { id: 1, competitor: 'Vertex Pharma', asset: 'VX-548 (Pain)', event: 'Phase III Top-line data release.', date: 'Oct 23', impact: 'High' },
-  { id: 2, competitor: 'Merck & Co.', asset: 'Keytruda sBLA', event: 'FDA PDUFA Date: early-stage NSCLC.', date: 'Oct 25', impact: 'Medium' }
-];
 
 export const useStore = create((set) => ({
   user: null,
