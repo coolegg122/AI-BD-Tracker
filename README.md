@@ -186,7 +186,7 @@ npm run dev
 
 1. 将代码推送到GitHub仓库
 2. 在Vercel仪表板中导入项目
-3. 配置环境变量（完整说明见根目录 [`.env.example`](.env.example) 与 [`VERCEL_DEPLOYMENT.md`](VERCEL_DEPLOYMENT.md)）：
+3. 配置环境变量（完整说明见根目录 [`.env.example`](.env.example) 与 [`docs/guides/vercel-deployment.md`](docs/guides/vercel-deployment.md)）：
    - `POSTGRES_URL` 或 `DATABASE_URL`: Supabase 连接串（Serverless 建议 Transaction Pooler **6543** 端口）
    - `SECRET_KEY`: JWT 签名密钥（生产环境请使用 `openssl rand -hex 32` 生成）
    - `GEMINI_API_KEY`: Google Gemini API密钥
@@ -228,8 +228,60 @@ AI-BD Tracker现在包含了完整的用户认证系统：
 - 认证上下文管理
 - 自动令牌管理（存储在localStorage中）
 
-## 贡献
+## 项目结构
 
+```
+BDProjectManagement/
+├── docs/                      # 文档目录
+│   ├── guides/               # 开发指南
+│   │   ├── production-guide.md    # 生产环境开发指南
+│   │   ├── vercel-deployment.md   # Vercel 部署指南
+│   │   ├── sync-sop.md            # 同步标准操作程序
+│   │   ├── gmail-setup.md         # Gmail 设置指南
+│   │   └── dev-log.md             # 开发日志
+│   ├── reports/              # 分析报告
+│   │   ├── code-structure-analysis.md     # 代码结构分析
+│   │   ├── code-fix-verification.md       # 代码修复验证
+│   │   ├── fullstack-comparison.md        # 全栈功能对比
+│   │   └── v0.1.0-verification.md         # v0.1.0 版本验证
+│   └── archive/                # 归档文档
+│       └── mvp-html-program.md      # MVP HTML 程序文档
+│
+├── scripts/                    # 脚本工具
+│   ├── test/                   # 测试脚本
+│   │   ├── test_gemini.py
+│   │   ├── test_registration.py
+│   │   ├── test_vercel.py
+│   │   └── verify_enrichment.py
+│   └── ...                     # 其他工具脚本
+│
+├── tools/                      # 工具
+│   ├── duplex-debug/           # 双工调试工具
+│   └── backend_code_reference.py
+│
+├── backend/                    # FastAPI 后端代码
+├── ai-bd-tracker/              # React 前端代码
+├── api/                        # Vercel Serverless API
+└── README.md                   # 本说明文档
+```
+
+## 文档索引
+
+### 开发指南
+- [生产环境开发指南](docs/guides/production-guide.md)
+- [Vercel 部署指南](docs/guides/vercel-deployment.md)
+- [同步标准操作程序](docs/guides/sync-sop.md)
+- [Gmail 设置指南](docs/guides/gmail-setup.md)
+- [开发日志](docs/guides/dev-log.md)
+
+### 分析报告
+- [代码结构分析](docs/reports/code-structure-analysis.md)
+- [代码修复验证](docs/reports/code-fix-verification.md)
+- [全栈功能对比](docs/reports/fullstack-comparison.md)
+- [v0.1.0 版本验证](docs/reports/v0.1.0-verification.md)
+
+### 归档文档
+- [MVP HTML 程序](docs/archive/mvp-html-program.md)
 
 ## 工具
 

@@ -1,6 +1,6 @@
 -- =============================================================
 -- AI-BD Tracker — Supabase Database Initialization Script
--- Updated to match all models through Phase 25 (see backend/models.py).
+-- Updated to match all models through v0.1.0 (see backend/models.py).
 --
 -- Run this in the Supabase SQL Editor (Dashboard → SQL Editor).
 -- Safe to re-run: all statements use IF NOT EXISTS / ON CONFLICT DO NOTHING.
@@ -150,6 +150,18 @@ CREATE TABLE IF NOT EXISTS pending_ingestion (
 );
 
 -- ---------------------------
+-- SMART INPUT ARCHIVE  (v0.1.0+)
+-- ---------------------------
+CREATE TABLE IF NOT EXISTS smart_input_archive (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    raw_text TEXT,
+    source_type VARCHAR(50), -- manual, email, zoho
+    entities_summary JSONB DEFAULT '{}',
+    created_at VARCHAR(50)
+);
+
+-- ---------------------------
 -- INDEXES
 -- ---------------------------
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -162,6 +174,8 @@ CREATE INDEX IF NOT EXISTS idx_career_histories_contact ON career_histories(cont
 CREATE INDEX IF NOT EXISTS idx_company_intelligence_name ON company_intelligence(company_name);
 CREATE INDEX IF NOT EXISTS idx_pending_ingestion_sender ON pending_ingestion(sender_email);
 CREATE INDEX IF NOT EXISTS idx_pending_ingestion_status ON pending_ingestion(status);
+CREATE INDEX IF NOT EXISTS idx_smart_input_archive_user ON smart_input_archive(user_id);
+CREATE INDEX IF NOT EXISTS idx_smart_input_archive_created ON smart_input_archive(created_at);
 
 -- ---------------------------
 -- DEFAULT ADMIN USER
