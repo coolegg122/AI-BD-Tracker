@@ -1,5 +1,7 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useTheme } from '../../context/ThemeContext';
-// Added useTheme import
 
 const STAGE_COLORS = {
   'Initial Contact': '#94a3b8', // slate-400
