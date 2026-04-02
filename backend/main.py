@@ -13,6 +13,15 @@ from ai_engine import extract_universal, extract_mixed, generate_negotiation_pre
 from mail_poller import sync_zoho_inbox
 from auth import authenticate_user, create_access_token, get_current_active_user, get_current_admin_user, get_password_hash, verify_password
 
+def get_now_str(include_time: bool = False, include_seconds: bool = False) -> str:
+    """Standardized date/time string generator."""
+    if include_seconds:
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if include_time:
+        return datetime.now().strftime('%Y-%m-%d %H:%M')
+    return datetime.now().strftime('%Y-%m-%d')
+
+
 # Auto-create tables for LOCAL SQLite ONLY.
 # IMPORTANT (Phase 17): DO NOT run create_all or DDL against Supabase Transaction Pooler (port 6543).
 # It causes Vercel 10s timeout crashes on cold start. Cloud schema is managed via Supabase dashboard.
@@ -163,7 +172,7 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
                 company=company,
                 pipeline=proj_data.get("pipeline") or "Unknown Pipeline",
                 stage=proj_data.get("stage") or "Initial Contact",
-                lastContactDate=datetime.now().strftime('%Y-%m-%d'),
+                lastContactDate=get_now_str(),
                 owner_id=current_user.id,
                 details=proj_data.get("details", {}),
                 source_text=request.raw_text, # NEW: Traceability
@@ -210,7 +219,7 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
             project_id=results["project"]["id"],
             type=hist_data.get("type", "meeting"),
             title=hist_data.get("title"),
-            date=hist_data.get("date") or datetime.now().strftime("%Y-%m-%d"),
+            date=hist_data.get("date") or get_now_str(),
             desc=hist_data.get("desc"),
             details=hist_data.get("details", {}),
             source_text=request.raw_text # Save traceability
@@ -251,7 +260,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(databas
         pipeline=project.pipeline,
         stage=project.stage,
         nextFollowUp=project.nextFollowUp,
-        lastContactDate=datetime.now().strftime('%Y-%m-%d'),
+        lastContactDate=get_now_str(),
         details=project.details,
         status="active"
     )
@@ -387,7 +396,7 @@ def webhook_ingest_data(payload: dict, db: Session = Depends(database.get_db)):
             ai_extracted_payload=parsed_data,
             entity_type="project", # AI's guess
             status="pending",
-            created_at=datetime.now().strftime('%Y-%m-%d %H:%M')
+            created_at=get_now_str(include_time=True)
         )
         db.add(db_pending)
         db.commit()
@@ -471,7 +480,7 @@ def get_project_negotiation_prep(project_id: int, force: bool = False, db: Sessi
     try:
         prep_data = generate_negotiation_prep(context)
         db_project.negotiation_prep = prep_data
-        db_project.prep_updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        db_project.prep_updated_at = get_now_str(include_time=True, include_seconds=True)
         db.commit()
         return prep_data
     except Exception as e:
@@ -568,7 +577,7 @@ def get_company_intelligence(company_name: str, db: Session = Depends(database.g
             bd_strategy=intel_data.get("bd_strategy", ""),
             patent_cliffs=intel_data.get("patent_cliffs", []),
             recent_deals=intel_data.get("recent_deals", []),
-            last_updated=datetime.now().strftime('%Y-%m-%d')
+            last_updated=get_now_str()
         )
         db.add(new_intel)
         db.commit()

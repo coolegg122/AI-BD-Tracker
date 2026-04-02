@@ -28,6 +28,27 @@ const getAuthHeaders = (includeContentType = true) => {
   return headers;
 };
 
+/** FastAPI often returns JSON; proxies may return HTML/plain text on 5xx — never assume JSON. */
+async function readJsonSafe(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text.trim().slice(0, 400) };
+  }
+}
+
+function detailFromBody(data) {
+  if (!data || data.detail == null) return null;
+  const d = data.detail;
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d)) {
+    return d.map((e) => (e && e.msg) ? e.msg : JSON.stringify(e)).join('; ');
+  }
+  return String(d);
+}
+
 export const api = {
   // Universal extraction from raw text using AI Engine
   extractInfo: async (raw_text, type = "project") => {
@@ -39,9 +60,10 @@ export const api = {
       });
 
       if (!response.ok) {
-          throw new Error(`AI Extraction failed: ${response.statusText}`);
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || `AI Extraction failed: ${response.statusText}`);
       }
-      return response.json();
+      return await readJsonSafe(response);
     } catch (error) {
       console.error('ExtractInfo API error:', error);
       throw error;
@@ -58,9 +80,10 @@ export const api = {
       });
 
       if (!response.ok) {
-          throw new Error(`Universal AI Extraction failed: ${response.statusText}`);
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || `Universal AI Extraction failed: ${response.statusText}`);
       }
-      return response.json();
+      return await readJsonSafe(response);
     } catch (error) {
       console.error('ExtractUniversal API error:', error);
       throw error;
@@ -92,19 +115,10 @@ export const api = {
         body: JSON.stringify(projectData),
       });
       if (!response.ok) {
-        let detail = `HTTP ${response.status}`;
-        try {
-          const text = await response.text();
-          if (text) {
-            try {
-              const json = JSON.parse(text);
-              detail = json.detail ? JSON.stringify(json.detail) : text;
-            } catch (_) { detail = text; }
-          }
-        } catch (_) {}
-        throw new Error(`Create project failed: ${detail}`);
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || `Create project failed: ${response.statusText}`);
       }
-      return response.json();
+      return await readJsonSafe(response);
     } catch (error) {
       console.error('CreateProject API error:', error);
       throw error;

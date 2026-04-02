@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -6,14 +6,13 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    firebase_uid = Column(String, unique=True, index=True)
     name = Column(String)
     email = Column(String, unique=True, index=True)
     job_title = Column(String)       # NEW (Phase 30.2): Job Title (e.g. BD Manager)
     role = Column(String)            # Permission Role (admin / guest)
     initials = Column(String)
     hashed_password = Column(String)  # For local authentication
-    is_active = Column(Integer, default=1)  # 1 for active, 0 for inactive
+    is_active = Column(Boolean, default=True)  # Boolean type for active status
     notification_prefs = Column(JSON, default=dict) # NEW: Phase 28
     theme = Column(String, default="light")          # NEW: Phase 28
 
@@ -122,7 +121,7 @@ class CareerHistory(Base):
     company = Column(String)
     title = Column(String)
     dateRange = Column(String)
-    isCurrent = Column(Integer, default=0) # SQLite doesn't strictly have boolean, use int 0/1 or string. We use int.
+    isCurrent = Column(Boolean, default=False) # Boolean type for consistency
 
     contact = relationship("Contact", back_populates="careerHistory")
 

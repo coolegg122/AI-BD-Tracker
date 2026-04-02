@@ -40,7 +40,7 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
             }
         
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-3-flash-preview"
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
     
     prompts = {
         "project": """
@@ -228,7 +228,7 @@ def extract_mixed(text: str) -> dict:
         }
 
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-3-flash-preview"
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
     
     system_instruction = """
         You are an advanced BioPharma BD Intelligence Analyst. 
@@ -335,7 +335,7 @@ def generate_company_intelligence(company_name: str) -> dict:
 
     # If API key is present, call the real model:
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-3-flash-preview"
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
     
     system_instruction = f"""
     You are an expert BioPharma BD Strategy Analyst.
@@ -392,7 +392,7 @@ def generate_negotiation_prep(context: dict) -> dict:
     
     client = genai.Client(api_key=api_key)
     # Use 3.1 Pro for supreme reasoning across complex BD data
-    model_id = "gemini-3-flash-preview"
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
     
     system_instruction = """
     You are a Senior BioPharma BD Negotiation Strategist. 
@@ -440,7 +440,7 @@ def chat_with_strategist(project_context: dict, prep_data: dict, user_message: s
         return "I am an AI Mock Strategist. I can't think deeply without an API key, but I'm here to listen!"
     
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-3-flash-preview"
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
     
     history_context = ""
     if chat_history:

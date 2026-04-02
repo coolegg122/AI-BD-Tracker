@@ -236,10 +236,9 @@ class UserUpdate(BaseModel):
     job_title: Optional[str] = None
     role: Optional[str] = None
     initials: Optional[str] = None
-    is_active: Optional[int] = None
+    is_active: Optional[bool] = None
 
-class TokenData(BaseModel):
-    email: Optional[str] = None
+
 
 # Phase 28: New Schemas
 class ChangePasswordRequest(BaseModel):
@@ -264,7 +263,7 @@ class UserPreferencesUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: int
-    is_active: int
+    is_active: bool
     notification_prefs: Optional[dict] = {}
     theme: Optional[str] = "light"
 
