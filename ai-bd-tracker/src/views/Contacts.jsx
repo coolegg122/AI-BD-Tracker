@@ -5,9 +5,10 @@ import { api } from '../services/api';
 import EditableField from '../components/EditableField';
 
 export default function Contacts() {
-  const { contacts, updateContact } = useStore();
+  const { contacts, projects, updateContact } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContactId, setSelectedContactId] = useState(null);
+  const [groupBy, setGroupBy] = useState('all'); // 'all', 'company', 'function'
 
   // Auto-select first contact when loaded
   useEffect(() => {
@@ -24,6 +25,50 @@ export default function Contacts() {
       c.currentTitle.toLowerCase().includes(q)
     );
   }, [searchQuery, contacts]);
+
+  const groupedContacts = useMemo(() => {
+    if (groupBy === 'all') return { 'All Contacts': filteredContacts };
+    
+    const groups = {};
+    
+    if (groupBy === 'project' && projects) {
+      // Find which projects each contact belongs to via history attendees
+      filteredContacts.forEach(c => {
+        let matched = false;
+        projects.forEach(p => {
+          // This is a simple heuristic: if the contact is met at a project, or name match in history
+          const nameMatch = (p.history || []).some(h => 
+            Array.isArray(h.details?.attendees) && 
+            h.details.attendees.some(a => 
+              (typeof a === 'object' && a.name?.toLowerCase() === c.name.toLowerCase()) ||
+              (typeof a === 'string' && a.toLowerCase().includes(c.name.toLowerCase()))
+            )
+          );
+          
+          if (nameMatch) {
+            const groupKey = p.company + " - " + p.pipeline;
+            if (!groups[groupKey]) groups[groupKey] = [];
+            groups[groupKey].push(c);
+            matched = true;
+          }
+        });
+        
+        if (!matched) {
+          if (!groups['Other / Indirect']) groups['Other / Indirect'] = [];
+          groups['Other / Indirect'].push(c);
+        }
+      });
+    } else {
+      filteredContacts.forEach(c => {
+        const key = groupBy === 'company' ? c.currentCompany : c.functionArea;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(c);
+      });
+    }
+    
+    // Sort group names
+    return Object.fromEntries(Object.entries(groups).sort());
+  }, [filteredContacts, groupBy, projects]);
 
   const activeContact = contacts.find(c => c.id === selectedContactId) || contacts[0];
 
@@ -57,62 +102,93 @@ export default function Contacts() {
       {/* LEFT PANE: Directory List */}
       <div className="w-[380px] shrink-0 border-r border-ui-border bg-ui-card flex flex-col h-full z-10 shadow-[2px_0_15px_rgba(0,0,0,0.02)] transition-colors">
         
-        {/* Search Header */}
+        {/* Search & Group Header */}
         <div className="p-6 border-b border-ui-border bg-ui-card transition-colors">
           <div className="flex items-center gap-2 mb-5">
             <Globe className="w-6 h-6 text-ui-accent" />
             <h1 className="text-xl font-extrabold text-ui-text tracking-tight transition-colors">Key Contacts</h1>
           </div>
+          
+          <div className="flex p-1 bg-ui-bg rounded-xl mb-4 border border-ui-border transition-colors">
+            {['all', 'company', 'function', 'project'].map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setGroupBy(mode)}
+                className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                  groupBy === mode 
+                    ? 'bg-ui-card text-ui-accent shadow-sm ring-1 ring-ui-border' 
+                    : 'text-ui-text-muted hover:text-ui-text'
+                }`}
+              >
+                {mode === 'all' ? 'A-Z' : mode}
+              </button>
+            ))}
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui-text-muted" />
             <input 
               type="text" 
-              placeholder="Search names, companies, titles..." 
+              placeholder="Search..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-ui-input border border-ui-input-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ui-accent/20 focus:border-ui-accent transition-all font-medium text-ui-text placeholder:text-ui-text-muted/50"
+              className="w-full pl-9 pr-4 py-2 bg-ui-input border border-ui-input-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-ui-accent/20 focus:border-ui-accent transition-all font-medium text-ui-text placeholder:text-ui-text-muted/50"
             />
           </div>
         </div>
 
         {/* Contact List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {filteredContacts.length === 0 && (
-            <div className="text-center py-10 text-ui-text-muted text-sm transition-colors">No contacts found matching "{searchQuery}"</div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {Object.entries(groupedContacts).length === 0 && (
+            <div className="text-center py-10 text-ui-text-muted text-sm transition-colors">No matches found.</div>
           )}
-          {filteredContacts.map(contact => {
-            const isSelected = contact.id === selectedContactId;
-            return (
-              <button
-                key={contact.id}
-                onClick={() => setSelectedContactId(contact.id)}
-                className={`w-full text-left p-4 rounded-2xl transition-all duration-200 border flex items-center gap-4 ${
-                  isSelected 
-                    ? 'bg-ui-accent/10 border-ui-accent/30 shadow-sm ring-1 ring-ui-accent/10' 
-                    : 'bg-ui-card border-transparent hover:bg-ui-hover hover:border-ui-border'
-                }`}
-              >
-                <div className="relative shrink-0">
-                  <img 
-                    src={contact.photoUrl} 
-                    alt={contact.name} 
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                  />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+          
+          {Object.entries(groupedContacts).map(([groupName, list]) => (
+            <div key={groupName} className="space-y-2">
+              {groupBy !== 'all' && (
+                <div className="flex items-center gap-2 px-2 mb-3">
+                  <div className="h-px bg-ui-border flex-1"></div>
+                  <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-tighter whitespace-nowrap bg-ui-bg px-2 py-0.5 rounded-full border border-ui-border transition-colors">
+                    {groupName || 'Unclassified'}
+                  </span>
+                  <div className="h-px bg-ui-border flex-1"></div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className={`font-bold truncate transition-colors ${isSelected ? 'text-ui-accent' : 'text-ui-text'}`}>
-                    {contact.name}
-                  </h3>
-                  <div className="text-sm font-medium text-ui-text-muted truncate mt-0.5 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" />
-                    {contact.currentCompany}
-                  </div>
-                </div>
-                <ChevronRight className={`w-5 h-5 shrink-0 transition-colors ${isSelected ? 'text-ui-accent' : 'text-ui-text-muted opacity-50'}`} />
-              </button>
-            )
-          })}
+              )}
+              
+              {list.map(contact => {
+                const isSelected = contact.id === selectedContactId;
+                return (
+                  <button
+                    key={contact.id}
+                    onClick={() => setSelectedContactId(contact.id)}
+                    className={`w-full text-left p-3 rounded-2xl transition-all duration-200 border flex items-center gap-3 ${
+                      isSelected 
+                        ? 'bg-ui-accent/10 border-ui-accent/30 shadow-sm ring-1 ring-ui-accent/10' 
+                        : 'bg-ui-card border-transparent hover:bg-ui-hover hover:border-ui-border'
+                    }`}
+                  >
+                    <div className="relative shrink-0">
+                      <img 
+                        src={contact.photoUrl} 
+                        alt={contact.name} 
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                      />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-bold text-sm truncate transition-colors ${isSelected ? 'text-ui-accent' : 'text-ui-text'}`}>
+                        {contact.name}
+                      </h3>
+                      <div className="text-[11px] font-medium text-ui-text-muted truncate mt-0.5 flex items-center gap-1.5 transition-colors">
+                        <Briefcase className="w-3 h-3 opacity-50" />
+                        {contact.currentTitle}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

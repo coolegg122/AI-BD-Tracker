@@ -117,13 +117,20 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
             
             You MUST return a single valid JSON object matching this exact schema:
             {
-              "type": "meeting/email/call",
+              "type": "meeting/email/group_call",
               "title": "Short note title",
               "date": "YYYY-MM-DD",
               "desc": "Core conclusion or progress (under 50 words)",
               "suspected_project_name": "Company or asset name for matching",
               "details": {
-                "attendees": ["Person A", "Person B"],
+                "attendees": [
+                    {
+                        "name": "Person Name",
+                        "title": "Job Title (e.g., Medical Director)",
+                        "functionArea": "Function (e.g., Clinical, Legal, BD)",
+                        "company": "Company Name"
+                    }
+                ],
                 "decisions_made": ["Decision 1"],
                 "sentiment": "Neutral/Positive/Negative",
                 "unresolved_issues": ["Issue A"]

@@ -358,10 +358,50 @@ export default function ProjectSlideOver() {
                               {(item.type === 'meeting' || item.type === 'call') && (
                                 <div className="space-y-3">
                                   <div className="bg-ui-card p-2.5 rounded border border-ui-border transition-colors">
-                                    <div className="flex items-center gap-1.5 text-ui-accent font-bold mb-1 border-b border-ui-border pb-1.5 transition-colors">
+                                    <div className="flex items-center gap-1.5 text-ui-accent font-bold mb-2 border-b border-ui-border pb-1.5 transition-colors">
                                       <Users className="w-3.5 h-3.5" /> Attendees
                                     </div>
-                                    <div className="text-[10px] text-ui-text-muted tracking-tight">{item.details.attendees}</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {Array.isArray(item.details.attendees) ? (
+                                        item.details.attendees.map((attendee, idx) => {
+                                          const matchedContact = typeof attendee === 'object' 
+                                            ? (useStore.getState().contacts || []).find(c => 
+                                                c.name.toLowerCase() === attendee.name?.toLowerCase() ||
+                                                (attendee.name && c.name.toLowerCase().includes(attendee.name.toLowerCase()))
+                                              )
+                                            : null;
+
+                                          if (matchedContact) {
+                                            return (
+                                              <div 
+                                                key={idx} 
+                                                className="flex items-center gap-2 p-1 pr-3 bg-ui-bg rounded-lg border border-ui-border shadow-sm group/contact transition-all hover:border-ui-accent/30"
+                                              >
+                                                <img 
+                                                  src={matchedContact.photoUrl} 
+                                                  className="w-6 h-6 rounded-md object-cover grayscale group-hover/contact:grayscale-0 transition-all" 
+                                                  alt="" 
+                                                />
+                                                <div className="min-w-0">
+                                                  <div className="text-[10px] font-bold text-ui-text truncate">{matchedContact.name}</div>
+                                                  <div className="text-[8px] font-medium text-ui-text-muted truncate uppercase tracking-tighter">
+                                                    {matchedContact.currentTitle} • {matchedContact.functionArea}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+
+                                          return (
+                                            <div key={idx} className="px-2 py-1 bg-ui-bg rounded-md border border-ui-border text-[9px] font-bold text-ui-text-muted transition-colors">
+                                              {typeof attendee === 'object' ? `${attendee.name}${attendee.title ? ` (${attendee.title})` : ''}` : attendee}
+                                            </div>
+                                          );
+                                        })
+                                      ) : (
+                                        <div className="text-[10px] text-ui-text-muted tracking-tight">{item.details.attendees}</div>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="bg-ui-accent/10 p-2.5 rounded border border-ui-accent/20 transition-colors">
                                     <div className="font-bold text-ui-accent mb-1 flex items-center gap-1.5">
