@@ -5,6 +5,8 @@ import { api } from './services/api';
 import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
+import ProjectSlideOver from './components/ProjectSlideOver';
+import AIAnalysisModal from './components/AIAnalysisModal';
 import SmartInput from './views/SmartInput';
 import Dashboard from './views/Dashboard';
 import Pipeline from './views/Pipeline';
@@ -55,6 +57,10 @@ const ProtectedLayout = ({ children }) => {
         <main className="flex-1 overflow-auto p-8 relative">
           {children}
         </main>
+        
+        {/* Global Modals accessible from all views */}
+        <ProjectSlideOver />
+        <AIAnalysisModal />
       </div>
     </div>
   );

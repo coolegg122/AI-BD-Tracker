@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import IntelligenceModal from '../components/IntelligenceModal';
 
 export default function Pipeline() {
-  const { projects, stages } = useStore();
+  const { projects, stages, openProjectOverview } = useStore();
   const [activeTab, setActiveTab] = useState('by_project'); // 'by_project' or 'by_company'
   const [openSections, setOpenSections] = useState({});
   const [intelligenceCompany, setIntelligenceCompany] = useState(null);
@@ -137,7 +137,11 @@ export default function Pipeline() {
                         
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                           {stageProjects.map(p => (
-                            <div key={p.id} className="flex gap-4 p-4 rounded-xl border border-ui-border bg-ui-bg/50 hover:bg-ui-card hover:border-ui-accent/50 hover:shadow-md transition-all group">
+                            <div 
+                              key={p.id} 
+                              onClick={() => openProjectOverview(p)}
+                              className="flex gap-4 p-4 rounded-xl border border-ui-border bg-ui-bg/50 hover:bg-ui-card hover:border-ui-accent/50 hover:shadow-md transition-all group cursor-pointer"
+                            >
                               <div className="w-10 h-10 rounded-full bg-ui-accent/10 border-2 border-ui-card shadow-sm flex items-center justify-center font-bold text-ui-accent shrink-0">
                                 {p.company?.substring(0,2).toUpperCase() || '??'}
                               </div>
@@ -220,7 +224,11 @@ export default function Pipeline() {
                     </thead>
                     <tbody className="divide-y divide-ui-border transition-colors">
                       {projList.map(p => (
-                        <tr key={p.id} className="hover:bg-ui-hover transition-colors group">
+                        <tr 
+                          key={p.id} 
+                          onClick={() => openProjectOverview(p)}
+                          className="hover:bg-ui-hover transition-colors group cursor-pointer"
+                        >
                           <td className="p-4 pl-6 align-top">
                             <div className="font-bold text-sm text-ui-text">{p.pipeline}</div>
                             <div className="text-[10px] font-bold text-ui-text-muted mt-1 uppercase">ID: PROJ-{p.id}</div>

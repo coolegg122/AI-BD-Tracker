@@ -2,8 +2,6 @@ import React from 'react';
 import { CalendarDays, Video, MoreHorizontal, Rocket, Microscope, Gavel, Zap, FileText, Mail, History, Phone, DoorOpen, Wand2, ChevronRight, Activity, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import ProjectSlideOver from '../components/ProjectSlideOver';
-import AIAnalysisModal from '../components/AIAnalysisModal';
 import ProjectFunnel from '../components/charts/ProjectFunnel';
 import PortfolioTrend from '../components/charts/PortfolioTrend';
 
@@ -227,8 +225,6 @@ export default function Dashboard() {
       </div>
 
       {/* Slide-over component rendered at top level */}
-      <ProjectSlideOver />
-      <AIAnalysisModal />
     </div>
   );
 }
