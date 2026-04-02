@@ -70,8 +70,11 @@ try:
         icon = "fa-solid fa-file-pdf"
 
     class UserAdmin(ModelView, model=models.User):
-        column_list = [models.User.id, models.User.name, models.User.email, models.User.role, models.User.hashed_password, models.User.is_active]
+        column_list = [models.User.id, models.User.name, models.User.email, models.User.role, models.User.is_active]
         form_columns = [models.User.name, models.User.email, models.User.role, models.User.hashed_password, models.User.is_active]
+        form_choices = {
+            "role": [("admin", "Administrator"), ("guest", "Guest / Read-Only")]
+        }
         name = "User Account"
         name_plural = "User Accounts"
         icon = "fa-solid fa-user-gear"

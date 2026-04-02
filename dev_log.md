@@ -472,3 +472,25 @@
      - 将访客的职能描述统一更新为 `Read-Only Intelligence`，强化了系统的角色边界感。
  
  **当前状态**: ✅ **系统已具备完善的企业级权限管控能力**。实现了数据读写分离与高成本 AI 操作的定向授权。
+ 
+ ---
+ 
+ ## [2026-04-02] 治理与管控升级：完成 Phase 30 (Admin User Management Interface)
+ 
+ ### Phase 30: 后台账号管理系统 (Administrative Governance)
+ 
+ 为了实现权限体系的闭环，我们为管理员提供了一个可视化的用户管理工作台，彻底摆脱了此前需要通过 SQL 或 API 调试工具修改角色的限制。
+ 
+ - **工作目录**: `backend/main.py`, `backend/schemas.py`, `src/views/SettingsPage.jsx`, `src/services/api.js`
+ - **核心变更**:
+   - **管理级 API 补全**:
+     - 新增 `GET /api/v1/users`：全量拉取用户花名册。
+     - 新增 `PATCH /api/v1/users/{id}`：允许管理员修改任何用户的 `role` 或 `is_active` 状态。
+   - **设置面板扩展**:
+     - 在 Settings 页面中新增 **"User Management"** (后台账号管理) 标签，该标签仅对 `admin` 用户可见。
+     - **交互式管理列表**: 采用高密度卡片布局展示团队成员，集成 **Role Dropdown** (角色下拉框) 与 **Status Toggle** (状态开关)。
+     - **安全保护逻辑**: 前后端协同实施了“防自锁”逻辑：管理员无法重置自己的角色或禁用自己的账号。
+   - **云端数据同步**:
+     - 运行 `migrate_to_supabase.py` 确保本地最新的权限分布同步至生产环境数据库。
+ 
+ **当前状态**: ✅ **全系统治理架构已完整**。管理员现在拥有对团队、数据及 AI 资源的全面主导权。
