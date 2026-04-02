@@ -289,3 +289,16 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     context_used: Optional[str] = None
+
+# Phase 35: Smart Input Archive
+class SmartInputArchiveResponse(BaseModel):
+    id: int
+    user_id: int
+    raw_text: str
+    source_type: str
+    entities_summary: dict
+    created_at: str
+
+    class Config:
+        from_attributes = True
+

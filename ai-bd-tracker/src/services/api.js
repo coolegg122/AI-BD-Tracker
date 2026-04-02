@@ -504,5 +504,22 @@ export const api = {
       console.error('UpdateContact API error:', error);
       throw error;
     }
+  },
+
+  getSmartInputHistory: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/smart-input/history`, {
+        headers: getAuthHeaders(false)
+      });
+      if (!response.ok) {
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || 'Failed to fetch smart input history');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('GetSmartInputHistory API error:', error);
+      throw error;
+    }
   }
 };
+

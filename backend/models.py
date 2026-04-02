@@ -149,3 +149,14 @@ class PendingIngestion(Base):
     entity_type = Column(String) # project, contact, or meeting_note
     status = Column(String, default="pending") # pending, processed, discarded
     created_at = Column(String) # YYYY-MM-DD HH:MM
+
+class SmartInputArchive(Base):
+    __tablename__ = "smart_input_archive"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    raw_text = Column(String)
+    source_type = Column(String) # manual, email, zoho
+    entities_summary = Column(JSON, default=dict) # e.g. {"project": "Company A", "contacts": ["Name 1"]}
+    created_at = Column(String) # YYYY-MM-DD HH:MM
+

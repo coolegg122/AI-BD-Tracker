@@ -48,3 +48,13 @@ To ensure the system's stability and prevent state-mismatch bugs (like 500 error
 
 > [!IMPORTANT]
 > **切记**：如果同步代码后发现前端一直在 “Loading”，请第一时间检查 **Backend API 是否返回 500**，这通常说明你只同步了前端代码，而忽略了**后端 Schema** 或**云端数据库字段**的更新。
+
+## 🏷️ 版本号管理规范 (Versioning Strategy)
+从 **v0.1.0** 开始，遵循语义化版本控制 (Semantic Versioning)：
+- **大版本 (Major - X.0.0)**：重大重构或UI/UX彻底变更。
+- **小版本 (Minor - 0.X.0)**：新增重要功能模块 (例如新增 Smart Input Archive)。
+- **修订版 (Patch - 0.0.X)**：修复 Bug、微调 UI 样式或优化代码。
+**操作规范**：每次代码变动完成并准备 Push 时，必须同步在 `ai-bd-tracker/package.json` 和 `backend/main.py` 中更新对应的版本号。
+
+## 🤖 自动化同步约束 (Mandatory Auto-Sync)
+对于 AI 助手 (Antigravity)：在完成并验证任何一个被分配的开发任务后，必须**自动执行** `git push` 并输出所有需要的云端数据库 DDL，不再需要等待用户明确的 Push 指令。这已写入基本操作规范。

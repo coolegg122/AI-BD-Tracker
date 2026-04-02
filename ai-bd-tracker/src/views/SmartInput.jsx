@@ -20,6 +20,11 @@ export default function SmartInput() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [history, setHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [selectedArchive, setSelectedArchive] = useState(null);
+
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -28,7 +33,9 @@ export default function SmartInput() {
 
   useEffect(() => {
     fetchPendingInbox();
+    fetchHistory();
   }, []);
+
 
   const fetchPendingInbox = async () => {
     setIsLoadingInbox(true);
@@ -40,6 +47,54 @@ export default function SmartInput() {
     }
     setIsLoadingInbox(false);
   };
+
+  const fetchHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await api.getSmartInputHistory();
+      setHistory(data);
+      // Expand the first group by default
+      const groups = groupHistory(data);
+      if (Object.keys(groups).length > 0) {
+        setExpandedGroups({ [Object.keys(groups)[0]]: true });
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+    setIsLoadingHistory(false);
+  };
+
+  const groupHistory = (items) => {
+    const groups = {};
+    const now = new Date();
+    
+    items.forEach(item => {
+      const date = new Date(item.created_at.replace(' ', 'T'));
+      const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+      
+      let groupName = "";
+      if (diffDays < 7) {
+        groupName = "This Week";
+      } else if (diffDays < 14) {
+        groupName = "Last Week";
+      } else {
+        groupName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+      
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(item);
+    });
+    
+    return groups;
+  };
+
+  const toggleGroup = (groupName) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
 
   const handleSyncMail = async () => {
     setIsSyncing(true);
@@ -126,7 +181,9 @@ export default function SmartInput() {
       setParsedResult(null);
       setEditData(null);
       setInputText('');
+      fetchHistory(); // Refresh history
     } catch (error) {
+
       showMessage('error', `Save failed: ${error.message}`);
     }
     setIsSaving(false);
@@ -160,14 +217,18 @@ export default function SmartInput() {
           <button onClick={() => setActiveTab('inbox')} className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all relative ${activeTab === 'inbox' ? 'bg-ui-card text-ui-accent shadow-sm' : 'text-ui-text-muted hover:text-ui-text'}`}>
             <Inbox className="w-4 h-4" /> AI Inbox
           </button>
+          <button onClick={() => setActiveTab('history')} className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'history' ? 'bg-ui-card text-ui-accent shadow-sm' : 'text-ui-text-muted hover:text-ui-text'}`}>
+            <MessageSquare className="w-4 h-4" /> History
+          </button>
         </div>
+
       </div>
 
       {activeTab === 'manual' ? (
         <section className="space-y-6">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-ui-accent/20 to-transparent rounded-2xl blur opacity-40 transition duration-1000"></div>
-            <div className="relative bg-ui-input rounded-xl shadow-sm overflow-hidden border border-ui-input-border transition-colors">
+            <div className="relative bg-ui-input rounded-xl shadow-sm overflow-hidden border border-ui-border transition-colors">
               <div className="flex items-center justify-between px-6 py-4 bg-ui-sidebar border-b border-ui-border transition-colors">
                 <div className="flex items-center gap-2">
                   <Wand2 className="w-4 h-4 text-ui-accent" />
@@ -187,7 +248,7 @@ export default function SmartInput() {
             </button>
           </div>
         </section>
-      ) : (
+      ) : activeTab === 'inbox' ? (
         <section className="space-y-4 animate-in slide-in-from-right-4 duration-300">
            <div className="flex items-center justify-between mb-2">
                <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">{pendingIngestions.length} Pending Records</span>
@@ -209,8 +270,117 @@ export default function SmartInput() {
                 </div>
              </div>
            ))}
+           {pendingIngestions.length === 0 && (
+             <div className="text-center py-20 bg-ui-sidebar rounded-2xl border-2 border-dashed border-ui-border">
+               <Inbox className="w-12 h-12 text-ui-text-muted mx-auto mb-4 opacity-20" />
+               <p className="text-ui-text-muted font-bold text-sm">Your AI Inbox is clean.</p>
+             </div>
+           )}
+        </section>
+      ) : (
+        <section className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">{history.length} Archived Inputs</span>
+            <button onClick={fetchHistory} className="text-xs font-bold text-ui-accent flex items-center gap-1 hover:underline">
+              <Plus className="w-3 h-3 rotate-45" /> Refresh
+            </button>
+          </div>
+          
+          {Object.entries(groupHistory(history)).map(([groupName, items]) => (
+            <div key={groupName} className="space-y-2">
+              <button 
+                onClick={() => toggleGroup(groupName)}
+                className="w-full flex items-center justify-between py-2 border-b border-ui-border hover:bg-ui-hover transition-colors rounded-t-lg px-2"
+              >
+                <span className="text-xs font-black uppercase text-ui-text-muted tracking-widest">{groupName}</span>
+                <ChevronDown className={`w-4 h-4 text-ui-text-muted transition-transform duration-300 ${expandedGroups[groupName] ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {expandedGroups[groupName] && (
+                <div className="space-y-3 pt-2 animate-in slide-in-from-top-2 duration-300">
+                  {items.map(item => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => setSelectedArchive(item)}
+                      className="group bg-ui-card rounded-xl border border-ui-border p-4 flex justify-between items-center transition-all hover:border-ui-accent/50 cursor-pointer hover:shadow-md"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`p-2 rounded-lg ${item.source_type === 'email' ? 'bg-blue-500/10 text-blue-500' : 'bg-ui-accent/10 text-ui-accent'}`}>
+                          {item.source_type === 'email' ? <Mail className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-ui-accent opacity-80">{item.source_type}</span>
+                            <span className="text-[10px] font-medium text-ui-text-muted">• {item.created_at}</span>
+                          </div>
+                          <h4 className="text-sm font-bold text-ui-text line-clamp-1">
+                            {item.entities_summary?.project || item.entities_summary?.subject || 'Structured Intelligence Extraction'}
+                          </h4>
+                        </div>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-ui-text-muted -rotate-90 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {history.length === 0 && !isLoadingHistory && (
+            <div className="text-center py-20 bg-ui-sidebar rounded-2xl border-2 border-dashed border-ui-border">
+              <MessageSquare className="w-12 h-12 text-ui-text-muted mx-auto mb-4 opacity-20" />
+              <p className="text-ui-text-muted font-bold text-sm">No historical records found.</p>
+            </div>
+          )}
         </section>
       )}
+
+
+      {selectedArchive && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedArchive(null)}>
+          <div className="bg-ui-card w-full max-w-2xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden border border-ui-border flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 bg-ui-sidebar border-b border-ui-border flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-ui-accent/10 text-ui-accent rounded-lg">
+                  <Wand2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-ui-text">Raw Archive Detail</h3>
+                  <p className="text-[10px] font-bold text-ui-text-muted uppercase">{selectedArchive.created_at} • {selectedArchive.source_type}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedArchive(null)} className="p-2 hover:bg-ui-hover rounded-full transition-colors text-ui-text-muted"><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="flex-1 p-6 overflow-y-auto">
+              <div className="bg-ui-input p-6 rounded-xl border border-ui-border font-mono text-sm leading-relaxed whitespace-pre-wrap text-ui-text">
+                {selectedArchive.raw_text}
+              </div>
+
+              {selectedArchive.entities_summary && (
+                <div className="mt-6 space-y-4">
+                  <h4 className="text-xs font-black uppercase text-ui-text-muted tracking-widest border-b border-ui-border pb-2">Extracted Entities</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedArchive.entities_summary.project && (
+                      <div className="bg-ui-sidebar p-3 rounded-lg border border-ui-border">
+                        <label className="text-[9px] font-black uppercase text-ui-text-muted block mb-1">Target Project</label>
+                        <p className="text-sm font-bold text-ui-accent">{selectedArchive.entities_summary.project}</p>
+                      </div>
+                    )}
+                    {selectedArchive.entities_summary.contacts && selectedArchive.entities_summary.contacts.length > 0 && (
+                      <div className="bg-ui-sidebar p-3 rounded-lg border border-ui-border">
+                        <label className="text-[9px] font-black uppercase text-ui-text-muted block mb-1">Affected Contacts</label>
+                        <p className="text-xs font-medium text-ui-text">{selectedArchive.entities_summary.contacts.join(', ')}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {parsedResult && editData && (
         <section className="mt-12 animate-in slide-in-from-bottom-4 duration-500 pb-20">

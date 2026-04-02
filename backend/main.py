@@ -30,7 +30,7 @@ if _db_url.startswith("sqlite"):
     models.Base.metadata.create_all(bind=database.engine)
 
 
-app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
+app = FastAPI(title="AI-BD Tracker API", version="0.1.0")
 
 # ==========================================
 # PHASE 7: SQLADMIN BACK-OFFICE PORTAL
@@ -248,9 +248,23 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
         
         db.commit()
     else:
+        # 6. Archive this Smart Input for Traceability
+        archive_entry = models.SmartInputArchive(
+            user_id=current_user.id,
+            raw_text=request.raw_text,
+            source_type="manual",
+            entities_summary={
+                "project": results["project"].get("company") if results["project"] else None,
+                "contacts": [c["name"] for c in results["contacts"]]
+            },
+            created_at=get_now_str(include_time=True)
+        )
+        db.add(archive_entry)
         db.commit()
 
     return {"status": "success", "results": results, "raw_ai_output": parsed}
+
+
 
 @app.post("/api/v1/projects", response_model=schemas.ProjectResponse)
 def create_project(project: schemas.ProjectCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
@@ -418,8 +432,23 @@ def mark_ingestion_processed(id: int, db: Session = Depends(database.get_db), cu
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
     db_item.status = "processed"
+    
+    # NEW: Archive the processed ingestion
+    archive_entry = models.SmartInputArchive(
+        user_id=current_user.id,
+        raw_text=db_item.raw_content,
+        source_type=db_item.source_type,
+        entities_summary={
+            "ingestion_id": db_item.id,
+            "subject": db_item.subject,
+            "entity_type": db_item.entity_type
+        },
+        created_at=get_now_str(include_time=True)
+    )
+    db.add(archive_entry)
     db.commit()
     return {"status": "success"}
+
 
 @app.delete("/api/v1/ingestion/{id}")
 def discard_ingestion(id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
@@ -438,6 +467,12 @@ def sync_mail_inbox(db: Session = Depends(database.get_db), current_user: models
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
+
+@app.get("/api/v1/smart-input/history", response_model=List[schemas.SmartInputArchiveResponse])
+def get_smart_input_history(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Fetch the historical record of all processed smart inputs."""
+    return db.query(models.SmartInputArchive).order_by(models.SmartInputArchive.created_at.desc()).all()
+
 
 @app.get("/api/v1/projects/{project_id}/negotiation-prep")
 def get_project_negotiation_prep(project_id: int, force: bool = False, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_active_user)):
