@@ -154,10 +154,24 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
                 for k, v in proj_data["details"].items():
                     existing_details[k] = v
                 db_project.details = existing_details
+            
+            db_project.source_text = request.raw_text # NEW: Traceability
             results["project"] = {"id": db_project.id, "action": "updated"}
         else:
-            # Maybe create new? For now only match existing or return status
-            results["project"] = {"company": company, "action": "not_found_skip"}
+            # NEW: Auto-create new project if not found
+            db_project = models.Project(
+                company=company,
+                pipeline=proj_data.get("pipeline") or "Unknown Pipeline",
+                stage=proj_data.get("stage") or "Initial Contact",
+                lastContactDate=datetime.now().strftime('%Y-%m-%d'),
+                owner_id=current_user.id,
+                details=proj_data.get("details", {}),
+                source_text=request.raw_text, # NEW: Traceability
+                status="active"
+            )
+            db.add(db_project)
+            db.flush() # Ensure ID is generated for history/timeline linking
+            results["project"] = {"id": db_project.id, "action": "created", "company": company}
 
     # 3. Upsert Contacts
     contacts_data = parsed.get("upsert_contacts", [])

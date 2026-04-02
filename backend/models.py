@@ -33,6 +33,7 @@ class Project(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="projects")
     details = Column(JSON, default=dict) # NEW (Phase 12): Flexible storage for AI-extracted details
+    source_text = Column(String) # NEW: Traceability for Smart Input
     
     # NEW (Phase 16.1): AI Strategist Cache
     negotiation_prep = Column(JSON, default=dict)

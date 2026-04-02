@@ -112,7 +112,8 @@ class ProjectBase(BaseModel):
     tasks: List[TaskCreate] = []
     attachments: List[AttachmentCreate] = []
     details: Optional[dict] = {}
-    primary_contact: Optional[ContactCreate] = None  # NEW: For auto-syncing contacts
+    primary_contact: Optional[ContactCreate] = None
+    source_text: Optional[str] = None # NEW: For AI sync tracing
 
     @field_validator('details', mode='before')
     @classmethod
@@ -142,6 +143,7 @@ class ProjectUpdate(BaseModel):
     nextFollowUp: Optional[str] = None
     owner_id: Optional[int] = None
     details: Optional[dict] = None
+    source_text: Optional[str] = None
 
 class DealBase(BaseModel):
     date: str
