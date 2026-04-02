@@ -541,6 +541,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_d
     db_user = models.User(
         name=user.name,
         email=user.email,
+        job_title=user.job_title or '',
         role=assigned_role,
         initials=user.initials,
         hashed_password=hashed_password
