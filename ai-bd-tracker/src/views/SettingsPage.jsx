@@ -62,7 +62,7 @@ const SettingsPage = () => {
     try {
       const result = await updateUserProfile(profileData);
       if (result.success) {
-        showMessage('success', 'Profile updated successfully!');
+        showMessage('success', '存储成功: Profile updated!');
       } else {
         showMessage('error', result.message || 'Failed to update profile');
       }
@@ -82,7 +82,7 @@ const SettingsPage = () => {
     setIsSaving(true);
     try {
       await api.changePassword(passwordData.currentPassword, passwordData.newPassword);
-      showMessage('success', 'Password changed successfully!');
+      showMessage('success', '存储成功: Password changed!');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
       showMessage('error', err.message);
@@ -98,7 +98,7 @@ const SettingsPage = () => {
       if (result) {
         // AuthContext updateUserProfile would be ideal here if it had a way to just refresh user
         // For now, we assume backend saved it.
-        showMessage('success', 'Notification preferences saved!');
+        showMessage('success', '存储成功: Notifications saved!');
       }
     } catch (err) {
       showMessage('error', err.message);

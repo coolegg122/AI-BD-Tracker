@@ -39,7 +39,7 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
             }
         
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-3-flash-preview"
+    model_id = "gemini-2.0-flash"
     
     prompts = {
         "project": """
@@ -192,7 +192,7 @@ def generate_company_intelligence(company_name: str) -> dict:
 
     # If API key is present, call the real model:
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-3-flash-preview"
+    model_id = "gemini-2.0-flash"
     
     system_instruction = f"""
     You are an expert BioPharma BD Strategy Analyst.
@@ -281,12 +281,13 @@ def generate_negotiation_prep(context: dict) -> dict:
         )
         return json.loads(response.text)
     except Exception as e:
-        print(f"Error during negotiation prep generation: {e}")
+        print(f"Error during negotiation prep generation (Pro): {e}")
         # Fallback to flash if pro fails or unavailable
         try:
-           response = client.models.generate_content(model="gemini-3-flash-preview", contents=prompt, config={"response_mime_type": "application/json"})
+           response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt, config={"response_mime_type": "application/json"})
            return json.loads(response.text)
-        except Exception:
+        except Exception as flash_e:
+           print(f"Error during negotiation prep generation (Flash): {flash_e}")
            raise
 
 def chat_with_strategist(project_context: dict, prep_data: dict, user_message: str, chat_history: list = None) -> str:
@@ -319,5 +320,10 @@ def chat_with_strategist(project_context: dict, prep_data: dict, user_message: s
         response = client.models.generate_content(model=model_id, contents=prompt)
         return response.text
     except Exception as e:
+        error_msg = str(e).lower()
         print(f"Error during strategist chat: {e}")
+        if "401" in error_msg or "apikey" in error_msg or "test_key" in api_key:
+            return "Strategist connection interrupted. Please ensure a valid GEMINI_API_KEY is configured in your .env file."
+        if "429" in error_msg:
+            return "Our strategic engine is currently over capacity. High-priority pipeline analysis requires a few minutes to cool down."
         return "Sorry, I had a strategic malfunction. Please try again."

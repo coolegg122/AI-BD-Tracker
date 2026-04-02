@@ -19,6 +19,12 @@ export default function SmartInput() {
   const [isLoadingInbox, setIsLoadingInbox] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+  };
 
   // Local state for editing the result before saving
   const [editData, setEditData] = useState(null);
@@ -115,13 +121,13 @@ export default function SmartInput() {
       if (extractType === 'project') {
         const saved = await api.createProject(editData);
         addProject(saved);
-        alert("Project archived successfully!");
+        showMessage('success', '存储成功: Project archived!');
       } else if (extractType === 'contact') {
         await api.createContact(editData);
-        alert("Key Contact added to CRM!");
+        showMessage('success', '存储成功: Key Contact added!');
       } else if (extractType === 'meeting_note') {
         if (!linkedProjectId) {
-            alert("Please select a project to associate this note with.");
+            showMessage('error', "Please select a project to associate this note with.");
             setIsSaving(false);
             return;
         }
@@ -132,7 +138,7 @@ export default function SmartInput() {
             desc: editData.desc,
             details: {}
         });
-        alert("Meeting note synced to project history!");
+        showMessage('success', '存储成功: Meeting note synced!');
       }
 
       // If this came from the inbox, mark as processed (non-blocking: don't fail the whole save if this call fails)
@@ -154,7 +160,7 @@ export default function SmartInput() {
     } catch (error) {
       console.error("Save failed:", error);
       const msg = error.message || "Unknown error";
-      alert(`Failed to save:\n${msg}`);
+      showMessage('error', `Save failed: ${msg}`);
     }
     setIsSaving(false);
   };
@@ -199,6 +205,16 @@ export default function SmartInput() {
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-300">
+      {message.text && (
+        <div className={`fixed top-20 right-8 z-50 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-right-4 border shadow-xl transition-colors ${
+          message.type === 'success' 
+            ? 'bg-ui-success/10 text-ui-success border-ui-success/20 backdrop-blur-md' 
+            : 'bg-ui-error/10 text-ui-error border-ui-error/20 backdrop-blur-md'
+        }`}>
+          {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          <span className="text-sm font-bold">{message.text}</span>
+        </div>
+      )}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-ui-text mb-2">Smart Input</h2>
