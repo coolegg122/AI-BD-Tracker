@@ -39,7 +39,7 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
             }
         
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-2.0-flash"
+    model_id = "gemini-3-flash-preview"
     
     prompts = {
         "project": """
@@ -192,7 +192,7 @@ def generate_company_intelligence(company_name: str) -> dict:
 
     # If API key is present, call the real model:
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-2.0-flash"
+    model_id = "gemini-3-flash-preview"
     
     system_instruction = f"""
     You are an expert BioPharma BD Strategy Analyst.
@@ -248,8 +248,8 @@ def generate_negotiation_prep(context: dict) -> dict:
         }
     
     client = genai.Client(api_key=api_key)
-    # Use Pro model for deep reasoning across multiple data sources
-    model_id = "gemini-1.5-pro" 
+    # Use 3.1 Pro for supreme reasoning across complex BD data
+    model_id = "gemini-3.1-pro-preview" 
     
     system_instruction = """
     You are a Senior BioPharma BD Negotiation Strategist. 
@@ -284,7 +284,7 @@ def generate_negotiation_prep(context: dict) -> dict:
         print(f"Error during negotiation prep generation (Pro): {e}")
         # Fallback to flash if pro fails or unavailable
         try:
-           response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt, config={"response_mime_type": "application/json"})
+           response = client.models.generate_content(model="gemini-3-flash-preview", contents=prompt, config={"response_mime_type": "application/json"})
            return json.loads(response.text)
         except Exception as flash_e:
            print(f"Error during negotiation prep generation (Flash): {flash_e}")
@@ -297,7 +297,7 @@ def chat_with_strategist(project_context: dict, prep_data: dict, user_message: s
         return "I am an AI Mock Strategist. I can't think deeply without an API key, but I'm here to listen!"
     
     client = genai.Client(api_key=api_key)
-    model_id = "gemini-1.5-pro"
+    model_id = "gemini-3.1-pro-preview"
     
     history_context = ""
     if chat_history:
