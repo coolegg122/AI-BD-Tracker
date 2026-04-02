@@ -20,13 +20,14 @@ export const useStore = create((set) => ({
   dashboardData: null,
   scheduleData: null,
   notifications: [],
+  contactsLoaded: false,
   selectedOverviewProject: null, // Phase 6: Timeline modal
   stages: STAGES,
   appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
   
   setUser: (user) => set({ user }),
   setProjects: (projects) => set({ projects }),
-  setContacts: (contacts) => set({ contacts }),
+  setContacts: (contacts) => set({ contacts, contactsLoaded: true }),
   setDashboardData: (data) => set({ dashboardData: data }),
   setScheduleData: (data) => set({ scheduleData: data }),
   setNotifications: (data) => set({ notifications: data }),

@@ -57,15 +57,15 @@ class CareerHistoryResponse(CareerHistoryBase):
 
 class ContactBase(BaseModel):
     name: str
-    currentCompany: str
-    currentTitle: str
-    functionArea: str
-    photoUrl: str
-    location: str
-    email: str
-    linkedin: str
-    phone: str
-    profile: str
+    currentCompany: Optional[str] = ""
+    currentTitle: Optional[str] = ""
+    functionArea: Optional[str] = ""
+    photoUrl: Optional[str] = ""
+    location: Optional[str] = ""
+    email: Optional[str] = ""
+    linkedin: Optional[str] = ""
+    phone: Optional[str] = ""
+    profile: Optional[str] = ""
     metAt: Optional[List[str]] = []
     details: Optional[dict] = {}
     source_text: Optional[str] = None

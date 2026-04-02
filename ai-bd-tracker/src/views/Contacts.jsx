@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import EditableField from '../components/EditableField';
 
 export default function Contacts() {
-  const { contacts, projects, updateContact } = useStore();
+  const { contacts, projects, updateContact, contactsLoaded } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [groupBy, setGroupBy] = useState('all'); // 'all', 'company', 'function'
@@ -20,9 +20,9 @@ export default function Contacts() {
   const filteredContacts = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return contacts.filter(c => 
-      c.name.toLowerCase().includes(q) || 
-      c.currentCompany.toLowerCase().includes(q) || 
-      c.currentTitle.toLowerCase().includes(q)
+      (c.name || '').toLowerCase().includes(q) || 
+      (c.currentCompany || '').toLowerCase().includes(q) || 
+      (c.currentTitle || '').toLowerCase().includes(q)
     );
   }, [searchQuery, contacts]);
 
@@ -89,8 +89,8 @@ export default function Contacts() {
       <div className="flex bg-ui-bg h-full items-center justify-center p-8 transition-colors">
          <div className="text-center">
             <UserCircle2 className="w-16 h-16 text-ui-text-muted mx-auto mb-4 animate-pulse opacity-20" />
-            <h2 className="text-xl font-bold text-ui-text">Loading Key Contacts...</h2>
-            <p className="text-ui-text-muted max-w-sm mx-auto mt-2">Connecting to the backend intelligence database. Ensure your FastAPI server is running.</p>
+            <h2 className="text-xl font-bold text-ui-text">{contactsLoaded ? 'No Key Contacts Yet' : 'Loading Key Contacts...'}</h2>
+            <p className="text-ui-text-muted max-w-sm mx-auto mt-2">{contactsLoaded ? 'Use Smart Input to add contacts from meeting notes or emails.' : 'Connecting to the backend intelligence database. Ensure your FastAPI server is running.'}</p>
          </div>
       </div>
     );
@@ -168,11 +168,17 @@ export default function Contacts() {
                     }`}
                   >
                     <div className="relative shrink-0">
-                      <img 
-                        src={contact.photoUrl} 
-                        alt={contact.name} 
-                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                      />
+                      {contact.photoUrl ? (
+                        <img 
+                          src={contact.photoUrl} 
+                          alt={contact.name} 
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-ui-accent/20 flex items-center justify-center text-ui-accent font-black text-xs border-2 border-white shadow-sm">
+                          {(contact.name || '??').split(' ').map(n => n[0]).join('').slice(0,2)}
+                        </div>
+                      )}
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -208,11 +214,17 @@ export default function Contacts() {
                {/* Large Avatar */}
                <div className="shrink-0 -mt-20">
                  <div className="p-2 bg-ui-card rounded-full shadow-lg ring-1 ring-ui-border inline-block transition-colors">
-                   <img 
-                     src={activeContact.photoUrl} 
-                     alt={activeContact.name} 
-                     className="w-36 h-36 rounded-full object-cover shadow-inner"
-                   />
+                   {activeContact.photoUrl ? (
+                     <img 
+                       src={activeContact.photoUrl} 
+                       alt={activeContact.name} 
+                       className="w-36 h-36 rounded-full object-cover shadow-inner"
+                     />
+                   ) : (
+                     <div className="w-36 h-36 rounded-full bg-gradient-to-br from-ui-accent/30 to-ui-accent/10 flex items-center justify-center text-ui-accent font-black text-4xl shadow-inner">
+                       {(activeContact.name || '??').split(' ').map(n => n[0]).join('').slice(0,2)}
+                     </div>
+                   )}
                  </div>
                </div>
 
@@ -304,7 +316,7 @@ export default function Contacts() {
                    <CalendarDays className="w-5 h-5 text-ui-accent" /> Encounter Footprints
                  </h3>
                  <div className="flex flex-wrap gap-3">
-                   {activeContact.metAt.map((conf, idx) => (
+                   {(activeContact.metAt || []).map((conf, idx) => (
                      <span key={idx} className="px-4 py-2 bg-ui-bg text-ui-text rounded-xl text-sm font-bold border border-ui-border flex items-center gap-2 transition-colors">
                        <div className="w-2 h-2 rounded-full bg-ui-text-muted"></div> {conf}
                      </span>
@@ -321,7 +333,7 @@ export default function Contacts() {
                  </h3>
                  
                  <div className="relative border-l-2 border-ui-border pl-6 pb-2 space-y-8 transition-colors">
-                   {activeContact.careerHistory.map((job, idx) => (
+                   {(activeContact.careerHistory || []).map((job, idx) => (
                      <div key={job.id} className="relative">
                        {/* Timeline dot */}
                        <div className={`absolute -left-[33px] top-1 w-4 h-4 rounded-full border-4 border-ui-card shadow-sm transition-all ${
