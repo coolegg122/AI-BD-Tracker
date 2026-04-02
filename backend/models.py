@@ -77,6 +77,7 @@ class ProjectHistory(Base):
     date = Column(String)
     desc = Column(String)
     details = Column(JSON, default=dict) # To store flexible fields like docId, link, attendees, etc.
+    source_text = Column(String) # NEW (Phase 33): Verbatim source for traceability
 
     project = relationship("Project", back_populates="history")
 
@@ -108,6 +109,7 @@ class Contact(Base):
     profile = Column(String)
     metAt = Column(JSON, default=list) # Array of strings
     details = Column(JSON, default=dict) # NEW: Flexible storage for AI-extracted details
+    source_text = Column(String) # NEW (Phase 33): Verbatim source/context for traceability
 
     careerHistory = relationship("CareerHistory", back_populates="contact", cascade="all, delete-orphan")
 

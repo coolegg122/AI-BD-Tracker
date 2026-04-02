@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import os
 
 import models, schemas, database
-from ai_engine import extract_universal, generate_negotiation_prep, chat_with_strategist
+from ai_engine import extract_universal, extract_mixed, generate_negotiation_prep, chat_with_strategist, generate_company_intelligence
 from mail_poller import sync_zoho_inbox
 from auth import authenticate_user, create_access_token, get_current_active_user, get_current_admin_user, get_password_hash, verify_password
 
@@ -127,6 +127,88 @@ def ai_extract_bd_data(request: schemas.AIParsingRequest, current_user: models.U
         return parsed_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI extraction failed: {str(e)}")
+
+@app.post("/api/v1/smart-input/universal")
+def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Universal AI extraction and auto-persistence for multi-module updates."""
+    # 1. AI Extraction
+    parsed = extract_mixed(request.raw_text)
+    
+    results = {"project": None, "contacts": [], "history": None}
+    
+    # 2. Update/Create Project
+    proj_data = parsed.get("update_project")
+    if proj_data:
+        company = proj_data.get("company")
+        # Try to match existing project by company + pipeline
+        db_project = db.query(models.Project).filter(
+            models.Project.company.ilike(company)
+        ).first()
+        
+        if db_project:
+            # Update existing
+            if proj_data.get("stage"): db_project.stage = proj_data["stage"]
+            if proj_data.get("details"):
+                existing_details = db_project.details or {}
+                # Deep merge or simple update
+                for k, v in proj_data["details"].items():
+                    existing_details[k] = v
+                db_project.details = existing_details
+            results["project"] = {"id": db_project.id, "action": "updated"}
+        else:
+            # Maybe create new? For now only match existing or return status
+            results["project"] = {"company": company, "action": "not_found_skip"}
+
+    # 3. Upsert Contacts
+    contacts_data = parsed.get("upsert_contacts", [])
+    for c in contacts_data:
+        if not c.get("name"): continue
+        # Find by name OR email
+        existing_c = db.query(models.Contact).filter(
+            (models.Contact.name.ilike(c["name"])) | 
+            (models.Contact.email == c.get("email"))
+        ).first()
+        
+        if existing_c:
+            # Update
+            if c.get("currentTitle"): existing_c.currentTitle = c["currentTitle"]
+            if c.get("functionArea"): existing_c.functionArea = c["functionArea"]
+            existing_c.source_text = request.raw_text # Save traceability
+            results["contacts"].append({"name": c["name"], "action": "updated"})
+        else:
+            # Create
+            new_c = models.Contact(
+                name=c["name"],
+                currentCompany=c.get("currentCompany") or (proj_data.get("company") if proj_data else "Unknown"),
+                currentTitle=c.get("currentTitle"),
+                functionArea=c.get("functionArea"),
+                email=c.get("email"),
+                profile=c.get("profile"),
+                source_text=request.raw_text # Save traceability
+            )
+            db.add(new_c)
+            results["contacts"].append({"name": c["name"], "action": "created"})
+
+    # 4. Add Timeline Event (History)
+    hist_data = parsed.get("add_timeline_event")
+    if hist_data and results["project"] and results["project"].get("id"):
+        db_history = models.ProjectHistory(
+            project_id=results["project"]["id"],
+            type=hist_data.get("type", "meeting"),
+            title=hist_data.get("title"),
+            date=hist_data.get("date") or datetime.now().strftime("%Y-%m-%d"),
+            desc=hist_data.get("desc"),
+            details=hist_data.get("details", {}),
+            source_text=request.raw_text # Save traceability
+        )
+        db.add(db_history)
+        db.commit()
+        db.refresh(db_history)
+        results["history"] = {"id": db_history.id, "action": "created"}
+    else:
+        db.commit()
+
+    return {"status": "success", "results": results, "raw_ai_output": parsed}
 
 @app.post("/api/v1/projects", response_model=schemas.ProjectResponse)
 def create_project(project: schemas.ProjectCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):

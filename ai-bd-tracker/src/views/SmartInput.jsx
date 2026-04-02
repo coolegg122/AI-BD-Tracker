@@ -9,11 +9,9 @@ export default function SmartInput() {
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('manual'); // 'manual' or 'inbox'
   const [inputText, setInputText] = useState('');
-  const [extractType, setExtractType] = useState('project'); // project, contact, meeting_note
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [parsedResult, setParsedResult] = useState(null);
-  const [linkedProjectId, setLinkedProjectId] = useState('');
   
   // Pending Inbox State
   const [pendingIngestions, setPendingIngestions] = useState([]);
@@ -60,17 +58,6 @@ export default function SmartInput() {
     setIsSyncing(false);
   };
 
-  useEffect(() => {
-    // If we're on meeting_note, try to match suspected_project_name to an existing project
-    if (extractType === 'meeting_note' && parsedResult?.suspected_project_name) {
-        const matched = projects.find(p => 
-            p.company.toLowerCase().includes(parsedResult.suspected_project_name.toLowerCase()) ||
-            parsedResult.suspected_project_name.toLowerCase().includes(p.company.toLowerCase())
-        );
-        if (matched) setLinkedProjectId(matched.id);
-    }
-  }, [parsedResult, extractType, projects]);
-
   const handleAIParse = async () => {
     if (!inputText.trim()) return;
     setIsAnalyzing(true);
@@ -79,9 +66,11 @@ export default function SmartInput() {
     setActiveIngestionId(null);
 
     try {
-      const data = await api.extractInfo(inputText, extractType);
-      setParsedResult(data);
-      setEditData(data); // Initialize editable form with AI guess
+      // Phase 33: Universal extraction (Mixed Project/Contact/History)
+      const data = await api.extractUniversal(inputText);
+      // Backend returns { status, results, raw_ai_output }
+      setParsedResult(data.raw_ai_output);
+      setEditData(data.raw_ai_output);
     } catch (error) {
       console.error("AI Parse failed:", error);
       alert(`AI extraction failed:\n${error.message || "Unknown error"}`);
@@ -91,7 +80,6 @@ export default function SmartInput() {
 
   const handleReviewInboxItem = (item) => {
     setActiveTab('manual');
-    setExtractType(item.entity_type || 'project');
     setParsedResult(item.ai_extracted_payload);
     setEditData(item.ai_extracted_payload);
     setActiveIngestionId(item.id);
@@ -120,35 +108,14 @@ export default function SmartInput() {
   const handleConfirmSave = async () => {
     setIsSaving(true);
     try {
-      if (extractType === 'project') {
-        const saved = await api.createProject(editData);
-        addProject(saved);
-        showMessage('success', '存储成功: Project archived!');
-      } else if (extractType === 'contact') {
-        await api.createContact(editData);
-        showMessage('success', '存储成功: Key Contact added!');
-      } else if (extractType === 'meeting_note') {
-        if (!linkedProjectId) {
-            showMessage('error', "Please select a project to associate this note with.");
-            setIsSaving(false);
-            return;
-        }
-        await api.createProjectHistory(linkedProjectId, {
-            type: editData.type || 'meeting',
-            title: editData.title,
-            date: editData.date,
-            desc: editData.desc,
-            details: {}
-        });
-        showMessage('success', '存储成功: Meeting note synced!');
-      }
+      // Re-trigger global sync with potentially edited data (though current UI edits are read-only-ish for now)
+      await api.extractUniversal(inputText); 
+      showMessage('success', '全站同步成功: Project, Contacts, and History updated!');
 
-      // If this came from the inbox, mark as processed (non-blocking: don't fail the whole save if this call fails)
       if (activeIngestionId) {
         try {
           await api.processIngestion(activeIngestionId);
         } catch (processErr) {
-          // Log but don't block success - project was saved, just inbox cleanup failed
           console.warn("Could not mark ingestion as processed:", processErr.message);
         }
         setPendingIngestions(prev => prev.filter(item => item.id !== activeIngestionId));
@@ -161,48 +128,13 @@ export default function SmartInput() {
       setInputText('');
     } catch (error) {
       console.error("Save failed:", error);
-      const msg = error.message || "Unknown error";
-      showMessage('error', `Save failed: ${msg}`);
+      showMessage('error', `Save failed: ${error.message}`);
     }
     setIsSaving(false);
   };
 
-  // Helper for dynamic details
-  const updateDetail = (key, value) => {
-    if (!editData) return;
-    setEditData({
-      ...editData,
-      details: {
-        ...(editData.details || {}),
-        [key]: value
-      }
-    });
-  };
-
-  const removeDetail = (key) => {
-    if (!editData) return;
-    const newDetails = { ...(editData.details || {}) };
-    delete newDetails[key];
-    setEditData({
-      ...editData,
-      details: newDetails
-    });
-  };
-
-  const addDetail = () => {
-    if (!editData) return;
-    const newKey = `field_${Object.keys(editData.details || {}).length + 1}`;
-    updateDetail(newKey, "");
-  };
-
   const fillTestData = () => {
-    if (extractType === 'project') {
-        setInputText("FWD: Ipsen Pharma Discussion. \n\nHi team, just got off the call with Ipsen regarding the expansion study. They are very keen. We need to circulate the NDA by Tuesday.");
-    } else if (extractType === 'contact') {
-        setInputText("Met Sarah Jenkins at JPM. She is the VP of BD at Novartis. Sarah.jenkins@novartis.com. Previously at Roche for 5 years.");
-    } else if (extractType === 'meeting_note') {
-        setInputText("Minutes from Pfizer meeting (Oct 12): Discussed the Phase III data readout. They had concerns about the toxicity profile in cohort B but agreed to proceed with the term sheet draft.");
-    }
+    setInputText("Minutes from Pfizer meeting (Oct 12). \n\nMet with Dr. Emily Watson (Chief Medical Officer) and Dr. Thomas Wayne (BD Lead). \n\nDiscussed Project Helios. Pfizer wants to proceed to Phase II diligence regarding the ADC asset. Emily mentioned she previously worked at Novartis for 8 years and Roche for 3 years.");
   };
 
   return (
@@ -249,43 +181,24 @@ export default function SmartInput() {
 
       {activeTab === 'manual' ? (
         <section className="space-y-6">
-          <div className="flex items-center justify-between mb-2">
-                 {/* Type Selector */}
-                <div className="flex bg-ui-hover p-1 rounded-lg border border-ui-border transition-colors">
-                    {[
-                        { id: 'project', label: 'Project', icon: Microscope },
-                        { id: 'contact', label: 'Contact', icon: UserPlus },
-                        { id: 'meeting_note', label: 'Meeting Note', icon: MessageSquare }
-                    ].map(t => (
-                        <button 
-                            key={t.id}
-                            onClick={() => { setExtractType(t.id); setParsedResult(null); }}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${extractType === t.id ? 'bg-ui-card text-ui-text shadow-sm' : 'text-ui-text-muted hover:text-ui-text'}`}
-                        >
-                            <t.icon className="w-3 h-3" />
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
-          </div>
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-ui-accent/20 to-transparent rounded-2xl blur opacity-40 transition duration-1000"></div>
             <div className="relative bg-ui-input rounded-xl shadow-sm overflow-hidden border border-ui-input-border transition-colors">
               <div className="flex items-center justify-between px-6 py-4 bg-ui-sidebar border-b border-ui-border transition-colors">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-ui-accent" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-ui-text-muted">Raw Input Source</span>
+                  <Wand2 className="w-4 h-4 text-ui-accent" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-ui-accent">Mixed Intelligence Input</span>
                 </div>
                 <button 
                   onClick={fillTestData} 
                   className="text-[10px] font-bold text-ui-accent hover:bg-ui-accent/10 px-2 py-1 rounded transition-colors"
                 >
-                  Fill Sample {extractType}
+                  Fill Mixed Sample
                 </button>
               </div>
               <textarea 
                 className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-ui-text resize-none placeholder:text-ui-text-muted/50 leading-relaxed focus:outline-none transition-colors" 
-                placeholder={`Paste ${extractType} details here...`}
+                placeholder="Paste an email, call transcript, or meeting minutes containing projects and contacts..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
               />
@@ -308,7 +221,6 @@ export default function SmartInput() {
         </section>
       ) : (
         <section className="animate-in slide-in-from-right-4 duration-300">
-          {/* Always-visible toolbar */}
           <div className="flex items-center justify-between mb-4 px-1">
             <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">
               {pendingIngestions.length} Pending Records
@@ -319,7 +231,6 @@ export default function SmartInput() {
                 onClick={handleSyncMail}
                 disabled={isSyncing || !isAdmin}
                 className={`flex items-center gap-1.5 bg-ui-accent text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:opacity-90 transition-all ${(isSyncing || !isAdmin) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={!isAdmin ? "Admin only" : ""}
               >
                 <Mail className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse' : ''}`} />
                 {isSyncing ? 'Syncing...' : 'Sync Zoho Mail'}
@@ -327,7 +238,6 @@ export default function SmartInput() {
             </div>
           </div>
 
-          {/* Sync result feedback */}
           {syncResult && (
             <div className={`mb-4 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 border transition-colors ${syncResult.error ? 'bg-red-500/10 text-red-600 border-red-500/20' : 'bg-green-500/10 text-green-600 border-green-500/20'}`}>
               {syncResult.error ? <X className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
@@ -344,68 +254,56 @@ export default function SmartInput() {
             <div className="bg-ui-bg rounded-2xl border-2 border-dashed border-ui-border p-20 flex flex-col items-center justify-center text-ui-text-muted transition-colors">
               <Inbox className="w-12 h-12 mb-4 opacity-20" />
               <p className="font-bold">No items awaiting review.</p>
-              <p className="text-xs mt-1">Send an email to <span className="font-mono font-bold text-ui-text">bdtracker212@zohomail.com</span> and click "Sync".</p>
             </div>
           ) : (
             <div className="space-y-4">
-               <div className="grid grid-cols-1 gap-4">
-                  {pendingIngestions.map(item => (
-                    <div key={item.id} className="bg-ui-card rounded-xl border border-ui-border p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-ui-accent/50 transition-colors group shadow-sm">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-ui-accent/10 p-3 rounded-xl transition-colors">
-                                {item.source_type === 'email' ? <Mail className="w-6 h-6 text-ui-accent" /> : <Wand2 className="w-6 h-6 text-ui-accent" />}
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-ui-accent/10 text-ui-accent transition-colors">{item.entity_type || 'project'}</span>
-                                    <span className="text-xs text-ui-text-muted font-medium transition-colors">{item.created_at}</span>
-                                </div>
-                                <h4 className="font-bold text-ui-text mb-1 transition-colors">{item.subject || 'Automated Catch-all'}</h4>
-                                <p className="text-xs text-ui-text-muted line-clamp-1 mb-2 transition-colors">From: <span className="font-bold text-ui-text">{item.sender_email}</span></p>
-                                  {item.attachments && item.attachments.length > 0 && (
-                                      <div className="flex flex-wrap gap-2">
-                                          {item.attachments.map((file, idx) => (
-                                               <span key={idx} className="flex items-center gap-1 text-[10px] bg-ui-sidebar text-ui-text-muted px-2 py-1 rounded-md border border-ui-border transition-colors">
-                                                   <Paperclip className="w-2.5 h-2.5" />
-                                                   {file}
-                                               </span>
-                                         ))}
-                                      </div>
-                                  )}
-                              </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                              <button
-                                  disabled={!isAdmin}
-                                  className={`p-2.5 text-ui-text-muted rounded-lg transition-all ${!isAdmin ? 'opacity-30 cursor-not-allowed' : 'hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
-                              >
-                                  <Trash2 className="w-5 h-5" />
-                              </button>
-                              <button
-                                  onClick={() => handleReviewInboxItem(item)}
-                                  className="bg-ui-accent text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:opacity-90 transition-all flex items-center gap-2"
-                              >
-                                  Review & Confirm
-                                  <Check className="w-4 h-4" />
-                              </button>
-                          </div>
+              {pendingIngestions.map(item => (
+                <div key={item.id} className="bg-ui-card rounded-xl border border-ui-border p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-ui-accent/50 transition-colors group shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-ui-accent/10 p-3 rounded-xl transition-colors">
+                      {item.source_type === 'email' ? <Mail className="w-6 h-6 text-ui-accent" /> : <Wand2 className="w-6 h-6 text-ui-accent" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-ui-accent/10 text-ui-accent transition-colors">{item.entity_type || 'Mixed'}</span>
+                        <span className="text-xs text-ui-text-muted font-medium transition-colors">{item.created_at}</span>
                       </div>
-                  ))}
-              </div>
+                      <h4 className="font-bold text-ui-text mb-1 transition-colors">{item.subject || 'Automated Catch-all'}</h4>
+                      <p className="text-xs text-ui-text-muted line-clamp-1 mb-2 transition-colors">From: <span className="font-bold text-ui-text">{item.sender_email}</span></p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      disabled={!isAdmin}
+                      onClick={(e) => handleDeleteIngestion(item.id, e)}
+                      className={`p-2.5 text-ui-text-muted rounded-lg transition-all ${!isAdmin ? 'opacity-30 cursor-not-allowed' : 'hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleReviewInboxItem(item)}
+                      className="bg-ui-accent text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                    >
+                      Review
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>
       )}
 
-      {/* REVIEW & CONFIRM SECTION */}
+      {/* UNIFIED REVIEW & CONFIRM SECTION (Phase 33) */}
       {parsedResult && editData && (
         <section className="mt-12 animate-in slide-in-from-bottom-4 duration-500 pb-20">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-                  <div className="bg-ui-warning/10 p-2 rounded-full transition-colors"><Wand2 className="w-4 h-4 text-ui-warning" /></div>
+                <div className="bg-ui-accent/10 p-2 rounded-full transition-colors"><Wand2 className="w-4 h-4 text-ui-accent" /></div>
                 <div>
-                    <h3 className="text-lg font-bold text-ui-text">AI Extraction Preview</h3>
-                    <p className="text-xs text-ui-text-muted font-medium italic">Please review and correct the AI's "guesses" before archiving.</p>
+                    <h3 className="text-lg font-bold text-ui-text">Intelligence Extraction Preview</h3>
+                    <p className="text-xs text-ui-text-muted font-medium italic">Universal AI has mapped your input to the following modules.</p>
                  </div>
             </div>
             <div className="flex gap-2">
@@ -413,323 +311,85 @@ export default function SmartInput() {
             </div>
           </div>
 
-           <div className="bg-ui-card rounded-2xl border-2 border-ui-warning/20 shadow-xl shadow-ui-warning/5 p-8 relative overflow-hidden transition-colors">
+          <div className="bg-ui-card rounded-2xl border-2 border-ui-accent/20 shadow-xl shadow-ui-accent/5 p-8 relative overflow-hidden transition-colors">
             {activeIngestionId && (
-                <div className="mb-8 p-4 bg-ui-warning/10 border border-ui-warning/20 rounded-xl flex items-center justify-between transition-colors">
+                <div className="mb-8 p-4 bg-ui-accent/5 border border-ui-accent/10 rounded-xl flex items-center justify-between transition-colors">
                     <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-ui-warning" />
-                        <span className="text-xs font-bold text-ui-warning uppercase tracking-tight">Processing Inbox Item #{activeIngestionId}</span>
+                        <Mail className="w-4 h-4 text-ui-accent" />
+                        <span className="text-xs font-bold text-ui-accent uppercase tracking-tight">Processing Inbox Item #{activeIngestionId}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-ui-warning/60 italic">Confirmation will clear this from your inbox</span>
                 </div>
-           )}
+            )}
             
-            {/* TYPE SPECIFIC FORMS */}
-            {extractType === 'project' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Company Name</label>
-                            <input 
-                                className="w-full text-xl font-extrabold text-ui-accent bg-ui-accent/10 border-b-2 border-ui-accent/20 focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.company}
-                                onChange={(e) => setEditData({...editData, company: e.target.value})}
-                            />
+            <div className="space-y-10">
+                {/* 1. Project Section */}
+                {editData.update_project && (
+                    <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Microscope className="w-4 h-4 text-ui-accent" />
+                            <h4 className="text-xs font-black uppercase tracking-widest text-ui-text-muted">Target Project Update</h4>
                         </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Pipeline Asset</label>
-                            <input 
-                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.pipeline}
-                                onChange={(e) => setEditData({...editData, pipeline: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Target Stage</label>
-                            <select 
-                                className="w-full font-bold text-ui-text border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 bg-transparent transition-colors"
-                                value={editData.stage}
-                                onChange={(e) => setEditData({...editData, stage: e.target.value})}
-                            >
-                                <option className="bg-ui-card">Initial Contact</option>
-                                <option className="bg-ui-card">CDA Signed</option>
-                                <option className="bg-ui-card">Due Diligence</option>
-                                <option className="bg-ui-card">Term Sheet</option>
-                                <option className="bg-ui-card">Negotiation</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Next Follow-up</label>
-                            <input 
-                                type="date"
-                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.nextFollowUp || ''}
-                                onChange={(e) => setEditData({...editData, nextFollowUp: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                    
-                    {/* NEW: Primary Contact Extraction Section */}
-                    <div className="md:col-span-2 mt-4 p-4 bg-ui-accent/5 rounded-xl border border-ui-accent/10 flex flex-col md:flex-row gap-6 transition-colors">
-                        <div className="shrink-0 flex items-center gap-3">
-                            <div className="bg-ui-accent/10 p-2 rounded-lg text-ui-accent"><UserPlus className="w-5 h-5" /></div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-ui-sidebar p-5 rounded-xl border border-ui-border transition-colors">
                             <div>
-                                <h4 className="text-[10px] font-bold text-ui-text uppercase tracking-tight">Key Contact Found</h4>
-                                <p className="text-[9px] text-ui-text-muted font-medium italic leading-tight">AI will auto-sync this to CRM.</p>
-                            </div>
-                        </div>
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-[8px] font-bold text-ui-accent/60 uppercase block mb-0.5">Full Name</label>
-                                <input 
-                                    className="w-full text-xs font-bold text-ui-text bg-transparent border-b border-ui-accent/10 focus:border-ui-accent focus:outline-none py-0.5 transition-colors"
-                                    placeholder="N/A"
-                                    value={editData.primary_contact?.name || ''}
-                                    onChange={(e) => setEditData({
-                                        ...editData, 
-                                        primary_contact: { ...(editData.primary_contact || {}), name: e.target.value }
-                                    })}
-                                />
+                                <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-1">Company</label>
+                                <p className="text-sm font-black text-ui-text">{editData.update_project.company || 'N/A'}</p>
                             </div>
                             <div>
-                                <label className="text-[8px] font-bold text-ui-accent/60 uppercase block mb-0.5">Email Address</label>
-                                <input 
-                                    className="w-full text-xs font-bold text-ui-text bg-transparent border-b border-ui-accent/10 focus:border-ui-accent focus:outline-none py-0.5 transition-colors"
-                                    placeholder="N/A"
-                                    value={editData.primary_contact?.email || ''}
-                                    onChange={(e) => setEditData({
-                                        ...editData, 
-                                        primary_contact: { ...(editData.primary_contact || {}), email: e.target.value }
-                                    })}
-                                />
+                                <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-1">Pipeline Asset</label>
+                                <p className="text-sm font-bold text-ui-accent">{editData.update_project.pipeline || 'N/A'}</p>
                             </div>
                             <div>
-                                <label className="text-[8px] font-bold text-ui-accent/60 uppercase block mb-0.5">Title / Role</label>
-                                <input 
-                                    className="w-full text-xs font-bold text-ui-text bg-transparent border-b border-ui-accent/10 focus:border-ui-accent focus:outline-none py-0.5 transition-colors"
-                                    placeholder="N/A"
-                                    value={editData.primary_contact?.currentTitle || ''}
-                                    onChange={(e) => setEditData({
-                                        ...editData, 
-                                        primary_contact: { ...(editData.primary_contact || {}), currentTitle: e.target.value }
-                                    })}
-                                />
+                                <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-1">Current Stage</label>
+                                <span className="text-[10px] bg-ui-accent/10 text-ui-accent px-2 py-0.5 rounded-full font-bold">{editData.update_project.stage || 'Detected'}</span>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {extractType === 'contact' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Full Name</label>
-                            <input 
-                                className="w-full text-xl font-extrabold text-ui-accent bg-ui-accent/5 border-b-2 border-ui-accent/10 focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.name}
-                                onChange={(e) => setEditData({...editData, name: e.target.value})}
-                            />
+                {/* 2. Contacts Section */}
+                {editData.upsert_contacts && editData.upsert_contacts.length > 0 && (
+                    <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-100">
+                        <div className="flex items-center gap-2 mb-4">
+                            <UserPlus className="w-4 h-4 text-ui-accent" />
+                            <h4 className="text-xs font-black uppercase tracking-widest text-ui-text-muted">People & Network ({editData.upsert_contacts.length})</h4>
                         </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Current Organization</label>
-                            <input 
-                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.currentCompany}
-                                onChange={(e) => setEditData({...editData, currentCompany: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Job Title</label>
-                            <input 
-                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.currentTitle}
-                                onChange={(e) => setEditData({...editData, currentTitle: e.target.value})}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Email (Work)</label>
-                            <input 
-                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
-                                value={editData.email}
-                                onChange={(e) => setEditData({...editData, email: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* SHARED DYNAMIC DETAILS SECTION - Grouped by AI categories */}
-            {editData.details && (
-                <div className="mt-8 pt-8 border-t border-ui-border transition-colors">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Deep Intelligence Categories</label>
-                            <p className="text-[10px] text-ui-text-muted italic">AI has categorized these findings. You can edit keys, values, or add your own.</p>
-                        </div>
-                        <button 
-                            onClick={addDetail}
-                            className="flex items-center gap-1 text-[10px] font-bold text-ui-accent hover:opacity-80 bg-ui-accent/10 px-2 py-1 rounded-md transition-colors"
-                        >
-                            <Plus className="w-3 h-3" /> Add Category/Field
-                        </button>
-                    </div>
-
-                    <div className="space-y-8">
-                        {Object.entries(editData.details).map(([category, content]) => (
-                            <div key={category} className="bg-ui-bg rounded-xl p-4 border border-ui-border transition-colors">
-                                <div className="flex items-center justify-between mb-3">
-                                    <input 
-                                        className="text-xs font-black text-ui-text uppercase tracking-tight bg-transparent border-none outline-none focus:text-ui-accent w-full transition-colors"
-                                        value={category}
-                                        onChange={(e) => {
-                                            const newKey = e.target.value;
-                                            const newDetails = { ...editData.details };
-                                            const val = newDetails[category];
-                                            delete newDetails[category];
-                                            newDetails[newKey] = val;
-                                            setEditData({...editData, details: newDetails});
-                                        }}
-                                    />
-                                    <button onClick={() => removeDetail(category)} className="text-ui-text-muted hover:text-red-400 p-1 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {editData.upsert_contacts.map((contact, idx) => (
+                                <div key={idx} className="bg-ui-sidebar p-4 rounded-xl border border-ui-border flex items-center gap-4 transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-ui-accent/10 flex items-center justify-center text-ui-accent font-black text-xs transition-colors">
+                                        {contact.name?.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs font-black text-ui-text">{contact.name}</p>
+                                        <p className="text-[10px] text-ui-text-muted font-bold leading-tight">{contact.currentTitle} @ {contact.currentCompany}</p>
+                                    </div>
+                                    <span className="text-[8px] bg-ui-sidebar border border-ui-border px-1.5 py-0.5 rounded text-ui-text-muted uppercase font-black transition-colors">{contact.functionArea || 'BD'}</span>
                                 </div>
-                                {typeof content === 'object' && content !== null ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {Object.entries(content).map(([subKey, subVal]) => (
-                                            <div key={subKey} className="group">
-                                                <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-0.5">{subKey.replace(/_/g, ' ')}</label>
-                                                <input 
-                                                    className="w-full text-xs font-medium text-ui-text bg-ui-input border border-ui-input-border rounded px-2 py-1 focus:border-ui-accent focus:outline-none transition-colors"
-                                                    value={subVal}
-                                                    onChange={(e) => {
-                                                        const newDetails = { ...editData.details };
-                                                        newDetails[category][subKey] = e.target.value;
-                                                        setEditData({...editData, details: newDetails});
-                                                    }}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <textarea 
-                                        className="w-full text-xs font-medium text-ui-text bg-ui-input border border-ui-input-border rounded p-2 focus:border-ui-accent focus:outline-none transition-colors"
-                                        value={content}
-                                        onChange={(e) => updateDetail(category, e.target.value)}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-
-                    {Object.keys(editData.details).length === 0 && (
-                        <p className="text-[11px] text-ui-text-muted italic">No extra categories detected. Add one manually to enrich the record.</p>
-                    )}
-                </div>
-            )}
-
-            {/* SUGGESTED ATTACHMENTS SECTION */}
-            {editData.attachments && editData.attachments.length > 0 && (
-                <div className="mt-8 pt-8 border-t border-ui-border transition-colors">
-                    <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-4">AI Suggested Documents</label>
-                    <div className="space-y-2">
-                        {editData.attachments.map((att, idx) => (
-                             <div key={idx} className="flex items-center justify-between bg-ui-bg border border-ui-border p-3 rounded-xl hover:border-ui-accent/30 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg transition-colors ${att.file_type === 'PDF' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-ui-accent/10 text-ui-accent'}`}>
-                                        <Paperclip className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                        <input 
-                                            className="text-xs font-bold text-ui-text bg-transparent border-none outline-none focus:underline w-full transition-colors"
-                                            value={att.name}
-                                            onChange={(e) => {
-                                                const newAtts = [...editData.attachments];
-                                                newAtts[idx].name = e.target.value;
-                                                setEditData({...editData, attachments: newAtts});
-                                            }}
-                                        />
-                                        <div className="flex gap-2 mt-1">
-                                            <span className="text-[9px] font-bold text-ui-text-muted uppercase">{att.file_type}</span>
-                                            <span className="text-[9px] font-bold text-ui-accent uppercase px-1 rounded bg-ui-accent/10 transition-colors">{att.category}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        const newAtts = editData.attachments.filter((_, i) => i !== idx);
-                                        setEditData({...editData, attachments: newAtts});
-                                    }}
-                                    className="p-1.5 text-ui-text-muted hover:text-red-400 transition-colors"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {extractType === 'meeting_note' && (
-                <div className="space-y-6 transition-colors">
-                    <div className="bg-ui-accent/5 p-4 rounded-xl border border-ui-accent/10 mb-6 flex items-start gap-3 transition-colors">
-                        <AlertCircle className="w-5 h-5 text-ui-accent shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                            <p className="text-xs font-bold text-ui-accent uppercase tracking-tight">AI Association Guess</p>
-                            <p className="text-xs text-ui-text-muted mb-3 italic">AI identified this note relates to: <span className="font-bold underline text-ui-text">"{parsedResult.suspected_project_name}"</span></p>
-                            
-                            <label className="text-[10px] font-bold text-ui-accent uppercase block mb-1">Link to Project</label>
-                            <div className="relative">
-                                <select 
-                                    className="w-full bg-ui-card border border-ui-border rounded-lg py-2 px-3 text-sm font-bold text-ui-text focus:outline-none focus:ring-2 focus:ring-ui-accent appearance-none transition-colors"
-                                    value={linkedProjectId}
-                                    onChange={(e) => setLinkedProjectId(e.target.value)}
-                                >
-                                    <option value="" className="bg-ui-card">-- Choose Project --</option>
-                                    {projects.map(p => (
-                                        <option key={p.id} value={p.id} className="bg-ui-card">{p.company} ({p.pipeline})</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-ui-text-muted pointer-events-none" />
-                            </div>
+                            ))}
                         </div>
                     </div>
+                )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Summary Title</label>
-                            <input 
-                                className="w-full text-lg font-bold text-ui-text border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 bg-transparent transition-colors"
-                                value={editData.title}
-                                onChange={(e) => setEditData({...editData, title: e.target.value})}
-                            />
+                {/* 3. Timeline/History Section */}
+                {editData.add_timeline_event && (
+                    <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-200">
+                        <div className="flex items-center gap-2 mb-4">
+                            <MessageSquare className="w-4 h-4 text-ui-accent" />
+                            <h4 className="text-xs font-black uppercase tracking-widest text-ui-text-muted">Footprint & Timeline Metadata</h4>
                         </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Interaction Date</label>
-                            <input 
-                                type="date"
-                                className="w-full font-bold text-ui-text border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 bg-transparent transition-colors"
-                                value={editData.date || ''}
-                                onChange={(e) => setEditData({...editData, date: e.target.value})}
-                            />
+                        <div className="bg-ui-sidebar p-5 rounded-xl border border-ui-border transition-colors">
+                            <div className="flex items-center justify-between mb-3">
+                                <h5 className="text-sm font-black text-ui-text">{editData.add_timeline_event.title}</h5>
+                                <span className="text-[10px] font-bold text-ui-text-muted">{editData.add_timeline_event.date}</span>
+                            </div>
+                            <p className="text-xs text-ui-text-muted leading-relaxed line-clamp-2 italic">\"{editData.add_timeline_event.desc}\"</p>
                         </div>
                     </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-2">Key Takeaways</label>
-                        <textarea 
-                            className="w-full h-24 p-3 bg-ui-input rounded-lg border border-ui-input-border focus:border-ui-accent focus:outline-none text-sm text-ui-text leading-relaxed transition-colors"
-                            value={editData.desc}
-                            onChange={(e) => setEditData({...editData, desc: e.target.value})}
-                        />
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
 
-            {/* SHARED CONFIRM BUTTON */}
-            <div className="mt-10 pt-10 border-t border-ui-border flex justify-end gap-3 transition-colors">
+            {/* CONFIRM BUTTON */}
+            <div className="mt-12 pt-10 border-t border-ui-border flex justify-end gap-3 transition-colors">
                 <button 
                   onClick={() => { setParsedResult(null); setActiveIngestionId(null); }}
                   className="px-6 py-2.5 text-sm font-bold text-ui-text-muted hover:text-ui-text transition-colors"
@@ -741,8 +401,8 @@ export default function SmartInput() {
                     disabled={isSaving || !isAdmin}
                     className={`flex items-center gap-2 bg-gradient-to-r from-ui-accent to-ui-accent/80 text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-ui-accent/20 transition-all ${(!isAdmin || isSaving) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[0.98]'}`}
                 >
-                    {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    <span>{isAdmin ? 'Confirm & Archive to Database' : 'Guest Mode: Archive Forbidden'}</span>
+                    {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    <span>One-Click Global Sync</span>
                 </button>
             </div>
           </div>

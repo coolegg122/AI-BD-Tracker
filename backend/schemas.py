@@ -68,6 +68,7 @@ class ContactBase(BaseModel):
     profile: str
     metAt: Optional[List[str]] = []
     details: Optional[dict] = {}
+    source_text: Optional[str] = None
 
     @field_validator('metAt', mode='before')
     @classmethod
@@ -172,6 +173,7 @@ class ProjectHistoryBase(BaseModel):
     date: str
     desc: str
     details: Optional[dict] = {}
+    source_text: Optional[str] = None
 
     @field_validator('details', mode='before')
     @classmethod

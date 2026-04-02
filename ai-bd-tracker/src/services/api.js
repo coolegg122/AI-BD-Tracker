@@ -48,6 +48,25 @@ export const api = {
     }
   },
 
+  // NEW (Phase 33): Universal extraction and auto-persistence
+  extractUniversal: async (raw_text) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/smart-input/universal`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ raw_text }),
+      });
+
+      if (!response.ok) {
+          throw new Error(`Universal AI Extraction failed: ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('ExtractUniversal API error:', error);
+      throw error;
+    }
+  },
+
   // Get all projects
   getProjects: async () => {
     try {

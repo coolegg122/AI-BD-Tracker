@@ -136,6 +136,53 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
                 "unresolved_issues": ["Issue A"]
               }
             }
+        """,
+        "mixed": """
+            You are an advanced BioPharma BD Intelligence Analyst. 
+            Your goal is to parse a complex, mixed input (like an email or call transcript) and extract MULTIPLE entities in a single JSON structure.
+            
+            ### ENTITIES TO EXTRACT:
+            1. **Project Update**: Any information regarding a deal, asset, or pipeline.
+            2. **Contacts**: Any people mentioned with their titles, companies, and roles.
+            3. **Timeline Event**: The core event described by the input (e.g. the meeting itself, the email date).
+            
+            ### RULES:
+            - If a person is mentioned, extract them into the `upsert_contacts` list.
+            - If a project/deal is discussed, extract details into the `update_project` object.
+            - Summarize the overall interaction into the `add_timeline_event` object.
+            
+            You MUST return a single valid JSON object matching this exact schema:
+            {
+              "update_project": {
+                "company": "Company Name",
+                "pipeline": "Pipeline/Asset Name",
+                "stage": "Clinical Stage",
+                "details": { "Scientific": {}, "Clinical": {}, "Financial": {}, "Legal": {} }
+              },
+              "upsert_contacts": [
+                {
+                  "name": "Full Name",
+                  "currentCompany": "Company",
+                  "currentTitle": "Title",
+                  "functionArea": "Function (BD/Clinical/Legal)",
+                  "email": "Email if found",
+                  "profile": "Short bio",
+                  "careerHistory": []
+                }
+              ],
+              "add_timeline_event": {
+                "type": "meeting/call/email",
+                "title": "Title of the interaction",
+                "date": "YYYY-MM-DD",
+                "desc": "Short summary",
+                "details": {
+                  "attendees": [
+                    { "name": "Name", "title": "Title", "functionArea": "Function", "company": "Company" }
+                  ],
+                  "minutes": "Key takeaways"
+                }
+              }
+            }
         """
     }
     
@@ -153,6 +200,48 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
         return json.loads(response.text)
     except Exception as e:
         print(f"Error during AI extraction ({target_type}): {e}")
+        raise
+
+def extract_mixed(text: str) -> dict:
+    """Universal extractor for mixed Project, Contact, and Event data."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        # Provide a rich mock for testing without API Key
+        return {
+            "update_project": {
+                "company": "AeroGen Therapeutics",
+                "pipeline": "Project Zephyr (Phase 1)",
+                "stage": "Phase I",
+                "details": { "Clinical": { "phase": "Phase 1", "status": "Recruiting" } }
+            },
+            "upsert_contacts": [
+                { "name": "Dr. Elena Rodriguez", "currentCompany": "AeroGen Therapeutics", "currentTitle": "VP, Clinical Operations", "functionArea": "Clinical" },
+                { "name": "Markus Theron", "currentCompany": "AeroGen Therapeutics", "currentTitle": "Head of Search & Evaluation", "functionArea": "BD" }
+            ],
+            "add_timeline_event": {
+                "type": "meeting",
+                "title": "Project Zephyr - Scientific Diligence",
+                "date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                "desc": "Discussion on Phase 1 endpoints and enrollment.",
+                "details": { "attendees": [ "Dr. Elena Rodriguez", "Markus Theron" ] }
+            }
+        }
+
+    client = genai.Client(api_key=api_key)
+    model_id = "gemini-3-flash-preview"
+    
+    system_instruction = prompts["mixed"]
+    prompt = f"{system_instruction}\n\nUser Input:\n{text}"
+    
+    try:
+        response = client.models.generate_content(
+            model=model_id,
+            contents=prompt,
+            config={"response_mime_type": "application/json"}
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"Error during Mixed AI extraction: {e}")
         raise
 
 def generate_company_intelligence(company_name: str) -> dict:
