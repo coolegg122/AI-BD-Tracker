@@ -11,7 +11,7 @@ import os
 import models, schemas, database
 from ai_engine import extract_universal, generate_negotiation_prep, chat_with_strategist
 from mail_poller import sync_zoho_inbox
-from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash, verify_password
+from auth import authenticate_user, create_access_token, get_current_active_user, get_current_admin_user, get_password_hash, verify_password
 
 # Auto-create tables for LOCAL SQLite ONLY.
 # IMPORTANT (Phase 17): DO NOT run create_all or DDL against Supabase Transaction Pooler (port 6543).
@@ -115,7 +115,7 @@ def read_root():
     return {"status": "ok", "message": "AI-BD Tracker Backend is running"}
 
 @app.post("/api/v1/extract", response_model=dict)
-def ai_extract_bd_data(request: schemas.AIParsingRequest):
+def ai_extract_bd_data(request: schemas.AIParsingRequest, current_user: models.User = Depends(get_current_admin_user)):
     """
     接收长文本，根据类型 (Project, Contact, Meeting Note) 调用大模型提取结构化数据
     """
@@ -126,7 +126,7 @@ def ai_extract_bd_data(request: schemas.AIParsingRequest):
         raise HTTPException(status_code=500, detail=f"AI extraction failed: {str(e)}")
 
 @app.post("/api/v1/projects", response_model=schemas.ProjectResponse)
-def create_project(project: schemas.ProjectCreate, db: Session = Depends(database.get_db)):
+def create_project(project: schemas.ProjectCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """保存 AI 提取后确认的项目，或手动新建项目"""
     db_project = models.Project(
         company=project.company,
@@ -191,7 +191,7 @@ def get_projects(db: Session = Depends(database.get_db)):
     return db.query(models.Project).all()
 
 @app.patch("/api/v1/projects/{project_id}", response_model=schemas.ProjectResponse)
-def update_project_stage(project_id: int, stage_update: dict, db: Session = Depends(database.get_db)):
+def update_project_stage(project_id: int, stage_update: dict, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """看板拖拽：更新项目所处阶段"""
     db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not db_project:
@@ -210,7 +210,7 @@ def get_project_history(project_id: int, db: Session = Depends(database.get_db))
     return history
 
 @app.post("/api/v1/projects/{project_id}/history", response_model=schemas.ProjectHistoryResponse)
-def create_project_history(project_id: int, history_entry: schemas.ProjectHistoryCreate, db: Session = Depends(database.get_db)):
+def create_project_history(project_id: int, history_entry: schemas.ProjectHistoryCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """新增一条项目历史追踪足迹"""
     db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not db_project:
@@ -268,7 +268,7 @@ def get_pending_ingestions(db: Session = Depends(database.get_db)):
     return db.query(models.PendingIngestion).filter(models.PendingIngestion.status == "pending").all()
 
 @app.post("/api/v1/ingestion/{id}/process")
-def mark_ingestion_processed(id: int, db: Session = Depends(database.get_db)):
+def mark_ingestion_processed(id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """审核通过后，将采集项标记为已处理"""
     db_item = db.query(models.PendingIngestion).filter(models.PendingIngestion.id == id).first()
     if not db_item:
@@ -278,7 +278,7 @@ def mark_ingestion_processed(id: int, db: Session = Depends(database.get_db)):
     return {"status": "success"}
 
 @app.delete("/api/v1/ingestion/{id}")
-def discard_ingestion(id: int, db: Session = Depends(database.get_db)):
+def discard_ingestion(id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """丢弃无用的自动化采集项"""
     db_item = db.query(models.PendingIngestion).filter(models.PendingIngestion.id == id).first()
     if not db_item:
@@ -288,7 +288,7 @@ def discard_ingestion(id: int, db: Session = Depends(database.get_db)):
     return {"status": "success"}
 
 @app.post("/api/v1/ingestion/sync")
-def sync_mail_inbox(db: Session = Depends(database.get_db)):
+def sync_mail_inbox(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """Trigger a manual Zoho IMAP sync and push new emails into PendingIngestion"""
     result = sync_zoho_inbox(db, extract_universal)
     if "error" in result:
@@ -379,7 +379,7 @@ def get_contacts(db: Session = Depends(database.get_db)):
     return db.query(models.Contact).all()
 
 @app.post("/api/v1/contacts", response_model=schemas.ContactResponse)
-def create_contact(contact: schemas.ContactCreate, db: Session = Depends(database.get_db)):
+def create_contact(contact: schemas.ContactCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """手工或 AI 录入新的人脉档案及相关履历"""
     # Create contact
     contact_data = contact.model_dump(exclude={"careerHistory"})
@@ -531,10 +531,14 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_d
     hashed_password = get_password_hash(user.password)
     
     # Create new user
+    # Logic: First user is admin, everyone else is guest by default to prevent self-escalation
+    user_count = db.query(models.User).count()
+    assigned_role = "admin" if user_count == 0 else "guest"
+    
     db_user = models.User(
         name=user.name,
         email=user.email,
-        role=user.role,
+        role=assigned_role,
         initials=user.initials,
         hashed_password=hashed_password
     )

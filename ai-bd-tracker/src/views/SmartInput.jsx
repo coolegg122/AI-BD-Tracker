@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown, Inbox, Trash2, Paperclip, Mail, Plus } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function SmartInput() {
   const { projects, addProject } = useStore();
+  const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('manual'); // 'manual' or 'inbox'
   const [inputText, setInputText] = useState('');
   const [extractType, setExtractType] = useState('project'); // project, contact, meeting_note
@@ -293,11 +295,14 @@ export default function SmartInput() {
           <div className="flex justify-center">
             <button 
               onClick={handleAIParse}
-              disabled={isAnalyzing || !inputText.trim()}
-              className="flex items-center gap-2 bg-ui-accent text-white px-10 py-3.5 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              disabled={isAnalyzing || !inputText.trim() || !isAdmin}
+              className="flex flex-col items-center gap-2"
             >
-              <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-              <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
+              <div className={`flex items-center gap-2 bg-ui-accent text-white px-10 py-3.5 rounded-full font-bold hover:opacity-90 transition-all ${(!isAdmin || isAnalyzing || !inputText.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
+              </div>
+              {!isAdmin && <span className="text-[10px] text-ui-text-muted font-bold mt-1 uppercase tracking-tighter">Admin Privileges Required to Extract</span>}
             </button>
           </div>
         </section>
@@ -312,8 +317,9 @@ export default function SmartInput() {
               <button onClick={fetchPendingInbox} className="text-xs font-bold text-ui-text-muted hover:text-ui-text transition-colors">Refresh</button>
               <button
                 onClick={handleSyncMail}
-                disabled={isSyncing}
-                className="flex items-center gap-1.5 bg-ui-accent text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
+                disabled={isSyncing || !isAdmin}
+                className={`flex items-center gap-1.5 bg-ui-accent text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:opacity-90 transition-all ${(isSyncing || !isAdmin) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={!isAdmin ? "Admin only" : ""}
               >
                 <Mail className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse' : ''}`} />
                 {isSyncing ? 'Syncing...' : 'Sync Zoho Mail'}
@@ -370,8 +376,8 @@ export default function SmartInput() {
                           </div>
                           <div className="flex items-center gap-3">
                               <button
-                                  onClick={(e) => handleDeleteIngestion(item.id, e)}
-                                  className="p-2.5 text-ui-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                  disabled={!isAdmin}
+                                  className={`p-2.5 text-ui-text-muted rounded-lg transition-all ${!isAdmin ? 'opacity-30 cursor-not-allowed' : 'hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
                               >
                                   <Trash2 className="w-5 h-5" />
                               </button>
@@ -732,11 +738,11 @@ export default function SmartInput() {
                 </button>
                 <button 
                     onClick={handleConfirmSave}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 bg-gradient-to-r from-ui-accent to-ui-accent/80 text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-ui-accent/20 hover:scale-[0.98] transition-all disabled:opacity-50"
+                    disabled={isSaving || !isAdmin}
+                    className={`flex items-center gap-2 bg-gradient-to-r from-ui-accent to-ui-accent/80 text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-ui-accent/20 transition-all ${(!isAdmin || isSaving) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[0.98]'}`}
                 >
                     {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    <span>Confirm & Archive to Database</span>
+                    <span>{isAdmin ? 'Confirm & Archive to Database' : 'Guest Mode: Archive Forbidden'}</span>
                 </button>
             </div>
           </div>

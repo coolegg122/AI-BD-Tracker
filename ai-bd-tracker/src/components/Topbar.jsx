@@ -237,8 +237,13 @@ export default function Topbar() {
             onClick={() => setShowUserMenu(!showUserMenu)}
           >
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-ui-text leading-none">{user?.name || 'User'}</p>
-              <p className="text-[10px] text-ui-text-muted mt-1">{user?.role || 'BD Team'}</p>
+              <p className="text-xs font-bold text-ui-text leading-none flex items-center gap-2 justify-end">
+                {user?.name || 'User'}
+                {user?.role !== 'admin' && (
+                  <span className="text-[8px] font-black bg-ui-accent/10 text-ui-accent px-1.5 py-0.5 rounded border border-ui-accent/20">GUEST</span>
+                )}
+              </p>
+              <p className="text-[10px] text-ui-text-muted mt-1">{user?.role === 'admin' ? 'Strategic Administrator' : 'Read-Only Intelligence'}</p>
             </div>
             <div className="w-8 h-8 rounded-full bg-ui-accent text-white flex items-center justify-center text-xs font-bold shadow-sm ring-2 ring-ui-card group-hover:scale-105 transition-transform">
               {user?.initials || user?.name?.substring(0, 2)?.toUpperCase() || 'U'}

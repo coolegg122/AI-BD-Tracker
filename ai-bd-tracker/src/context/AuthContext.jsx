@@ -172,6 +172,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUserProfile,
     loading,
+    isAdmin: user?.role === 'admin',
     isAuthenticated: !!token
   };
 

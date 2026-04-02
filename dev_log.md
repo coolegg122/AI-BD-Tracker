@@ -448,3 +448,27 @@
   - **Agenda**: 建议的会议流程，确保己方资产与对方的 Patent Cliff 高度对齐。
 
 **当前状态**: ✅ **AI 从单纯的数据提取器进化为深度的决策支持工具。**
+ 
+ ---
+ 
+ ## [2026-04-02] 权限与安全管理：完成 Phase 29 (Role-Based Access Control - RBAC)
+ 
+ ### Phase 29: 角色权限分层 (Admin vs Guest)
+ 
+ 为了满足企业多用户协作场景下的数据安全与操作合规性，我们实施了完备的角色权限管理系统。
+ 
+ - **工作目录**: `backend/auth.py`, `backend/main.py`, `ai-bd-tracker/src/context/AuthContext.jsx`, `ai-bd-tracker/src/views/SmartInput.jsx`, `ai-bd-tracker/src/components/Topbar.jsx`
+ - **核心变更**:
+   - **后端权限校验**: 
+     - 在 `auth.py` 中新增 `get_current_admin_user` 依赖项。
+     - 对所有涉及数据变动的 API 端点（如 `POST /projects`, `PATCH /projects/{id}`, `POST /contacts`, `POST /ingestion/sync` 等）强制执行管理员权限校验。
+     - **防自提权注册**: 更新了注册逻辑，仅系统**首位注册用户**自动获得 `admin` 权限，后续注册者默认分配 `guest` 角色。
+   - **前端访问控制**:
+     - **Auth 状态感知**: `AuthContext` 实时透传 `isAdmin` 布尔值，驱动前端响应式权限切换。
+     - **Smart Input (只读限制)**: 访客（Guest）现已无法执行 AI 提取、邮件同步、手动存档或删除操作。按钮状态显示为禁用并配有“需要管理员权限”或“访客模式：禁止归档”提示。
+     - **AI 策略配额保护**: 限制了访客在 `ProjectSlideOver` 中触发“重新生成战略分析”的操作权限，保护高额度 API 资源。
+   - **UI 身份化徽章**:
+     - 在 `Topbar` 用户名旁为访客注入了高对比度的 `GUEST` 身份勋章。
+     - 将访客的职能描述统一更新为 `Read-Only Intelligence`，强化了系统的角色边界感。
+ 
+ **当前状态**: ✅ **系统已具备完善的企业级权限管控能力**。实现了数据读写分离与高成本 AI 操作的定向授权。

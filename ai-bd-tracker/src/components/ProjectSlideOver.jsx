@@ -2,9 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, Users, History, ChevronDown, ChevronUp, Link, Download, Microscope, Target, BrainCircuit, Sparkles, Send, ShieldAlert, ListChecks, MessageSquareQuote, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProjectSlideOver() {
   const { selectedOverviewProject, closeProjectOverview } = useStore();
+  const { isAdmin } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [expandedEventId, setExpandedEventId] = useState(null);
   const [historyData, setHistoryData] = useState([]);
@@ -527,19 +529,25 @@ export default function ProjectSlideOver() {
                   </div>
 
                   <button 
-                    onClick={() => fetchPrep(true)}
-                    disabled={isPrepLoading}
-                    className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-ui-text-muted hover:text-ui-accent transition-colors flex items-center justify-center gap-2 border border-dashed border-ui-border rounded-xl"
+                    onClick={() => isAdmin && fetchPrep(true)}
+                    disabled={isPrepLoading || !isAdmin}
+                    className={`w-full py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-dashed border-ui-border rounded-xl ${!isAdmin ? 'opacity-50 cursor-not-allowed text-ui-text-muted' : 'text-ui-text-muted hover:text-ui-accent'}`}
                   >
                     <Clock className="w-3.5 h-3.5" />
-                    Analysed: {prepData.updated_at || 'Recently'} • Refresh Strategic Analysis
+                    {isAdmin ? `Analysed: ${prepData.updated_at || 'Recently'} • Refresh Strategic Analysis` : 'Read-Only Mode: Analysis Refresh Disabled'}
                   </button>
                 </>
               ) : (
                 <div className="text-center py-20 bg-ui-card rounded-2xl border border-ui-border mt-8 transition-colors">
                    <Target className="w-12 h-12 text-ui-text-muted opacity-20 mx-auto mb-4" />
                    <p className="text-sm font-bold text-ui-text-muted">Strategist awaits orders.</p>
-                   <button onClick={() => fetchPrep()} className="mt-4 px-6 py-2 bg-ui-accent text-white text-[10px] font-bold uppercase rounded-lg shadow-sm">Initialize Analysis</button>
+                   <button 
+                     onClick={() => isAdmin && fetchPrep()} 
+                     disabled={!isAdmin}
+                     className={`mt-4 px-6 py-2 bg-ui-accent text-white text-[10px] font-bold uppercase rounded-lg shadow-sm ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
+                   >
+                     {isAdmin ? 'Initialize Analysis' : 'Admin Required for Analysis'}
+                   </button>
                 </div>
               )}
             </div>
