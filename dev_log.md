@@ -494,3 +494,35 @@
      - 运行 `migrate_to_supabase.py` 确保本地最新的权限分布同步至生产环境数据库。
  
  **当前状态**: ✅ **全系统治理架构已完整**。管理员现在拥有对团队、数据及 AI 资源的全面主导权。
+
+---
+
+## [2026-04-02] 系统健壮性与架构优化：完成 Phase 31 - 34 (Infrastructure Audit & Refactor)
+
+### Phase 31: Smart Input 持久化与看板联动增强 (Smart Persistence)
+
+- **核心变更记录**:
+  - **自动化人脉晋升**: 升级了 backend/main.py 的提取逻辑。现在“会议纪要”中的参会人如果不属于存量库，系统会自动将其“晋升 (Promote)”为正式的 Contact 记录。
+  - **Dashboard 实时刷新**: 修复了 Smart Input 保存后主面板数据不更新的 Bug。在 SmartInput.jsx 中新增了成功后的 fetchDashboardData 回调，确保指标卡片实时同步。
+
+### Phase 32: 基础设施审计与技术债识别 (Structure Audit)
+
+- **核心变更记录**:
+  - **全栈扫描**: 执行了《AI-BD Tracker 代码结构分析》，识别出 10 项影响长期维护的不一致问题，包括 Firebase 残留、数据类型不兼容及硬编码参数。
+
+### Phase 33: 全栈一致性重构 (Full-Stack Consistency Refactor)
+
+- **核心变更记录**:
+  - **Auth 体系纯净化**: 彻底移除了 firebase 依赖及 firebase_uid 字段，回归纯净的本地 JWT 架构。
+  - **类型同步**: 将 is_active 与 isCurrent 从 Integer 统一重构为 Boolean，解决了 PostgreSQL 在 Serverless 环境下的静默转换报错。
+  - **AI 模型配置化**: 将 hardcoded 的模型 ID 迁移至环境参数 GEMINI_MODEL_ID。
+  - **错误处理规范化**: 在 api.js 中引入了 readJsonSafe 与 detailFromBody 助手，确保前端能精准展示后端发出的 detail 错误信息。
+  - **日期格式标准化**: 在后端引入了统一的 get_now_str() 助手，消除了不同模块间 strftime 格式不一的问题。
+
+### Phase 34: 代码精致化与权限矩阵 (Polish & Permissions Matrix)
+
+- **核心变更记录**:
+  - **Mock 数据隔离**: 将 useStore.js 中的演示常量剥离至 src/mocks/demoData.js，实现了逻辑与静态数据的解耦。
+  - **权限矩阵文档化**: 编写了正式的 PERMISSIONS_MATRIX.md，明确定义了 Admin 与 Guest 在全业务链路上的操作边界。
+
+**当前状态**: 🏆 **系统已具备工业级代码水准**。完成了从“功能堆叠”到“架构优化”的华丽转型，系统性能、安全性和可扩展性达到平衡。
