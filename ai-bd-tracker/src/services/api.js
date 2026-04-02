@@ -402,5 +402,37 @@ export const api = {
       console.error('SendStrategistMessage API error:', error);
       throw error;
     }
+  },
+
+  // --- Phase 30: User Management (Admin Only) ---
+  getUsers: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        headers: getAuthHeaders(false)
+      });
+      if (!response.ok) throw new Error('Failed to fetch user list');
+      return response.json();
+    } catch (error) {
+      console.error('GetUsers API error:', error);
+      throw error;
+    }
+  },
+
+  updateUser: async (userId, data) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update user');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('UpdateUser API error:', error);
+      throw error;
+    }
   }
 };

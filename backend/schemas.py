@@ -208,6 +208,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     role: Optional[str] = None
     initials: Optional[str] = None
+    is_active: Optional[int] = None
 
 class TokenData(BaseModel):
     email: Optional[str] = None

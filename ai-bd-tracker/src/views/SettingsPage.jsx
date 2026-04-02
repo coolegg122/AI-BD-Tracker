@@ -11,6 +11,10 @@ const SettingsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  // User management states
+  const [users, setUsers] = useState([]);
+  const [isUsersLoading, setIsUsersLoading] = useState(false);
+
   // Form states
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -50,6 +54,24 @@ const SettingsPage = () => {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'management' && user?.role === 'admin') {
+      fetchUsers();
+    }
+  }, [activeTab, user]);
+
+  const fetchUsers = async () => {
+    setIsUsersLoading(true);
+    try {
+      const data = await api.getUsers();
+      setUsers(data);
+    } catch (err) {
+      showMessage('error', 'Failed to fetch users: ' + err.message);
+    } finally {
+      setIsUsersLoading(false);
+    }
+  };
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -96,8 +118,6 @@ const SettingsPage = () => {
     try {
       const result = await api.updatePreferences({ notification_prefs: notifPrefs });
       if (result) {
-        // AuthContext updateUserProfile would be ideal here if it had a way to just refresh user
-        // For now, we assume backend saved it.
         showMessage('success', '存储成功: Notifications saved!');
       }
     } catch (err) {
@@ -107,11 +127,33 @@ const SettingsPage = () => {
     }
   };
 
+  const updateUserRole = async (userId, newRole) => {
+    try {
+      await api.updateUser(userId, { role: newRole });
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      showMessage('success', '存储成功: User role updated');
+    } catch (err) {
+      showMessage('error', err.message);
+    }
+  };
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    try {
+      await api.updateUser(userId, { is_active: newStatus });
+      setUsers(users.map(u => u.id === userId ? { ...u, is_active: newStatus } : u));
+      showMessage('success', `存储成功: User ${newStatus === 1 ? 'activated' : 'deactivated'}`);
+    } catch (err) {
+      showMessage('error', err.message);
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'appearance', label: 'Appearance', icon: Palette },
+    ...(user?.role === 'admin' ? [{ id: 'management', label: 'User Management', icon: Bell }] : [])
   ];
 
   return (
@@ -194,10 +236,11 @@ const SettingsPage = () => {
                   <label className="text-xs font-bold text-ui-text-muted uppercase">Role</label>
                   <input
                     type="text"
-                    className="w-full bg-ui-input border border-ui-input-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-ui-accent/20 outline-none text-ui-text transition-colors"
+                    className="w-full bg-ui-input border border-ui-input-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-ui-accent/20 outline-none text-ui-text transition-colors opacity-60 cursor-not-allowed"
                     value={profileData.role}
-                    onChange={(e) => setProfileData({...profileData, role: e.target.value})}
+                    disabled
                   />
+                  <p className="text-[10px] text-ui-text-muted italic">Self-role modification disabled for safety.</p>
                 </div>
                 <button
                   type="submit"
@@ -336,6 +379,76 @@ const SettingsPage = () => {
                   <span className="text-sm font-bold text-ui-text">Dark Mode</span>
                 </button>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'management' && user?.role === 'admin' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h3 className="text-lg font-bold mb-1 text-ui-text transition-colors">User Management</h3>
+                <p className="text-sm text-ui-text-muted transition-colors">Manage team access levels and account status.</p>
+              </div>
+
+              {isUsersLoading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader2 className="w-8 h-8 text-ui-accent animate-spin mb-4" />
+                  <p className="text-xs font-bold text-ui-text-muted">Loading team roster...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users.map(u => {
+                    const isSelf = u.id === user.id;
+                    return (
+                      <div key={u.id} className="bg-ui-bg p-4 rounded-xl border border-ui-border flex items-center justify-between transition-colors hover:shadow-sm">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-ui-accent/20 text-ui-accent flex items-center justify-center text-xs font-black border border-ui-accent/20">
+                            {u.initials || u.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-ui-text flex items-center gap-2">
+                              {u.name}
+                              {isSelf && <span className="text-[9px] bg-ui-accent text-white px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">You</span>}
+                            </p>
+                            <p className="text-xs text-ui-text-muted">{u.email}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-6">
+                          <div className="flex flex-col items-end gap-1">
+                            <label className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest leading-none">Role Assignment</label>
+                            <select
+                              value={u.role}
+                              disabled={isSelf}
+                              onChange={(e) => updateUserRole(u.id, e.target.value)}
+                              className={`bg-ui-card border border-ui-border rounded-lg px-3 py-1.5 text-xs font-bold text-ui-text outline-none focus:ring-1 focus:ring-ui-accent transition-all ${isSelf ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-ui-accent/50'}`}
+                            >
+                              <option value="admin">Administrator</option>
+                              <option value="guest">Guest / Read-Only</option>
+                            </select>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1">
+                            <label className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest leading-none">Status</label>
+                            <button
+                              disabled={isSelf}
+                              onClick={() => toggleUserStatus(u.id, u.is_active)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isSelf ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'} ${
+                                u.is_active === 1 ? 'bg-ui-accent' : 'bg-ui-border'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  u.is_active === 1 ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

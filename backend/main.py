@@ -589,16 +589,47 @@ def update_user_profile(
     db: Session = Depends(database.get_db)
 ):
     """Update current user's profile information."""
-    # Update only the fields that were provided
-    update_data = user_update.dict(exclude_unset=True)
-    
+    update_data = user_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(current_user, field, value)
-    
     db.commit()
     db.refresh(current_user)
-    
     return current_user
+
+@app.get("/api/v1/users", response_model=List[schemas.UserResponse])
+def get_all_users(
+    db: Session = Depends(database.get_db),
+    current_admin: models.User = Depends(get_current_admin_user)
+):
+    """List all users (Admin only)."""
+    return db.query(models.User).order_by(models.User.id).all()
+
+@app.patch("/api/v1/users/{user_id}", response_model=schemas.UserResponse)
+def update_user_by_admin(
+    user_id: int,
+    user_update: schemas.UserUpdate, 
+    db: Session = Depends(database.get_db),
+    current_admin: models.User = Depends(get_current_admin_user)
+):
+    """Update any user's role or status (Admin only)."""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Prevent admin from de-activating themselves or removing their own admin role
+    if db_user.id == current_admin.id:
+        if user_update.role is not None and user_update.role != 'admin':
+             raise HTTPException(status_code=400, detail="You cannot remove your own admin status.")
+        if user_update.is_active is not None and user_update.is_active == 0:
+             raise HTTPException(status_code=400, detail="You cannot deactivate your own account.")
+
+    update_data = user_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_user, field, value)
+    
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 @app.post("/api/v1/auth/change-password")
 def change_password(
