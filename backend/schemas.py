@@ -139,6 +139,7 @@ class ProjectUpdate(BaseModel):
     pipeline: Optional[str] = None
     stage: Optional[str] = None
     nextFollowUp: Optional[str] = None
+    owner_id: Optional[int] = None
     details: Optional[dict] = None
 
 class DealBase(BaseModel):

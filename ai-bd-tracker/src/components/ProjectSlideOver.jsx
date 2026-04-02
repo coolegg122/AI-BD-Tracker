@@ -17,8 +17,8 @@ export default function ProjectSlideOver() {
   const [prepData, setPrepData] = useState(null);
   const [isPrepLoading, setIsPrepLoading] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [users, setUsers] = useState([]);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -31,6 +31,7 @@ export default function ProjectSlideOver() {
       setChatMessage('');
       fetchHistory(selectedOverviewProject.id);
       fetchAttachments(selectedOverviewProject.id);
+      if (isAdmin) fetchUsers();
     } else {
       setIsVisible(false);
       setHistoryData([]);
@@ -50,6 +51,16 @@ export default function ProjectSlideOver() {
       console.error("Failed to load project history:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const data = await api.getUsers();
+      // Filter for active users who could lead a project
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to load user list:", err);
     }
   };
 
@@ -236,7 +247,16 @@ export default function ProjectSlideOver() {
                       </div>
                       <div className="flex items-center gap-1.5 bg-ui-hover px-2 py-1 rounded transition-colors">
                         <Users className="w-3.5 h-3.5" />
-                        Responsibility: Deal Team
+                        Responsibility: 
+                        <EditableField
+                          value={project.owner?.id || ''}
+                          type="select"
+                          options={users.map(u => ({ id: u.id, label: u.name }))}
+                          onSave={(val) => handleFieldUpdate('owner_id', val ? parseInt(val) : null)}
+                          textClassName="font-bold text-ui-text"
+                          label="Project Lead"
+                          placeholder="Deal Team"
+                        />
                       </div>
                     </div>
                   </div>

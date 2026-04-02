@@ -20,7 +20,8 @@ export default function EditableField({
   className = "", 
   textClassName = "", 
   type = "text",
-  options = []
+  options = [],
+  placeholder = "--"
 }) {
   const { isAdmin } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -67,8 +68,8 @@ export default function EditableField({
       <div className={`group flex items-center gap-2 ${className}`}>
         <span className={`${textClassName} transition-colors`}>
           {type === 'select' 
-            ? (options.find(o => o.id === value)?.label || value || '--')
-            : (value || '--')}
+            ? (options.find(o => o.id === value)?.label || value || placeholder)
+            : (value || placeholder)}
         </span>
         {isAdmin && (
           <button 
