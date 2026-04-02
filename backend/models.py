@@ -9,7 +9,8 @@ class User(Base):
     firebase_uid = Column(String, unique=True, index=True)
     name = Column(String)
     email = Column(String, unique=True, index=True)
-    role = Column(String)
+    job_title = Column(String)       # NEW (Phase 30.2): Job Title (e.g. BD Manager)
+    role = Column(String)            # Permission Role (admin / guest)
     initials = Column(String)
     hashed_password = Column(String)  # For local authentication
     is_active = Column(Integer, default=1)  # 1 for active, 0 for inactive

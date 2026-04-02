@@ -19,6 +19,7 @@ const SettingsPage = () => {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    job_title: user?.job_title || '',
     role: user?.role || '',
     initials: user?.initials || ''
   });
@@ -42,6 +43,7 @@ const SettingsPage = () => {
       setProfileData({
         name: user.name,
         email: user.email,
+        job_title: user.job_title,
         role: user.role,
         initials: user.initials
       });
@@ -233,6 +235,16 @@ const SettingsPage = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-ui-text-muted uppercase">Job Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. BD Manager, CEO"
+                    className="w-full bg-ui-input border border-ui-input-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-ui-accent/20 outline-none text-ui-text transition-colors"
+                    value={profileData.job_title}
+                    onChange={(e) => setProfileData({...profileData, job_title: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-ui-text-muted uppercase">Role</label>
                   <input
                     type="text"
@@ -409,7 +421,7 @@ const SettingsPage = () => {
                               {u.name}
                               {isSelf && <span className="text-[9px] bg-ui-accent text-white px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">You</span>}
                             </p>
-                            <p className="text-xs text-ui-text-muted">{u.email}</p>
+                            <p className="text-xs text-ui-text-muted">{u.job_title || 'No Title'} • {u.email}</p>
                           </div>
                         </div>
 

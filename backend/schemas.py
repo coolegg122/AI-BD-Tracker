@@ -197,6 +197,7 @@ class PendingIngestionResponse(PendingIngestionBase):
 class UserBase(BaseModel):
     name: str
     email: EmailStr
+    job_title: Optional[str] = None
     role: str
     initials: str
 
@@ -206,6 +207,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
+    job_title: Optional[str] = None
     role: Optional[str] = None
     initials: Optional[str] = None
     is_active: Optional[int] = None
