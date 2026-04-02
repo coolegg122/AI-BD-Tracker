@@ -156,6 +156,21 @@ export default function SmartInput() {
     setIsSaving(true);
     try {
       await api.extractUniversal(inputText); 
+      
+      // Save Archive Data explicitly
+      try {
+        await api.saveSmartInputArchive({
+          raw_text: inputText,
+          source_type: activeIngestionId ? 'email' : 'manual',
+          entities_summary: {
+             project: editData?.update_project?.company || null,
+             contacts: editData?.upsert_contacts?.map(c => c.name) || []
+          }
+        });
+      } catch (err) {
+        console.error("Archive Failed:", err);
+      }
+
       showMessage('success', 'Global Sync Successful!');
 
       // Refresh global store data so other views reflect the new data immediately

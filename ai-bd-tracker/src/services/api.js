@@ -506,18 +506,36 @@ export const api = {
     }
   },
 
-  getSmartInputHistory: async () => {
+  getSmartInputArchive: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/smart-input/history`, {
+      const response = await fetch(`${API_BASE_URL}/smart-input/archive`, {
         headers: getAuthHeaders(false)
       });
       if (!response.ok) {
         const errorData = await readJsonSafe(response);
-        throw new Error(detailFromBody(errorData) || 'Failed to fetch smart input history');
+        throw new Error(detailFromBody(errorData) || 'Failed to fetch smart input archive');
       }
       return response.json();
     } catch (error) {
-      console.error('GetSmartInputHistory API error:', error);
+      console.error('GetSmartInputArchive API error:', error);
+      throw error;
+    }
+  },
+
+  saveSmartInputArchive: async (archiveData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/smart-input/archive`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(archiveData)
+      });
+      if (!response.ok) {
+        const errorData = await readJsonSafe(response);
+        throw new Error(detailFromBody(errorData) || 'Failed to save smart input archive');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('SaveSmartInputArchive API error:', error);
       throw error;
     }
   }

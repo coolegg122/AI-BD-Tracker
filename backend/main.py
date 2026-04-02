@@ -247,21 +247,6 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
                     results["contacts"].append({"name": name, "action": "promoted_from_attendee"})
         
         db.commit()
-    else:
-        # 6. Archive this Smart Input for Traceability
-        archive_entry = models.SmartInputArchive(
-            user_id=current_user.id,
-            raw_text=request.raw_text,
-            source_type="manual",
-            entities_summary={
-                "project": results["project"].get("company") if results["project"] else None,
-                "contacts": [c["name"] for c in results["contacts"]]
-            },
-            created_at=get_now_str(include_time=True)
-        )
-        db.add(archive_entry)
-        db.commit()
-
     return {"status": "success", "results": results, "raw_ai_output": parsed}
 
 
@@ -468,10 +453,26 @@ def sync_mail_inbox(db: Session = Depends(database.get_db), current_user: models
         raise HTTPException(status_code=500, detail=result["error"])
     return result
 
-@app.get("/api/v1/smart-input/history", response_model=List[schemas.SmartInputArchiveResponse])
-def get_smart_input_history(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+@app.get("/api/v1/smart-input/archive", response_model=List[schemas.SmartInputArchiveResponse])
+def get_smart_input_archive(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     """Fetch the historical record of all processed smart inputs."""
     return db.query(models.SmartInputArchive).order_by(models.SmartInputArchive.created_at.desc()).all()
+
+@app.post("/api/v1/smart-input/archive", response_model=schemas.SmartInputArchiveResponse)
+def create_smart_input_archive(archive_data: schemas.SmartInputArchiveCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Manually persist a smart input session into the traceability archive."""
+    archive_entry = models.SmartInputArchive(
+        user_id=current_user.id,
+        raw_text=archive_data.raw_text,
+        source_type=archive_data.source_type,
+        entities_summary=archive_data.entities_summary,
+        created_at=get_now_str(include_time=True)
+    )
+    db.add(archive_entry)
+    db.commit()
+    db.refresh(archive_entry)
+    return archive_entry
+
 
 
 @app.get("/api/v1/projects/{project_id}/negotiation-prep")
