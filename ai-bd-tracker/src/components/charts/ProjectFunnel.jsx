@@ -1,6 +1,5 @@
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
+// Added useTheme import
 
 const STAGE_COLORS = {
   'Initial Contact': '#94a3b8', // slate-400
@@ -12,6 +11,8 @@ const STAGE_COLORS = {
 
 export default function ProjectFunnel({ projects }) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Aggregate data by stage
   const stageData = [
@@ -48,23 +49,26 @@ export default function ProjectFunnel({ projects }) {
             }
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
           <XAxis type="number" hide />
           <YAxis 
             dataKey="name" 
             type="category" 
-            tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }}
+            tick={{ fontSize: 11, fontWeight: 600, fill: isDark ? '#94a3b8' : '#64748b' }}
             width={100}
           />
           <Tooltip 
-            cursor={{ fill: '#f8fafc' }}
+            cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : '#f8fafc' }}
             contentStyle={{ 
+              backgroundColor: isDark ? '#1e293b' : '#ffffff',
               borderRadius: '12px', 
-              border: 'none', 
+              border: isDark ? '1px solid #334155' : 'none', 
               boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
               fontSize: '12px',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              color: isDark ? '#f1f5f9' : '#0f172a'
             }}
+            itemStyle={{ color: isDark ? '#f1f5f9' : '#0f172a' }}
           />
           <Bar 
             dataKey="count" 
@@ -73,7 +77,10 @@ export default function ProjectFunnel({ projects }) {
             className="cursor-pointer"
           >
             {stageData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={STAGE_COLORS[entry.name] || '#cbd5e1'} />
+              <Cell 
+                key={`cell-${index}`} 
+                fill={STAGE_COLORS[entry.name] || (isDark ? '#475569' : '#cbd5e1')} 
+              />
             ))}
           </Bar>
         </BarChart>

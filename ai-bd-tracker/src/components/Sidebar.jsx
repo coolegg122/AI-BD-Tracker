@@ -40,12 +40,12 @@ export default function Sidebar() {
       <div className="flex flex-col h-full py-6">
         <div className="px-6 mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-sm ring-2 ring-blue-500/20">
+            <div className="w-10 h-10 rounded-xl bg-ui-accent flex items-center justify-center text-white shadow-sm ring-2 ring-ui-accent/20 transition-colors">
               <Activity className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-ui-text leading-tight tracking-tight">AI-BD Tracker</h1>
-              <p className="text-[10px] uppercase tracking-widest text-blue-600 dark:text-blue-400 font-bold mt-0.5">Clinical Architect</p>
+              <p className="text-[10px] uppercase tracking-widest text-ui-accent font-bold mt-0.5">Clinical Architect</p>
             </div>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                   isActive
-                  ? 'bg-ui-card text-blue-800 dark:text-blue-400 font-bold shadow-sm border-l-4 border-blue-700'
+                  ? 'bg-ui-card text-ui-accent font-bold shadow-sm border-l-4 border-ui-accent'
                   : 'text-ui-text-muted hover:bg-ui-hover'
                 }`
               }
@@ -74,25 +74,25 @@ export default function Sidebar() {
               onClick={() => setConferencesExpanded(!conferencesExpanded)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
                 isConferencesActive && !conferencesExpanded
-                ? 'bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 font-bold shadow-sm border-l-4 border-blue-700'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-ui-card text-ui-accent font-bold shadow-sm border-l-4 border-ui-accent'
+                : 'text-ui-text-muted hover:bg-ui-hover hover:text-ui-text transition-colors'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Globe className={`w-5 h-5 ${isConferencesActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-                <span className={isConferencesActive ? 'font-bold text-slate-900 dark:text-white' : ''}>Conferences</span>
+                <Globe className={`w-5 h-5 ${isConferencesActive ? 'text-ui-accent' : ''}`} />
+                <span className={isConferencesActive ? 'font-bold text-ui-text' : ''}>Conferences</span>
               </div>
               {conferencesExpanded ? (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
+                <ChevronDown className="w-4 h-4 text-ui-text-muted" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <ChevronRight className="w-4 h-4 text-ui-text-muted" />
               )}
             </button>
-
+ streams
             {conferencesExpanded && (
               <div className="mt-1 space-y-1 relative">
                 {/* Visual connecting line for sub-menu */}
-                <div className="absolute left-6 top-0 bottom-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+                <div className="absolute left-6 top-0 bottom-4 w-px bg-ui-border"></div>
 
                 {conferenceSubItems.map((subItem) => (
                   <NavLink
@@ -101,16 +101,16 @@ export default function Sidebar() {
                     className={({ isActive }) =>
                       `w-full flex items-center gap-2 py-2 pr-4 pl-10 rounded-lg transition-all duration-200 text-[13px] relative ${
                         isActive
-                        ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-extrabold shadow-sm'
+                        ? 'bg-ui-accent/10 text-ui-accent font-extrabold shadow-sm'
                         : 'text-ui-text-muted hover:bg-ui-hover hover:text-ui-text'
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <div className={`absolute left-[23px] top-1/2 -translate-y-1/2 w-3 h-px ${isActive ? 'bg-blue-400' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
+                        <div className={`absolute left-[23px] top-1/2 -translate-y-1/2 w-3 h-px ${isActive ? 'bg-ui-accent' : 'bg-ui-border'}`}></div>
                         <span className={isActive ? 'relative z-10' : ''}>{subItem.label}</span>
-                        {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></div>}
+                        {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-ui-accent"></div>}
                       </>
                     )}
                   </NavLink>
@@ -129,16 +129,16 @@ export default function Sidebar() {
             <span>Settings</span>
           </button>
           <div className="w-full flex items-center gap-3 px-4 py-3 text-ui-text-muted hover:bg-ui-hover rounded-lg transition-colors text-sm font-medium mt-1">
-            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold">
+            <div className="w-6 h-6 rounded-full bg-ui-accent flex items-center justify-center text-[10px] text-white font-bold">
               {user.initials || user.name?.substring(0, 2)?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="truncate text-xs font-bold dark:text-white">{user.name}</div>
-              <div className="truncate text-[10px] text-slate-500 dark:text-slate-500">{user.role}</div>
+              <div className="truncate text-xs font-bold text-ui-text">{user.name}</div>
+              <div className="truncate text-[10px] text-ui-text-muted">{user.role}</div>
             </div>
             <button 
               onClick={handleLogout}
-              className="text-slate-400 hover:text-red-500 transition-colors"
+              className="text-ui-text-muted hover:text-red-500 transition-colors"
             >
               Logout
             </button>

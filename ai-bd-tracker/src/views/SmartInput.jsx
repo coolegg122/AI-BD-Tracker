@@ -201,27 +201,27 @@ export default function SmartInput() {
     <div className="max-w-4xl mx-auto animate-in fade-in duration-300">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">Smart Input</h2>
-            <p className="text-slate-500 max-w-xl text-sm leading-relaxed">Multi-entity extraction engine. Paste raw transcripts or notes and let AI structure your BD intelligence.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-ui-text mb-2">Smart Input</h2>
+            <p className="text-ui-text-muted max-w-xl text-sm leading-relaxed">Multi-entity extraction engine. Paste raw transcripts or notes and let AI structure your BD intelligence.</p>
         </div>
         
         {/* Tab Switcher */}
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex bg-ui-hover p-1 rounded-xl border border-ui-border transition-colors">
             <button 
                 onClick={() => setActiveTab('manual')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'manual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'manual' ? 'bg-ui-card text-ui-accent shadow-sm' : 'text-ui-text-muted hover:text-ui-text'}`}
             >
                 <FileText className="w-4 h-4" />
                 Manual Extract
             </button>
             <button 
                 onClick={() => setActiveTab('inbox')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all relative ${activeTab === 'inbox' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold transition-all relative ${activeTab === 'inbox' ? 'bg-ui-card text-ui-accent shadow-sm' : 'text-ui-text-muted hover:text-ui-text'}`}
             >
                 <Inbox className="w-4 h-4" />
                 AI Inbox
                 {pendingIngestions.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-bounce-slow">
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-bounce-slow shadow-sm">
                         {pendingIngestions.length}
                     </span>
                 )}
@@ -233,7 +233,7 @@ export default function SmartInput() {
         <section className="space-y-6">
           <div className="flex items-center justify-between mb-2">
                  {/* Type Selector */}
-                <div className="flex bg-slate-200/50 p-1 rounded-lg">
+                <div className="flex bg-ui-hover p-1 rounded-lg border border-ui-border transition-colors">
                     {[
                         { id: 'project', label: 'Project', icon: Microscope },
                         { id: 'contact', label: 'Contact', icon: UserPlus },
@@ -242,7 +242,7 @@ export default function SmartInput() {
                         <button 
                             key={t.id}
                             onClick={() => { setExtractType(t.id); setParsedResult(null); }}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${extractType === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${extractType === t.id ? 'bg-ui-card text-ui-text shadow-sm' : 'text-ui-text-muted hover:text-ui-text'}`}
                         >
                             <t.icon className="w-3 h-3" />
                             {t.label}
@@ -251,22 +251,22 @@ export default function SmartInput() {
                 </div>
           </div>
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-indigo-50 rounded-2xl blur opacity-40 transition duration-1000"></div>
-            <div className="relative bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-              <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
+            <div className="absolute -inset-1 bg-gradient-to-r from-ui-accent/20 to-transparent rounded-2xl blur opacity-40 transition duration-1000"></div>
+            <div className="relative bg-ui-input rounded-xl shadow-sm overflow-hidden border border-ui-input-border transition-colors">
+              <div className="flex items-center justify-between px-6 py-4 bg-ui-sidebar border-b border-ui-border transition-colors">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Raw Input Source</span>
+                  <FileText className="w-4 h-4 text-ui-accent" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-ui-text-muted">Raw Input Source</span>
                 </div>
                 <button 
                   onClick={fillTestData} 
-                  className="text-[10px] font-bold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
+                  className="text-[10px] font-bold text-ui-accent hover:bg-ui-accent/10 px-2 py-1 rounded transition-colors"
                 >
                   Fill Sample {extractType}
                 </button>
               </div>
               <textarea 
-                className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-slate-800 resize-none placeholder:text-slate-400 leading-relaxed focus:outline-none" 
+                className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-ui-text resize-none placeholder:text-ui-text-muted/50 leading-relaxed focus:outline-none transition-colors" 
                 placeholder={`Paste ${extractType} details here...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
@@ -278,7 +278,7 @@ export default function SmartInput() {
             <button 
               onClick={handleAIParse}
               disabled={isAnalyzing || !inputText.trim()}
-              className="flex items-center gap-2 bg-slate-900 text-white px-10 py-3.5 rounded-full font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 bg-ui-accent text-white px-10 py-3.5 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50"
             >
               <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
               <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
@@ -289,15 +289,15 @@ export default function SmartInput() {
         <section className="animate-in slide-in-from-right-4 duration-300">
           {/* Always-visible toolbar */}
           <div className="flex items-center justify-between mb-4 px-1">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">
               {pendingIngestions.length} Pending Records
             </span>
             <div className="flex items-center gap-3">
-              <button onClick={fetchPendingInbox} className="text-xs font-bold text-slate-500 hover:text-slate-800">Refresh</button>
+              <button onClick={fetchPendingInbox} className="text-xs font-bold text-ui-text-muted hover:text-ui-text transition-colors">Refresh</button>
               <button
                 onClick={handleSyncMail}
                 disabled={isSyncing}
-                className="flex items-center gap-1.5 bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 bg-ui-accent text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
               >
                 <Mail className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse' : ''}`} />
                 {isSyncing ? 'Syncing...' : 'Sync Zoho Mail'}
@@ -307,47 +307,47 @@ export default function SmartInput() {
 
           {/* Sync result feedback */}
           {syncResult && (
-            <div className={`mb-4 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 ${syncResult.error ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+            <div className={`mb-4 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 border transition-colors ${syncResult.error ? 'bg-red-500/10 text-red-600 border-red-500/20' : 'bg-green-500/10 text-green-600 border-green-500/20'}`}>
               {syncResult.error ? <X className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
               {syncResult.error || syncResult.message}
             </div>
           )}
 
           {isLoadingInbox ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-20 flex flex-col items-center justify-center text-slate-400">
-              <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <div className="bg-ui-card rounded-2xl border border-ui-border p-20 flex flex-col items-center justify-center text-ui-text-muted transition-colors">
+              <div className="w-12 h-12 border-4 border-ui-border border-t-ui-accent rounded-full animate-spin mb-4"></div>
               <p className="font-bold">Loading Inbox...</p>
             </div>
           ) : pendingIngestions.length === 0 ? (
-            <div className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-20 flex flex-col items-center justify-center text-slate-400">
+            <div className="bg-ui-bg rounded-2xl border-2 border-dashed border-ui-border p-20 flex flex-col items-center justify-center text-ui-text-muted transition-colors">
               <Inbox className="w-12 h-12 mb-4 opacity-20" />
               <p className="font-bold">No items awaiting review.</p>
-              <p className="text-xs mt-1">Send an email to <span className="font-mono font-bold text-slate-600">bdtracker212@zohomail.com</span> and click "Sync".</p>
+              <p className="text-xs mt-1">Send an email to <span className="font-mono font-bold text-ui-text">bdtracker212@zohomail.com</span> and click "Sync".</p>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
+               <div className="grid grid-cols-1 gap-4">
                   {pendingIngestions.map(item => (
-                      <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-blue-300 transition-colors group shadow-sm">
-                          <div className="flex items-start gap-4">
-                              <div className="bg-blue-50 p-3 rounded-xl">
-                                  {item.source_type === 'email' ? <Mail className="w-6 h-6 text-blue-600" /> : <Wand2 className="w-6 h-6 text-blue-600" />}
-                              </div>
-                              <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-700">{item.entity_type || 'project'}</span>
-                                      <span className="text-xs text-slate-400 font-medium">{item.created_at}</span>
-                                  </div>
-                                  <h4 className="font-bold text-slate-900 mb-1">{item.subject || 'Automated Catch-all'}</h4>
-                                  <p className="text-xs text-slate-500 line-clamp-1 mb-2">From: <span className="font-bold text-slate-700">{item.sender_email}</span></p>
+                    <div key={item.id} className="bg-ui-card rounded-xl border border-ui-border p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-ui-accent/50 transition-colors group shadow-sm">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-ui-accent/10 p-3 rounded-xl transition-colors">
+                                {item.source_type === 'email' ? <Mail className="w-6 h-6 text-ui-accent" /> : <Wand2 className="w-6 h-6 text-ui-accent" />}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-ui-accent/10 text-ui-accent transition-colors">{item.entity_type || 'project'}</span>
+                                    <span className="text-xs text-ui-text-muted font-medium transition-colors">{item.created_at}</span>
+                                </div>
+                                <h4 className="font-bold text-ui-text mb-1 transition-colors">{item.subject || 'Automated Catch-all'}</h4>
+                                <p className="text-xs text-ui-text-muted line-clamp-1 mb-2 transition-colors">From: <span className="font-bold text-ui-text">{item.sender_email}</span></p>
                                   {item.attachments && item.attachments.length > 0 && (
                                       <div className="flex flex-wrap gap-2">
                                           {item.attachments.map((file, idx) => (
-                                              <span key={idx} className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md border border-slate-200">
-                                                  <Paperclip className="w-2.5 h-2.5" />
-                                                  {file}
-                                              </span>
-                                          ))}
+                                               <span key={idx} className="flex items-center gap-1 text-[10px] bg-ui-sidebar text-ui-text-muted px-2 py-1 rounded-md border border-ui-border transition-colors">
+                                                   <Paperclip className="w-2.5 h-2.5" />
+                                                   {file}
+                                               </span>
+                                         ))}
                                       </div>
                                   )}
                               </div>
@@ -355,13 +355,13 @@ export default function SmartInput() {
                           <div className="flex items-center gap-3">
                               <button
                                   onClick={(e) => handleDeleteIngestion(item.id, e)}
-                                  className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  className="p-2.5 text-ui-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                               >
                                   <Trash2 className="w-5 h-5" />
                               </button>
                               <button
                                   onClick={() => handleReviewInboxItem(item)}
-                                  className="bg-slate-900 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-600 transition-all flex items-center gap-2"
+                                  className="bg-ui-accent text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:opacity-90 transition-all flex items-center gap-2"
                               >
                                   Review & Confirm
                                   <Check className="w-4 h-4" />
@@ -380,44 +380,44 @@ export default function SmartInput() {
         <section className="mt-12 animate-in slide-in-from-bottom-4 duration-500 pb-20">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-                <div className="bg-orange-100 p-2 rounded-full"><Wand2 className="w-4 h-4 text-orange-600" /></div>
+                  <div className="bg-ui-warning/10 p-2 rounded-full transition-colors"><Wand2 className="w-4 h-4 text-ui-warning" /></div>
                 <div>
-                   <h3 className="text-lg font-bold">AI Extraction Preview</h3>
-                   <p className="text-xs text-slate-500 font-medium italic">Please review and correct the AI's "guesses" before archiving.</p>
-                </div>
+                    <h3 className="text-lg font-bold text-ui-text">AI Extraction Preview</h3>
+                    <p className="text-xs text-ui-text-muted font-medium italic">Please review and correct the AI's "guesses" before archiving.</p>
+                 </div>
             </div>
             <div className="flex gap-2">
-                <button onClick={() => { setParsedResult(null); setActiveIngestionId(null); }} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
+                <button onClick={() => { setParsedResult(null); setActiveIngestionId(null); }} className="p-2 text-ui-text-muted hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border-2 border-orange-100 shadow-xl shadow-orange-900/5 p-8 relative overflow-hidden">
+           <div className="bg-ui-card rounded-2xl border-2 border-ui-warning/20 shadow-xl shadow-ui-warning/5 p-8 relative overflow-hidden transition-colors">
             {activeIngestionId && (
-                <div className="mb-8 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center justify-between">
+                <div className="mb-8 p-4 bg-ui-warning/10 border border-ui-warning/20 rounded-xl flex items-center justify-between transition-colors">
                     <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-orange-600" />
-                        <span className="text-xs font-bold text-orange-800 uppercase tracking-tight">Processing Inbox Item #{activeIngestionId}</span>
+                        <Mail className="w-4 h-4 text-ui-warning" />
+                        <span className="text-xs font-bold text-ui-warning uppercase tracking-tight">Processing Inbox Item #{activeIngestionId}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-orange-400 italic">Confirmation will clear this from your inbox</span>
+                    <span className="text-[10px] font-bold text-ui-warning/60 italic">Confirmation will clear this from your inbox</span>
                 </div>
-            )}
+           )}
             
             {/* TYPE SPECIFIC FORMS */}
             {extractType === 'project' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Company Name</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Company Name</label>
                             <input 
-                                className="w-full text-xl font-extrabold text-blue-700 bg-blue-50/30 border-b-2 border-blue-100 focus:border-blue-500 focus:outline-none py-1"
+                                className="w-full text-xl font-extrabold text-ui-accent bg-ui-accent/10 border-b-2 border-ui-accent/20 focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.company}
                                 onChange={(e) => setEditData({...editData, company: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pipeline Asset</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Pipeline Asset</label>
                             <input 
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.pipeline}
                                 onChange={(e) => setEditData({...editData, pipeline: e.target.value})}
                             />
@@ -425,24 +425,24 @@ export default function SmartInput() {
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Target Stage</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Target Stage</label>
                             <select 
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1 bg-transparent"
+                                className="w-full font-bold text-ui-text border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 bg-transparent transition-colors"
                                 value={editData.stage}
                                 onChange={(e) => setEditData({...editData, stage: e.target.value})}
                             >
-                                <option>Initial Contact</option>
-                                <option>CDA Signed</option>
-                                <option>Due Diligence</option>
-                                <option>Term Sheet</option>
-                                <option>Negotiation</option>
+                                <option className="bg-ui-card">Initial Contact</option>
+                                <option className="bg-ui-card">CDA Signed</option>
+                                <option className="bg-ui-card">Due Diligence</option>
+                                <option className="bg-ui-card">Term Sheet</option>
+                                <option className="bg-ui-card">Negotiation</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Next Follow-up</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Next Follow-up</label>
                             <input 
                                 type="date"
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.nextFollowUp || ''}
                                 onChange={(e) => setEditData({...editData, nextFollowUp: e.target.value})}
                             />
@@ -450,19 +450,19 @@ export default function SmartInput() {
                     </div>
                     
                     {/* NEW: Primary Contact Extraction Section */}
-                    <div className="md:col-span-2 mt-4 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex flex-col md:flex-row gap-6">
+                    <div className="md:col-span-2 mt-4 p-4 bg-ui-accent/5 rounded-xl border border-ui-accent/10 flex flex-col md:flex-row gap-6 transition-colors">
                         <div className="shrink-0 flex items-center gap-3">
-                            <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><UserPlus className="w-5 h-5" /></div>
+                            <div className="bg-ui-accent/10 p-2 rounded-lg text-ui-accent"><UserPlus className="w-5 h-5" /></div>
                             <div>
-                                <h4 className="text-[10px] font-bold text-indigo-900 uppercase tracking-tight">Key Contact Found</h4>
-                                <p className="text-[9px] text-indigo-500 font-medium italic leading-tight">AI will auto-sync this to CRM.</p>
+                                <h4 className="text-[10px] font-bold text-ui-text uppercase tracking-tight">Key Contact Found</h4>
+                                <p className="text-[9px] text-ui-text-muted font-medium italic leading-tight">AI will auto-sync this to CRM.</p>
                             </div>
                         </div>
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="text-[8px] font-bold text-indigo-400 uppercase block mb-0.5">Full Name</label>
+                                <label className="text-[8px] font-bold text-ui-accent/60 uppercase block mb-0.5">Full Name</label>
                                 <input 
-                                    className="w-full text-xs font-bold text-slate-800 bg-transparent border-b border-indigo-200 focus:border-indigo-500 focus:outline-none py-0.5"
+                                    className="w-full text-xs font-bold text-ui-text bg-transparent border-b border-ui-accent/10 focus:border-ui-accent focus:outline-none py-0.5 transition-colors"
                                     placeholder="N/A"
                                     value={editData.primary_contact?.name || ''}
                                     onChange={(e) => setEditData({
@@ -472,9 +472,9 @@ export default function SmartInput() {
                                 />
                             </div>
                             <div>
-                                <label className="text-[8px] font-bold text-indigo-400 uppercase block mb-0.5">Email Address</label>
+                                <label className="text-[8px] font-bold text-ui-accent/60 uppercase block mb-0.5">Email Address</label>
                                 <input 
-                                    className="w-full text-xs font-bold text-slate-800 bg-transparent border-b border-indigo-200 focus:border-indigo-500 focus:outline-none py-0.5"
+                                    className="w-full text-xs font-bold text-ui-text bg-transparent border-b border-ui-accent/10 focus:border-ui-accent focus:outline-none py-0.5 transition-colors"
                                     placeholder="N/A"
                                     value={editData.primary_contact?.email || ''}
                                     onChange={(e) => setEditData({
@@ -484,9 +484,9 @@ export default function SmartInput() {
                                 />
                             </div>
                             <div>
-                                <label className="text-[8px] font-bold text-indigo-400 uppercase block mb-0.5">Title / Role</label>
+                                <label className="text-[8px] font-bold text-ui-accent/60 uppercase block mb-0.5">Title / Role</label>
                                 <input 
-                                    className="w-full text-xs font-bold text-slate-800 bg-transparent border-b border-indigo-200 focus:border-indigo-500 focus:outline-none py-0.5"
+                                    className="w-full text-xs font-bold text-ui-text bg-transparent border-b border-ui-accent/10 focus:border-ui-accent focus:outline-none py-0.5 transition-colors"
                                     placeholder="N/A"
                                     value={editData.primary_contact?.currentTitle || ''}
                                     onChange={(e) => setEditData({
@@ -502,19 +502,19 @@ export default function SmartInput() {
 
             {extractType === 'contact' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-4">
+                      <div className="space-y-4">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Name</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Full Name</label>
                             <input 
-                                className="w-full text-xl font-extrabold text-indigo-700 bg-indigo-50/30 border-b-2 border-indigo-100 focus:border-indigo-500 focus:outline-none py-1"
+                                className="w-full text-xl font-extrabold text-ui-accent bg-ui-accent/5 border-b-2 border-ui-accent/10 focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.name}
                                 onChange={(e) => setEditData({...editData, name: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Current Organization</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Current Organization</label>
                             <input 
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 focus:outline-none py-1"
+                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.currentCompany}
                                 onChange={(e) => setEditData({...editData, currentCompany: e.target.value})}
                             />
@@ -522,17 +522,17 @@ export default function SmartInput() {
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Job Title</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Job Title</label>
                             <input 
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 focus:outline-none py-1"
+                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.currentTitle}
                                 onChange={(e) => setEditData({...editData, currentTitle: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Email (Work)</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Email (Work)</label>
                             <input 
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 focus:outline-none py-1"
+                                className="w-full font-bold text-ui-text bg-transparent border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 transition-colors"
                                 value={editData.email}
                                 onChange={(e) => setEditData({...editData, email: e.target.value})}
                             />
@@ -543,15 +543,15 @@ export default function SmartInput() {
 
             {/* SHARED DYNAMIC DETAILS SECTION - Grouped by AI categories */}
             {editData.details && (
-                <div className="mt-8 pt-8 border-t border-slate-100">
+                <div className="mt-8 pt-8 border-t border-ui-border transition-colors">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Deep Intelligence Categories</label>
-                            <p className="text-[10px] text-slate-400 italic">AI has categorized these findings. You can edit keys, values, or add your own.</p>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Deep Intelligence Categories</label>
+                            <p className="text-[10px] text-ui-text-muted italic">AI has categorized these findings. You can edit keys, values, or add your own.</p>
                         </div>
                         <button 
                             onClick={addDetail}
-                            className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                            className="flex items-center gap-1 text-[10px] font-bold text-ui-accent hover:opacity-80 bg-ui-accent/10 px-2 py-1 rounded-md transition-colors"
                         >
                             <Plus className="w-3 h-3" /> Add Category/Field
                         </button>
@@ -559,10 +559,10 @@ export default function SmartInput() {
 
                     <div className="space-y-8">
                         {Object.entries(editData.details).map(([category, content]) => (
-                            <div key={category} className="bg-slate-50/50 rounded-xl p-4 border border-slate-100">
+                            <div key={category} className="bg-ui-bg rounded-xl p-4 border border-ui-border transition-colors">
                                 <div className="flex items-center justify-between mb-3">
                                     <input 
-                                        className="text-xs font-black text-slate-900 uppercase tracking-tight bg-transparent border-none outline-none focus:text-blue-600 w-full"
+                                        className="text-xs font-black text-ui-text uppercase tracking-tight bg-transparent border-none outline-none focus:text-ui-accent w-full transition-colors"
                                         value={category}
                                         onChange={(e) => {
                                             const newKey = e.target.value;
@@ -573,16 +573,15 @@ export default function SmartInput() {
                                             setEditData({...editData, details: newDetails});
                                         }}
                                     />
-                                    <button onClick={() => removeDetail(category)} className="text-slate-300 hover:text-red-400 p-1"><Trash2 className="w-3 h-3" /></button>
+                                    <button onClick={() => removeDetail(category)} className="text-ui-text-muted hover:text-red-400 p-1 transition-colors"><Trash2 className="w-3 h-3" /></button>
                                 </div>
-
                                 {typeof content === 'object' && content !== null ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {Object.entries(content).map(([subKey, subVal]) => (
                                             <div key={subKey} className="group">
-                                                <label className="text-[9px] font-bold text-slate-400 uppercase block mb-0.5">{subKey.replace(/_/g, ' ')}</label>
+                                                <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-0.5">{subKey.replace(/_/g, ' ')}</label>
                                                 <input 
-                                                    className="w-full text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded px-2 py-1 focus:border-blue-400 focus:outline-none"
+                                                    className="w-full text-xs font-medium text-ui-text bg-ui-input border border-ui-input-border rounded px-2 py-1 focus:border-ui-accent focus:outline-none transition-colors"
                                                     value={subVal}
                                                     onChange={(e) => {
                                                         const newDetails = { ...editData.details };
@@ -595,7 +594,7 @@ export default function SmartInput() {
                                     </div>
                                 ) : (
                                     <textarea 
-                                        className="w-full text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded p-2 focus:border-blue-400 focus:outline-none"
+                                        className="w-full text-xs font-medium text-ui-text bg-ui-input border border-ui-input-border rounded p-2 focus:border-ui-accent focus:outline-none transition-colors"
                                         value={content}
                                         onChange={(e) => updateDetail(category, e.target.value)}
                                     />
@@ -605,25 +604,25 @@ export default function SmartInput() {
                     </div>
 
                     {Object.keys(editData.details).length === 0 && (
-                        <p className="text-[11px] text-slate-400 italic">No extra categories detected. Add one manually to enrich the record.</p>
+                        <p className="text-[11px] text-ui-text-muted italic">No extra categories detected. Add one manually to enrich the record.</p>
                     )}
                 </div>
             )}
 
             {/* SUGGESTED ATTACHMENTS SECTION */}
             {editData.attachments && editData.attachments.length > 0 && (
-                <div className="mt-8 pt-8 border-t border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4">AI Suggested Documents</label>
+                <div className="mt-8 pt-8 border-t border-ui-border transition-colors">
+                    <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-4">AI Suggested Documents</label>
                     <div className="space-y-2">
                         {editData.attachments.map((att, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-xl hover:border-blue-200 transition-all">
+                             <div key={idx} className="flex items-center justify-between bg-ui-bg border border-ui-border p-3 rounded-xl hover:border-ui-accent/30 transition-all">
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${att.file_type === 'PDF' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                                    <div className={`p-2 rounded-lg transition-colors ${att.file_type === 'PDF' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-ui-accent/10 text-ui-accent'}`}>
                                         <Paperclip className="w-4 h-4" />
                                     </div>
                                     <div>
                                         <input 
-                                            className="text-xs font-bold text-slate-800 bg-transparent border-none outline-none focus:underline w-full"
+                                            className="text-xs font-bold text-ui-text bg-transparent border-none outline-none focus:underline w-full transition-colors"
                                             value={att.name}
                                             onChange={(e) => {
                                                 const newAtts = [...editData.attachments];
@@ -632,8 +631,8 @@ export default function SmartInput() {
                                             }}
                                         />
                                         <div className="flex gap-2 mt-1">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase">{att.file_type}</span>
-                                            <span className="text-[9px] font-bold text-blue-500 uppercase px-1 rounded bg-blue-50">{att.category}</span>
+                                            <span className="text-[9px] font-bold text-ui-text-muted uppercase">{att.file_type}</span>
+                                            <span className="text-[9px] font-bold text-ui-accent uppercase px-1 rounded bg-ui-accent/10 transition-colors">{att.category}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -642,7 +641,7 @@ export default function SmartInput() {
                                         const newAtts = editData.attachments.filter((_, i) => i !== idx);
                                         setEditData({...editData, attachments: newAtts});
                                     }}
-                                    className="p-1.5 text-slate-300 hover:text-red-400"
+                                    className="p-1.5 text-ui-text-muted hover:text-red-400 transition-colors"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -653,53 +652,53 @@ export default function SmartInput() {
             )}
 
             {extractType === 'meeting_note' && (
-                <div className="space-y-6">
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-6 transition-colors">
+                    <div className="bg-ui-accent/5 p-4 rounded-xl border border-ui-accent/10 mb-6 flex items-start gap-3 transition-colors">
+                        <AlertCircle className="w-5 h-5 text-ui-accent shrink-0 mt-0.5" />
                         <div className="flex-1">
-                            <p className="text-xs font-bold text-blue-900 uppercase tracking-tight">AI Association Guess</p>
-                            <p className="text-xs text-blue-700 mb-3">AI identified this note relates to: <span className="font-bold underline">"{parsedResult.suspected_project_name}"</span></p>
+                            <p className="text-xs font-bold text-ui-accent uppercase tracking-tight">AI Association Guess</p>
+                            <p className="text-xs text-ui-text-muted mb-3 italic">AI identified this note relates to: <span className="font-bold underline text-ui-text">"{parsedResult.suspected_project_name}"</span></p>
                             
-                            <label className="text-[10px] font-bold text-blue-800 uppercase block mb-1">Link to Project</label>
+                            <label className="text-[10px] font-bold text-ui-accent uppercase block mb-1">Link to Project</label>
                             <div className="relative">
                                 <select 
-                                    className="w-full bg-white border border-blue-200 rounded-lg py-2 px-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                                    className="w-full bg-ui-card border border-ui-border rounded-lg py-2 px-3 text-sm font-bold text-ui-text focus:outline-none focus:ring-2 focus:ring-ui-accent appearance-none transition-colors"
                                     value={linkedProjectId}
                                     onChange={(e) => setLinkedProjectId(e.target.value)}
                                 >
-                                    <option value="">-- Choose Project --</option>
+                                    <option value="" className="bg-ui-card">-- Choose Project --</option>
                                     {projects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.company} ({p.pipeline})</option>
+                                        <option key={p.id} value={p.id} className="bg-ui-card">{p.company} ({p.pipeline})</option>
                                     ))}
                                 </select>
-                                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-ui-text-muted pointer-events-none" />
                             </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Summary Title</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Summary Title</label>
                             <input 
-                                className="w-full text-lg font-bold text-slate-900 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                className="w-full text-lg font-bold text-ui-text border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 bg-transparent transition-colors"
                                 value={editData.title}
                                 onChange={(e) => setEditData({...editData, title: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Interaction Date</label>
+                            <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">Interaction Date</label>
                             <input 
                                 type="date"
-                                className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1"
+                                className="w-full font-bold text-ui-text border-b border-ui-border focus:border-ui-accent focus:outline-none py-1 bg-transparent transition-colors"
                                 value={editData.date || ''}
                                 onChange={(e) => setEditData({...editData, date: e.target.value})}
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Key Takeaways</label>
+                        <label className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest block mb-2">Key Takeaways</label>
                         <textarea 
-                            className="w-full h-24 p-3 bg-slate-50 rounded-lg border border-slate-200 focus:border-blue-500 focus:outline-none text-sm leading-relaxed"
+                            className="w-full h-24 p-3 bg-ui-input rounded-lg border border-ui-input-border focus:border-ui-accent focus:outline-none text-sm text-ui-text leading-relaxed transition-colors"
                             value={editData.desc}
                             onChange={(e) => setEditData({...editData, desc: e.target.value})}
                         />
@@ -708,17 +707,17 @@ export default function SmartInput() {
             )}
 
             {/* SHARED CONFIRM BUTTON */}
-            <div className="mt-10 pt-10 border-t border-slate-100 flex justify-end gap-3">
+            <div className="mt-10 pt-10 border-t border-ui-border flex justify-end gap-3 transition-colors">
                 <button 
                   onClick={() => { setParsedResult(null); setActiveIngestionId(null); }}
-                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800"
+                  className="px-6 py-2.5 text-sm font-bold text-ui-text-muted hover:text-ui-text transition-colors"
                 >
                     Discard
                 </button>
                 <button 
                     onClick={handleConfirmSave}
                     disabled={isSaving}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:scale-[0.98] transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 bg-gradient-to-r from-ui-accent to-ui-accent/80 text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-ui-accent/20 hover:scale-[0.98] transition-all disabled:opacity-50"
                 >
                     {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                     <span>Confirm & Archive to Database</span>

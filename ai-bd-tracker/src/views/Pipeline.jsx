@@ -60,7 +60,7 @@ export default function Pipeline() {
             <nav className="flex items-center gap-1.5 text-[10px] font-bold text-ui-text-muted mb-2 uppercase tracking-widest">
               <span>Intelligence</span>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-blue-600 dark:text-blue-400">Pipeline Matrix</span>
+              <span className="text-ui-accent">Pipeline Matrix</span>
             </nav>
             <h2 className="text-3xl font-extrabold text-ui-text tracking-tight">Deal Tracker 360°</h2>
             <p className="text-ui-text-muted text-sm mt-1">Multi-dimensional tracking of all external engagements.</p>
@@ -69,7 +69,7 @@ export default function Pipeline() {
             <button 
               onClick={() => setActiveTab('by_project')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 ${
-                activeTab === 'by_project' ? 'bg-ui-card text-indigo-700 dark:text-indigo-400 shadow-sm' : 'text-ui-text-muted hover:text-ui-text'
+                activeTab === 'by_project' ? 'bg-ui-card text-ui-accent shadow-sm' : 'text-ui-text-muted hover:text-ui-text'
               }`}
             >
               <Layers className="w-4 h-4" /> By Project Asset
@@ -77,7 +77,7 @@ export default function Pipeline() {
             <button 
               onClick={() => setActiveTab('by_company')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 ${
-                activeTab === 'by_company' ? 'bg-ui-card text-indigo-700 dark:text-indigo-400 shadow-sm' : 'text-ui-text-muted hover:text-ui-text'
+                activeTab === 'by_company' ? 'bg-ui-card text-ui-accent shadow-sm' : 'text-ui-text-muted hover:text-ui-text'
               }`}
             >
               <Building2 className="w-4 h-4" /> By External Partner
@@ -108,7 +108,7 @@ export default function Pipeline() {
                 className="w-full flex items-center justify-between p-5 bg-ui-bg hover:bg-ui-hover transition-colors border-b border-ui-border"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-ui-accent/10 text-ui-accent flex items-center justify-center">
                     <Layers className="w-4 h-4" />
                   </div>
                   <div className="text-left">
@@ -137,17 +137,17 @@ export default function Pipeline() {
                         
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                           {stageProjects.map(p => (
-                            <div key={p.id} className="flex gap-4 p-4 rounded-xl border border-ui-border bg-ui-bg/50 hover:bg-ui-card hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all group">
-                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 border-2 border-ui-card shadow-sm flex items-center justify-center font-bold text-blue-700 dark:text-blue-400 shrink-0">
+                            <div key={p.id} className="flex gap-4 p-4 rounded-xl border border-ui-border bg-ui-bg/50 hover:bg-ui-card hover:border-ui-accent/50 hover:shadow-md transition-all group">
+                              <div className="w-10 h-10 rounded-full bg-ui-accent/10 border-2 border-ui-card shadow-sm flex items-center justify-center font-bold text-ui-accent shrink-0">
                                 {p.company?.substring(0,2).toUpperCase() || '??'}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start mb-1">
                                   <div className="flex items-center gap-3">
-                                    <h5 className="font-bold text-ui-text group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors truncate max-w-[120px]" title={p.company}>{p.company}</h5>
+                                    <h5 className="font-bold text-ui-text group-hover:text-ui-accent transition-colors truncate max-w-[120px]" title={p.company}>{p.company}</h5>
                                     <button 
                                       onClick={(e) => { e.stopPropagation(); setIntelligenceCompany(p.company); }}
-                                      className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-md text-[9px] font-extrabold uppercase tracking-wider shadow-sm shadow-indigo-200 transition-all hover:scale-105 shrink-0"
+                                      className="flex items-center gap-1 px-2.5 py-1 bg-ui-accent text-white rounded-md text-[9px] font-extrabold uppercase tracking-wider shadow-sm shadow-ui-accent/20 transition-all hover:scale-105 shrink-0"
                                     >
                                       <Sparkles className="w-3 h-3" /> AI Dossier
                                     </button>
@@ -181,30 +181,30 @@ export default function Pipeline() {
           
           return (
             <div key={companyName} className="mb-6 bg-ui-card rounded-2xl border border-ui-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 transition-colors">
-              <button 
+               <button 
                 onClick={() => toggleSection(`comp_${companyName}`)}
-                className="w-full flex items-center justify-between p-5 bg-blue-50/20 dark:bg-blue-900/10 hover:bg-blue-50/40 dark:hover:bg-blue-900/20 transition-colors border-b border-blue-100 dark:border-blue-900"
+                className="w-full flex items-center justify-between p-5 bg-ui-accent/5 hover:bg-ui-accent/10 transition-colors border-b border-ui-border"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-ui-accent text-white flex items-center justify-center shadow-sm">
                     <Building2 className="w-4 h-4" />
                   </div>
                   <div className="text-left flex-1">
-                    <div className="flex items-center gap-4">
+                     <div className="flex items-center gap-4">
                       <h3 className="text-lg font-extrabold text-ui-text">{companyName}</h3>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setIntelligenceCompany(companyName); }}
-                        className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[11px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-indigo-200/50 hover:scale-105 hover:shadow-lg"
+                        className="flex items-center gap-1.5 px-4 py-1.5 bg-ui-accent hover:opacity-90 text-white text-[11px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-ui-accent/20 hover:scale-105"
                       >
                         <Sparkles className="w-3.5 h-3.5" /> View AI Deep Dive
                       </button>
                     </div>
-                    <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-0.5">
+                    <p className="text-xs font-bold text-ui-accent uppercase tracking-widest mt-0.5 transition-colors">
                       {projList.length} Interfacing Track{projList.length > 1 ? 's' : ''}
                     </p>
                   </div>
-                </div>
-                {isOpen ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
+                 </div>
+                {isOpen ? <ChevronDown className="w-5 h-5 text-ui-text-muted transition-colors" /> : <ChevronRight className="w-5 h-5 text-ui-text-muted transition-colors" />}
               </button>
 
               {isOpen && (
@@ -239,11 +239,11 @@ export default function Pipeline() {
                           <td className="p-4 pr-6 align-top">
                             {p.nextFollowUp ? (
                               <div className="flex flex-col gap-1">
-                                <span className="text-xs font-bold text-slate-900">{p.nextFollowUp}</span>
-                                <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full inline-block w-fit">Follow Up</span>
+                                <span className="text-xs font-bold text-ui-text transition-colors">{p.nextFollowUp}</span>
+                                <span className="text-[9px] font-bold text-orange-600 bg-orange-100/20 px-2 py-0.5 rounded-full inline-block w-fit">Follow Up</span>
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-400 italic">No dates set</span>
+                              <span className="text-xs text-ui-text-muted italic transition-colors">No dates set</span>
                             )}
                           </td>
                         </tr>

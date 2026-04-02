@@ -67,19 +67,19 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-ui-bg p-4 relative transition-colors duration-500">
+      <div className="w-full max-w-md bg-ui-card rounded-2xl shadow-xl overflow-hidden relative z-10 border border-ui-border transition-colors">
         <div className="p-8">
           <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-              <User className="w-8 h-8 text-blue-600" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-ui-accent/10 flex items-center justify-center mb-4 transition-colors">
+              <User className="w-8 h-8 text-ui-accent" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
-            <p className="text-gray-500 mt-2">Join AI-BD Tracker to manage your deals</p>
+            <h2 className="text-2xl font-bold text-ui-text transition-colors">Create Account</h2>
+            <p className="text-ui-text-muted mt-2 transition-colors">Join AI-BD Tracker to manage your deals</p>
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+            <div className="mb-6 p-3 bg-ui-error/10 text-ui-error rounded-lg text-sm transition-colors">
               {error}
             </div>
           )}
@@ -87,12 +87,12 @@ const RegisterPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-ui-text-muted mb-1 transition-colors">
                   Full Name
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
+                    <User className="h-5 w-5 text-ui-text-muted" />
                   </div>
                   <input
                     id="name"
@@ -101,14 +101,14 @@ const RegisterPage = () => {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full pl-10 pr-3 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/30 focus:border-ui-accent text-ui-text transition-all"
                     placeholder="John Doe"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="initials" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="initials" className="block text-sm font-medium text-ui-text-muted mb-1">
                   Initials
                 </label>
                 <input
@@ -118,7 +118,7 @@ const RegisterPage = () => {
                   required
                   value={formData.initials}
                   onChange={handleChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/30 focus:border-ui-accent text-ui-text transition-all"
                   placeholder="JD"
                   maxLength="3"
                 />
@@ -126,12 +126,12 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-ui-text-muted mb-1">
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-ui-text-muted" />
                 </div>
                 <input
                   id="email"
@@ -141,14 +141,14 @@ const RegisterPage = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/30 focus:border-ui-accent text-ui-text transition-all"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="role" className="block text-sm font-medium text-ui-text-muted mb-1">
                 Role
               </label>
               <select
@@ -156,7 +156,7 @@ const RegisterPage = () => {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/30 focus:border-ui-accent text-ui-text transition-all appearance-none"
               >
                 <option value="BD Manager">BD Manager</option>
                 <option value="BD Director">BD Director</option>
@@ -167,12 +167,12 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-ui-text-muted mb-1">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-ui-text-muted" />
                 </div>
                 <input
                   id="password"
@@ -181,7 +181,7 @@ const RegisterPage = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-10 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/30 focus:border-ui-accent text-ui-text transition-all"
                   placeholder="••••••••"
                 />
                 <button
@@ -190,21 +190,21 @@ const RegisterPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                    <EyeOff className="h-5 w-5 text-ui-text-muted hover:text-ui-text" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                    <Eye className="h-5 w-5 text-ui-text-muted hover:text-ui-text" />
                   )}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-ui-text-muted mb-1">
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-ui-text-muted" />
                 </div>
                 <input
                   id="confirmPassword"
@@ -213,7 +213,7 @@ const RegisterPage = () => {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-10 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/30 focus:border-ui-accent text-ui-text transition-all"
                   placeholder="••••••••"
                 />
                 <button
@@ -222,9 +222,9 @@ const RegisterPage = () => {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                    <EyeOff className="h-5 w-5 text-ui-text-muted hover:text-ui-text" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                    <Eye className="h-5 w-5 text-ui-text-muted hover:text-ui-text" />
                   )}
                 </button>
               </div>
@@ -234,7 +234,7 @@ const RegisterPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-ui-accent hover:bg-ui-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ui-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? 'Creating account...' : 'Create Account'}
               </button>
@@ -242,9 +242,9 @@ const RegisterPage = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ui-text-muted transition-colors">
               Already have an account?{' '}
-              <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              <a href="/login" className="font-bold text-ui-accent hover:text-ui-accent/80 transition-colors">
                 Sign in
               </a>
             </p>

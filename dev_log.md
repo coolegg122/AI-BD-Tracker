@@ -12,6 +12,7 @@
 | **P 10-11**| **全球战役室 (Conferences Hub)**：新增会议管理一级模块，支持 JPM, ASCO 等顶会的倒计时、时差换算计算以及专属战盟档案背景自动切换。 | `Completed` |
 | **P 12-13**| **人脉情报网持久化 (Key Contacts)**：建立高管大图名片簿，后接 SQLite `Contact` 与 `CareerHistory` 表实现履历变动的 1-to-N 级联数据库固化。 | `Completed` |
 | **P 14** | **AI 竞争情报引擎 (Intelligence)**：贯通 Gemini 接口，在 Kanban 直接生成大厂近况调查（战略、并购史、专利悬崖），并使用本地 DB 永久缓存提速。 | `Completed` |
+| **P 15** | **全局 UI 审计与主题一致性 (UI Audit & Dark Mode)**：全站去硬编码颜色，建立 `ui-*` 变量体系。对 Dashboard, SmartInput, Modals 进行深度 UI 重构，确保极致深色模式体验。 | `Completed` |
 
 ---
 
@@ -390,3 +391,26 @@
 - **数据一致性**: 每次后端模型变更后，请务必运行对应的 `migrate_xxx.py` 脚本同步本地与线上数据库。
 
 **当前状态**: ✅ **全系统功能点已无占位符，具备完整的生产级交互体验。**
+
+---
+
+## [2026-04-01] UI 架构升级：Phase 15 全局 UI 审计与深色模式一致性重构
+
+本阶段的核心任务是彻底消除全站点的“UI 视觉断层”，通过建立一套严谨的语义化 CSS 变量体系，确保应用在深色模式（Dark Mode）下具有一致且高级的视觉表现。
+
+### Phase 15: 全局 UI 语义化变量重构 (UI Refactor & Theme Consistency)
+
+- **核心变更记录**:
+  - **设计系统扩展 (`index.css`)**: 
+    - 新增了 `ui-success` (成功/积极状态) 与 `ui-warning` (预警/待处理状态) 语义化变量。
+    - 统一了 `ui-accent`, `ui-error`, `ui-text-muted` 的在不同模式下的对比度。
+  - **业务组件重构**:
+    - **Dashboard**: 对统计卡片、趋势图表（ProjectFunnel, PortfolioTrend）进行了主题感知的重写，确保 Recharts 与全局主题深度集成。
+    - **SmartInput**: 全面清理了 AI 解析预览、表单输入、AI Inbox 中的硬编码蓝色、白色和灰色，统一使用 `ui-input` 和 `ui-accent`。
+    - **Intelligence / AI Analysis Modals**: 重构了所有弹窗的 Head/Body 结构，移除了过时的 `indigo-*` 或 `blue-900` 渐变，采用统一的 `slate-dark` 品牌渐变。
+    - **ProjectSlideOver**: 修复了时间轴、文档列表中的“白底黑字”残留，确保文档档案卡片在深色模式下具有足够的层次感。
+    - **Auth (Login/Register)**: 对登录注册页面的 Forgot Password 模态框及表单验证状态进行了深色模式适配。
+  - **技术决策**:
+    - **强制语义化**: 禁止在 React 组件中直接使用 Tailwind 的基础颜色类（如 `text-blue-500`），强制要求映射至 `ui-*` 变量。
+    - **交互增强**: 优化了所有悬停 (`hover`)、激活 (`active`) 和焦点 (`focus`) 状态的 `ui-*` 透明度，提升微交互质感。
+    - **产出一致性**: 确保了生产环境（Vercel）下的 UI 表现与本地开发环境的一致性，解决了部分 Vercel 部署后的视觉异常问题。

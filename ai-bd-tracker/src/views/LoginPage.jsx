@@ -35,19 +35,19 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 relative">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-ui-bg p-4 relative transition-colors duration-500">
+      <div className="w-full max-w-md bg-ui-card rounded-2xl shadow-xl overflow-hidden relative z-10 border border-ui-border transition-colors">
         <div className="p-8">
           <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8 text-blue-600" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-ui-accent/10 flex items-center justify-center mb-4 transition-colors">
+              <Lock className="w-8 h-8 text-ui-accent" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
-            <p className="text-gray-500 mt-2">Sign in to your AI-BD Tracker account</p>
+            <h2 className="text-2xl font-bold text-ui-text">Welcome Back</h2>
+            <p className="text-ui-text-muted mt-2">Sign in to your AI-BD Tracker account</p>
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
+            <div className="mb-6 p-3 bg-ui-error/10 text-ui-error rounded-lg text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -55,12 +55,12 @@ const LoginPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-ui-text-muted mb-1">
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-ui-text-muted" />
                 </div>
                 <input
                   id="email"
@@ -70,19 +70,19 @@ const LoginPage = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="block w-full pl-10 pr-3 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/20 focus:border-ui-accent outline-none text-ui-text transition-all"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-ui-text-muted mb-1">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-ui-text-muted" />
                 </div>
                 <input
                   id="password"
@@ -92,7 +92,7 @@ const LoginPage = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="block w-full pl-10 pr-10 py-3 bg-ui-input border border-ui-input-border rounded-lg focus:ring-2 focus:ring-ui-accent/20 focus:border-ui-accent outline-none text-ui-text transition-all"
                   placeholder="••••••••"
                 />
                 <button
@@ -101,9 +101,9 @@ const LoginPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                    <EyeOff className="h-5 w-5 text-ui-text-muted hover:text-ui-text" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                    <Eye className="h-5 w-5 text-ui-text-muted hover:text-ui-text" />
                   )}
                 </button>
               </div>
@@ -115,9 +115,9 @@ const LoginPage = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-ui-accent focus:ring-ui-accent border-ui-border rounded transition-colors"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-ui-text-muted">
                   Remember me
                 </label>
               </div>
@@ -126,7 +126,7 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  className="font-bold text-blue-600 hover:text-blue-500 cursor-pointer bg-transparent border-none outline-none"
+                  className="font-bold text-ui-accent hover:text-ui-accent/80 cursor-pointer bg-transparent border-none outline-none"
                 >
                   Forgot password?
                 </button>
@@ -137,7 +137,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-ui-accent hover:bg-ui-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ui-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -150,9 +150,9 @@ const LoginPage = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ui-text-muted">
               Don't have an account?{' '}
-              <a href="/register" className="font-bold text-blue-600 hover:text-blue-500">
+              <a href="/register" className="font-bold text-ui-accent hover:text-ui-accent/80">
                 Sign up
               </a>
             </p>
@@ -162,29 +162,29 @@ const LoginPage = () => {
 
       {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 transition-all">
+          <div className="w-full max-w-sm bg-ui-card rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-ui-border transition-colors">
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-blue-50 rounded-xl">
-                  <Mail className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-ui-accent/10 rounded-xl transition-colors">
+                  <Mail className="w-6 h-6 text-ui-accent" />
                 </div>
-                <button onClick={() => setShowForgotModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <button onClick={() => setShowForgotModal(false)} className="text-ui-text-muted hover:text-ui-text p-1 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Reset Password</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-6">
+              <h3 className="text-xl font-bold text-ui-text mb-2 transition-colors">Reset Password</h3>
+              <p className="text-sm text-ui-text-muted leading-relaxed mb-6 transition-colors">
                 For security reasons, password resets are handled by your system administrator. 
                 Please contact the IT support team or your BD Director.
               </p>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
-                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Support Email</p>
-                <p className="text-sm font-bold text-slate-900">support@ai-bdtracker.com</p>
+              <div className="bg-ui-bg p-4 rounded-xl border border-ui-border mb-6 transition-colors">
+                <p className="text-[10px] font-bold text-ui-text-muted uppercase mb-1">Support Email</p>
+                <p className="text-sm font-bold text-ui-text">support@ai-bdtracker.com</p>
               </div>
               <button
                 onClick={() => setShowForgotModal(false)}
-                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all"
+                className="w-full py-3 bg-ui-accent hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg shadow-ui-accent/20"
               >
                 Got it
               </button>

@@ -4,34 +4,34 @@ import { Globe, MapPin, Clock, CalendarDays, Crosshair, Users, Info, Building2, 
 
 const themeMap = {
   blue: {
-    banner: 'bg-gradient-to-br from-blue-900 to-blue-950 border-b border-blue-800',
-    iconHover: 'text-blue-500',
-    iconActive: 'text-blue-600',
-    pillTarget: 'bg-blue-100 text-blue-800',
+    banner: 'bg-gradient-to-br from-blue-900 to-slate-900 border-b border-blue-800/30',
+    iconHover: 'text-blue-400',
+    iconActive: 'text-blue-400',
+    pillTarget: 'bg-blue-500/10 text-blue-400',
   },
   emerald: {
-    banner: 'bg-gradient-to-br from-emerald-900 to-emerald-950 border-b border-emerald-800',
-    iconHover: 'text-emerald-500',
-    iconActive: 'text-emerald-500',
-    pillTarget: 'bg-emerald-100 text-emerald-800',
+    banner: 'bg-gradient-to-br from-emerald-900 to-slate-900 border-b border-emerald-800/30',
+    iconHover: 'text-emerald-400',
+    iconActive: 'text-emerald-400',
+    pillTarget: 'bg-emerald-500/10 text-emerald-400',
   },
   indigo: {
-    banner: 'bg-gradient-to-br from-indigo-900 to-indigo-950 border-b border-indigo-800',
-    iconHover: 'text-indigo-500',
-    iconActive: 'text-indigo-500',
-    pillTarget: 'bg-indigo-100 text-indigo-800',
+    banner: 'bg-gradient-to-br from-indigo-900 to-slate-900 border-b border-indigo-800/30',
+    iconHover: 'text-indigo-400',
+    iconActive: 'text-indigo-400',
+    pillTarget: 'bg-indigo-500/10 text-indigo-400',
   },
   orange: {
-    banner: 'bg-gradient-to-br from-orange-900 to-orange-950 border-b border-orange-800',
-    iconHover: 'text-orange-500',
-    iconActive: 'text-orange-600',
-    pillTarget: 'bg-orange-100 text-orange-900',
+    banner: 'bg-gradient-to-br from-orange-900 to-slate-900 border-b border-orange-800/30',
+    iconHover: 'text-orange-400',
+    iconActive: 'text-orange-400',
+    pillTarget: 'bg-orange-500/10 text-orange-400',
   },
   slate: {
-    banner: 'bg-gradient-to-br from-slate-700 to-slate-900 border-b border-slate-700',
+    banner: 'bg-gradient-to-br from-slate-800 to-slate-950 border-b border-slate-700/30',
     iconHover: 'text-slate-400',
-    iconActive: 'text-slate-500',
-    pillTarget: 'bg-slate-100 text-slate-700',
+    iconActive: 'text-slate-400',
+    pillTarget: 'bg-slate-500/10 text-slate-400',
   }
 };
 
@@ -110,14 +110,13 @@ export default function Conferences() {
   const currentTheme = activeConf.isHistorical ? themeMap.slate : themeMap[activeConf.color];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f7f9fb] animate-in fade-in duration-300">
+    <div className="flex-1 overflow-y-auto bg-ui-bg transition-colors duration-500 animate-in fade-in duration-300">
       
       {/* Massive 100% Width Header */}
       <div className={`${currentTheme.banner} p-8 md:p-12 text-white relative overflow-hidden shadow-sm transition-colors duration-500`}>
          <div className="absolute top-0 right-0 w-full h-full bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
          
          <div className="relative z-10 max-w-7xl mx-auto">
-           {/* Top Navigation Tabs for Year/Event Switching */}
            <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none">
              {categoryConferences.map(conf => {
                const isSelected = conf.id === activeConfId;
@@ -127,13 +126,13 @@ export default function Conferences() {
                    onClick={() => setActiveConfId(conf.id)}
                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${
                      isSelected 
-                     ? 'bg-white text-slate-900 border-white shadow-md scale-105' 
-                     : 'bg-black/20 text-white/70 border-white/20 hover:bg-black/40 hover:text-white'
+                     ? 'bg-ui-text text-ui-bg border-ui-text shadow-lg scale-105' 
+                     : 'bg-white/10 text-white/70 border-white/10 hover:bg-white/20 hover:text-white'
                    }`}
                  >
                    {conf.isHistorical ? <Archive className={`w-4 h-4 ${isSelected ? 'text-slate-500' : ''}`} /> : <Sparkles className={`w-4 h-4 ${isSelected ? themeMap[conf.color].iconActive : ''}`} />}
                    {conf.acronym}
-                   {conf.isHistorical && <span className={`ml-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider ${isSelected ? 'bg-slate-200 text-slate-600' : 'bg-black/30 text-white/50'}`}>Archive</span>}
+                   {conf.isHistorical && <span className={`ml-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider ${isSelected ? 'bg-slate-200 text-slate-600' : 'bg-white/10 text-white/50'}`}>Archive</span>}
                  </button>
                )
              })}
@@ -163,14 +162,13 @@ export default function Conferences() {
                </div>
              </div>
 
-             {/* Partner/Conference Extracted Logo Image */}
              {logoMap[activeConf.type] && (
                <div className="shrink-0 animate-in fade-in zoom-in duration-700">
-                 <div className="bg-white/95 p-3 sm:p-4 rounded-2xl shadow-2xl ring-1 ring-white/20 hover:scale-105 transition-transform">
+                 <div className="bg-ui-card p-3 sm:p-4 rounded-2xl shadow-2xl ring-1 ring-ui-border hover:scale-105 transition-all">
                    <img 
                      src={logoMap[activeConf.type]} 
                      alt={`${activeConf.type} Logo`}
-                     className="max-w-[140px] sm:max-w-[180px] max-h-[70px] sm:max-h-[90px] object-contain drop-shadow-sm" 
+                     className="max-w-[140px] sm:max-w-[180px] max-h-[70px] sm:max-h-[90px] object-contain transition-all" 
                    />
                  </div>
                </div>
@@ -180,40 +178,39 @@ export default function Conferences() {
          </div>
       </div>
 
-      {/* Main Content Area filling the entire width */}
       <div className="p-8 md:p-12 max-w-7xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
           
-          <div className="col-span-1 lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-            <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-4 mb-6">
-              <Crosshair className={`w-5 h-5 ${activeConf.isHistorical ? 'text-slate-400' : 'text-red-500'}`} /> {activeConf.isHistorical ? 'Retrospective Goals' : 'Operational Objectives'}
+          <div className="col-span-1 lg:col-span-2 bg-ui-card rounded-2xl border border-ui-border p-8 shadow-sm transition-colors duration-500">
+            <h3 className="flex items-center gap-2 text-sm font-extrabold text-ui-text uppercase tracking-widest border-b border-ui-border pb-4 mb-6">
+              <Crosshair className={`w-5 h-5 ${activeConf.isHistorical ? 'text-ui-text-muted' : 'text-red-500'}`} /> {activeConf.isHistorical ? 'Retrospective Goals' : 'Operational Objectives'}
             </h3>
             <ul className="space-y-5">
               {activeConf.objectives.map((obj, i) => (
                 <li key={i} className="flex gap-4 items-start">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 ${activeConf.isHistorical ? 'bg-slate-100 text-slate-500' : 'bg-red-50 text-red-600'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 transition-colors ${activeConf.isHistorical ? 'bg-ui-bg text-ui-text-muted' : 'bg-red-500/10 text-red-500'}`}>
                     {i+1}
                   </div>
-                  <p className={`text-base font-medium ${activeConf.isHistorical ? 'text-slate-500' : 'text-slate-800'} leading-relaxed pt-1`}>{obj}</p>
+                  <p className={`text-base font-medium transition-colors ${activeConf.isHistorical ? 'text-ui-text-muted' : 'text-ui-text'} leading-relaxed pt-1`}>{obj}</p>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-8 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-            <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-4 mb-6">
-              <Users className={`w-5 h-5 ${activeConf.isHistorical ? 'text-slate-400' : 'text-blue-500'}`} /> {activeConf.isHistorical ? 'Attendees of Record' : 'Our Delegation'}
+          <div className="col-span-1 bg-ui-card rounded-2xl border border-ui-border p-8 shadow-sm transition-colors duration-500">
+            <h3 className="flex items-center gap-2 text-sm font-extrabold text-ui-text uppercase tracking-widest border-b border-ui-border pb-4 mb-6">
+              <Users className={`w-5 h-5 ${activeConf.isHistorical ? 'text-ui-text-muted' : 'text-ui-accent'}`} /> {activeConf.isHistorical ? 'Attendees of Record' : 'Our Delegation'}
             </h3>
             <div className="space-y-5">
-              {activeConf.delegation.map((del, i) => (
+               {activeConf.delegation.map((del, i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full ${activeConf.isHistorical ? 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' : 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-800 ring-2 ring-blue-500/20'} flex items-center justify-center font-bold text-lg shrink-0 uppercase shadow-sm`}>
+                  <div className={`w-12 h-12 rounded-full transition-colors ${activeConf.isHistorical ? 'bg-ui-bg text-ui-text-muted ring-1 ring-ui-border' : 'bg-ui-accent/10 text-ui-accent ring-2 ring-ui-accent/20'} flex items-center justify-center font-bold text-lg shrink-0 uppercase shadow-sm`}>
                     {del.name.split(' ').map(n=>n[0]).join('').substring(0,2)}
                   </div>
                   <div>
-                    <h4 className={`text-base font-bold ${activeConf.isHistorical ? 'text-slate-700' : 'text-slate-900'}`}>{del.name}</h4>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{del.title}</p>
-                    <p className={`text-sm mt-1 font-medium ${activeConf.isHistorical ? 'text-slate-500' : 'text-blue-600'}`}>{del.role}</p>
+                    <h4 className={`text-base font-bold transition-colors ${activeConf.isHistorical ? 'text-ui-text-muted' : 'text-ui-text'}`}>{del.name}</h4>
+                    <p className="text-[11px] font-bold text-ui-text-muted uppercase tracking-wider mt-0.5">{del.title}</p>
+                    <p className={`text-sm mt-1 font-medium transition-colors ${activeConf.isHistorical ? 'text-ui-text-muted' : 'text-ui-accent'}`}>{del.role}</p>
                   </div>
                 </div>
               ))}
@@ -221,10 +218,9 @@ export default function Conferences() {
           </div>
         </div>
 
-        {/* Meetings Radar */}
-        <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 uppercase tracking-widest mb-6">
+        <h3 className="flex items-center gap-2 text-sm font-extrabold text-ui-text uppercase tracking-widest mb-6">
           {activeConf.isHistorical ? (
-            <><Archive className="w-5 h-5 text-slate-500" /> Archived Encounters Dashboard</>
+            <><Archive className="w-5 h-5 text-ui-text-muted" /> Archived Encounters Dashboard</>
           ) : (
             <><ShieldAlert className="w-5 h-5 text-indigo-500" /> Tactical Meeting Radar</>
           )}
@@ -232,65 +228,65 @@ export default function Conferences() {
         
         <div className="space-y-6">
           {activeConf.meetings.length === 0 && (
-             <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 border-dashed">
-               <Filter className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-               <p className="text-base text-slate-500 font-medium">No recorded meetings for this particular milestone.</p>
+             <div className="text-center py-16 bg-ui-card rounded-2xl border border-ui-border border-dashed transition-colors">
+               <Filter className="w-8 h-8 text-ui-text-muted mx-auto mb-3" />
+               <p className="text-base text-ui-text-muted font-medium">No recorded meetings for this particular milestone.</p>
              </div>
           )}
 
-          {activeConf.meetings.map(meeting => (
-            <div key={meeting.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
-              <div className="bg-slate-50 w-full p-6 lg:flex items-center justify-between border-b border-slate-200">
+           {activeConf.meetings.map(meeting => (
+            <div key={meeting.id} className="bg-ui-card rounded-2xl border border-ui-border shadow-sm overflow-hidden group hover:shadow-md transition-all duration-500">
+              <div className="bg-ui-sidebar/50 w-full p-6 lg:flex items-center justify-between border-b border-ui-border transition-colors">
                 <div className="flex items-center gap-5">
-                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center shadow-lg shrink-0 ring-1 ring-black/10">
-                     <Building2 className="w-7 h-7 text-white" />
+                   <div className="w-14 h-14 rounded-2xl bg-ui-sidebar flex items-center justify-center shadow-lg shrink-0 ring-1 ring-ui-border">
+                     <Building2 className="w-7 h-7 text-ui-accent" />
                    </div>
                    <div>
                      <div className="flex items-center gap-3 mb-1.5">
-                       <h4 className="text-2xl font-extrabold text-slate-900">{meeting.partner}</h4>
-                       <span className="bg-blue-100 text-blue-800 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full">{meeting.focus}</span>
+                       <h4 className="text-2xl font-extrabold text-ui-text">{meeting.partner}</h4>
+                       <span className="bg-ui-accent/10 text-ui-accent text-[10px] uppercase font-bold px-2.5 py-1 rounded-full">{meeting.focus}</span>
                      </div>
-                     <div className={`flex items-center gap-2 text-sm font-bold px-2.5 py-1 rounded inline-flex ${activeConf.isHistorical ? 'text-slate-600 bg-slate-200/50' : 'text-orange-700 bg-orange-100 ring-1 ring-orange-500/20'}`}>
+                     <div className={`flex items-center gap-2 text-sm font-bold px-2.5 py-1 rounded inline-flex transition-colors ${activeConf.isHistorical ? 'text-ui-text-muted bg-ui-bg' : 'text-orange-600 bg-orange-500/10 ring-1 ring-orange-500/20'}`}>
                        <Clock className="w-4 h-4" /> {meeting.time}
                      </div>
                    </div>
                 </div>
                 
-                <div className="mt-5 lg:mt-0 lg:text-right border-l-2 lg:border-l lg:border-slate-200 pl-6">
-                   <p className="text-[11px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Our Attendees</p>
-                   <p className="text-base font-extrabold text-slate-700">{meeting.ourAttendees.join(', ')}</p>
+                <div className="mt-5 lg:mt-0 lg:text-right border-l-2 lg:border-l lg:border-ui-border pl-6 transition-colors">
+                   <p className="text-[11px] uppercase font-bold text-ui-text-muted mb-1.5 tracking-wider">Our Attendees</p>
+                   <p className="text-base font-extrabold text-ui-text">{meeting.ourAttendees.join(', ')}</p>
                 </div>
               </div>
 
               <div className="p-8 lg:flex gap-10">
                 <div className="lg:w-1/3 mb-8 lg:mb-0">
-                  <p className={`text-[11px] uppercase font-bold tracking-widest mb-3 flex items-center gap-2 ${activeConf.isHistorical ? 'text-slate-500' : 'text-indigo-600'}`}>
+                  <p className={`text-[11px] uppercase font-bold tracking-widest mb-3 flex items-center gap-2 transition-colors ${activeConf.isHistorical ? 'text-ui-text-muted' : 'text-indigo-400'}`}>
                     <Crosshair className="w-4 h-4" /> Core Objective
                   </p>
-                  <p className={`text-base text-slate-800 font-medium leading-relaxed border p-6 rounded-2xl shadow-inner ${activeConf.isHistorical ? 'bg-slate-50/80 border-slate-100' : 'bg-indigo-50/50 border-indigo-100/60'}`}>
+                  <p className={`text-base text-ui-text font-medium leading-relaxed border p-6 rounded-2xl shadow-inner transition-colors ${activeConf.isHistorical ? 'bg-ui-sidebar/30 border-ui-border' : 'bg-indigo-500/5 border-indigo-500/20'}`}>
                     {meeting.goal}
                   </p>
                 </div>
 
                 <div className="lg:w-2/3">
-                  <p className="text-[11px] uppercase font-bold text-slate-400 tracking-widest mb-5 flex items-center gap-2">
+                  <p className="text-[11px] uppercase font-bold text-ui-text-muted tracking-widest mb-5 flex items-center gap-2 transition-colors">
                     <Briefcase className="w-4 h-4" /> Opponent Dossier
                   </p>
                   
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                     {meeting.counterparties.map((cp, idx) => (
-                       <div key={idx} className="bg-white rounded-2xl border border-slate-200 p-5 ring-1 ring-slate-900/5 hover:border-blue-200 transition-colors">
+                       <div key={idx} className="bg-ui-card rounded-2xl border border-ui-border p-5 hover:border-ui-accent transition-colors">
                          <div className="flex gap-4">
-                           <div className="w-12 h-12 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center font-extrabold text-slate-500 shrink-0 text-lg">
+                           <div className="w-12 h-12 rounded-full bg-ui-bg border-2 border-ui-border flex items-center justify-center font-extrabold text-ui-text-muted shrink-0 text-lg transition-colors">
                              {cp.name.split(' ').map(n=>n[0]).join('').substring(0,2)}
                            </div>
                            <div className="flex-1">
                              <div className="flex flex-col mb-3">
-                               <h5 className="font-extrabold text-slate-900 text-base">{cp.name}</h5>
-                               <span className="text-xs font-bold text-slate-500">{cp.title}</span>
+                               <h5 className="font-extrabold text-ui-text text-base">{cp.name}</h5>
+                               <span className="text-xs font-bold text-ui-text-muted">{cp.title}</span>
                              </div>
-                             <div className="flex items-start gap-2 bg-slate-50 p-3 rounded-xl text-sm text-slate-600 font-medium italic border-l-4 border-slate-300">
-                               <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                             <div className="flex items-start gap-2 bg-ui-sidebar p-3 rounded-xl text-sm text-ui-text-muted font-medium italic border-l-4 border-ui-border transition-colors">
+                               <Info className="w-4 h-4 text-ui-text-muted shrink-0 mt-0.5" />
                                <p className="leading-snug">{cp.bio}</p>
                              </div>
                            </div>
