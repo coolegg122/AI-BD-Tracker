@@ -3,9 +3,10 @@ import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone,
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import EditableField from './EditableField';
 
 export default function ProjectSlideOver() {
-  const { selectedOverviewProject, closeProjectOverview } = useStore();
+  const { selectedOverviewProject, closeProjectOverview, stages, updateProject } = useStore();
   const { isAdmin } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [expandedEventId, setExpandedEventId] = useState(null);
@@ -94,6 +95,32 @@ export default function ProjectSlideOver() {
     }
   };
 
+  const handleFieldUpdate = async (field, newValue) => {
+    if (!selectedOverviewProject) return;
+    try {
+      // Logic for nested details update
+      let updateData = { [field]: newValue };
+      
+      // If it's a detail nested update (formatted as 'details.category.key')
+      if (field.startsWith('details.')) {
+        const parts = field.split('.');
+        const category = parts[1];
+        const key = parts[2];
+        const currentDetails = { ...(selectedOverviewProject.details || {}) };
+        const categoryData = { ...(currentDetails[category] || {}) };
+        categoryData[key] = newValue;
+        currentDetails[category] = categoryData;
+        updateData = { details: currentDetails };
+      }
+
+      await api.updateProject(selectedOverviewProject.id, updateData);
+      updateProject(selectedOverviewProject.id, updateData);
+    } catch (err) {
+      console.error(`Failed to update project field ${field}:`, err);
+      throw err;
+    }
+  };
+
   if (!selectedOverviewProject && !isVisible) return null;
 
   const project = selectedOverviewProject || {};
@@ -125,15 +152,30 @@ export default function ProjectSlideOver() {
         <div className="px-6 py-5 border-b border-ui-border bg-ui-sidebar flex justify-between items-start shrink-0 transition-colors">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-1 bg-ui-accent/10 text-ui-accent text-[10px] uppercase font-bold tracking-wider rounded-md transition-colors">
-                {project.stage || 'Pipeline'}
-              </span>
+              <EditableField
+                value={project.stage}
+                type="select"
+                options={stages.map(s => ({ id: s.id, label: s.label }))}
+                onSave={(val) => handleFieldUpdate('stage', val)}
+                className="inline-block"
+                textClassName="px-2.5 py-1 bg-ui-accent/10 text-ui-accent text-[10px] uppercase font-bold tracking-wider rounded-md"
+              />
               <span className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md transition-colors ${project.status === 'overdue' ? 'bg-red-500/10 text-red-600' : 'bg-green-500/10 text-green-600'}`}>
                 {project.status === 'overdue' ? 'Stalled / Action Req.' : 'Active'}
               </span>
             </div>
-            <h2 className="text-2xl font-extrabold text-ui-text">{project.company}</h2>
-            <p className="text-sm font-medium text-ui-text-muted mt-1">{project.pipeline}</p>
+            <EditableField
+              value={project.company}
+              onSave={(val) => handleFieldUpdate('company', val)}
+              textClassName="text-2xl font-extrabold text-ui-text"
+              label="Company Name"
+            />
+            <EditableField
+              value={project.pipeline}
+              onSave={(val) => handleFieldUpdate('pipeline', val)}
+              textClassName="text-sm font-medium text-ui-text-muted mt-1"
+              label="Pipeline Asset"
+            />
           </div>
           <button onClick={closeProjectOverview} className="p-2 text-ui-text-muted hover:text-ui-text hover:bg-ui-hover rounded-full transition-colors">
             <X className="w-5 h-5" />
@@ -184,9 +226,15 @@ export default function ProjectSlideOver() {
                     <div className="flex items-center gap-4 text-xs font-medium text-ui-text-muted">
                       <div className="flex items-center gap-1.5 bg-ui-hover px-2 py-1 rounded">
                         <Calendar className="w-3.5 h-3.5" />
-                        Target: {project.nextFollowUp || 'TBD'}
+                        Target: 
+                        <EditableField
+                          value={project.nextFollowUp || ''}
+                          type="date"
+                          onSave={(val) => handleFieldUpdate('nextFollowUp', val)}
+                          textClassName="font-bold text-ui-accent"
+                        />
                       </div>
-                      <div className="flex items-center gap-1.5 bg-ui-hover px-2 py-1 rounded">
+                      <div className="flex items-center gap-1.5 bg-ui-hover px-2 py-1 rounded transition-colors">
                         <Users className="w-3.5 h-3.5" />
                         Responsibility: Deal Team
                       </div>
@@ -340,7 +388,11 @@ export default function ProjectSlideOver() {
                               {Object.entries(content).map(([key, val]) => (
                                 <div key={key}>
                                    <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-1">{key.replace(/_/g, ' ')}</label>
-                                   <span className="text-xs font-bold text-ui-text">{val || '--'}</span>
+                                   <EditableField
+                                     value={val || ''}
+                                     onSave={(newVal) => handleFieldUpdate(`details.${category}.${key}`, newVal)}
+                                     textClassName="text-xs font-bold text-ui-text"
+                                   />
                                 </div>
                               ))}
                            </div>

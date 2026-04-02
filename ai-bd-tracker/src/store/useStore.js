@@ -55,6 +55,17 @@ export const useStore = create((set) => ({
   updateProjectStage: (projectId, newStage) => set((state) => ({
     projects: state.projects.map(p => p.id === projectId ? { ...p, stage: newStage } : p)
   })),
+  // Phase 31: Generic updates
+  updateProject: (projectId, updatedFields) => set((state) => ({
+    projects: state.projects.map(p => p.id === projectId ? { ...p, ...updatedFields } : p),
+    // Update selectedOverviewProject if it matches
+    selectedOverviewProject: state.selectedOverviewProject?.id === projectId 
+      ? { ...state.selectedOverviewProject, ...updatedFields }
+      : state.selectedOverviewProject
+  })),
+  updateContact: (contactId, updatedFields) => set((state) => ({
+    contacts: state.contacts.map(c => c.id === contactId ? { ...c, ...updatedFields } : c)
+  })),
   addProject: (project) => set((state) => ({
     projects: [project, ...state.projects]
   })),

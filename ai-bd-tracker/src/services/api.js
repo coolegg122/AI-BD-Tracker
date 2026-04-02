@@ -434,5 +434,42 @@ export const api = {
       console.error('UpdateUser API error:', error);
       throw error;
     }
+  },
+
+  // --- Phase 31: General Edit API ---
+  updateProject: async (projectId, data) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update project');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('UpdateProject API error:', error);
+      throw error;
+    }
+  },
+
+  updateContact: async (contactId, data) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/contacts/${contactId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update contact');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('UpdateContact API error:', error);
+      throw error;
+    }
   }
 };

@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Mail, Phone, Globe, Building2, Briefcase, MapPin, CalendarDays, History, ChevronRight, UserCircle2, Activity } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { api } from '../services/api';
+import EditableField from '../components/EditableField';
 
 export default function Contacts() {
-  const { contacts } = useStore();
+  const { contacts, updateContact } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContactId, setSelectedContactId] = useState(null);
 
@@ -24,6 +26,18 @@ export default function Contacts() {
   }, [searchQuery, contacts]);
 
   const activeContact = contacts.find(c => c.id === selectedContactId) || contacts[0];
+
+  const handleFieldUpdate = async (field, newValue) => {
+    if (!activeContact) return;
+    try {
+      const updateData = { [field]: newValue };
+      await api.updateContact(activeContact.id, updateData);
+      updateContact(activeContact.id, updateData);
+    } catch (err) {
+      console.error(`Failed to update contact field ${field}:`, err);
+      throw err;
+    }
+  };
 
   if (contacts.length === 0) {
     return (
@@ -128,41 +142,66 @@ export default function Contacts() {
 
                <div className="flex-1 pt-2">
                  <div className="flex flex-wrap items-center gap-3 mb-2">
-                   <span className="px-3 py-1 bg-ui-accent/10 text-ui-accent text-xs font-bold uppercase tracking-wider rounded-full transition-colors">
-                     {activeContact.functionArea}
-                   </span>
+                   <EditableField
+                     value={activeContact.functionArea}
+                     onSave={(val) => handleFieldUpdate('functionArea', val)}
+                     textClassName="px-3 py-1 bg-ui-accent/10 text-ui-accent text-xs font-bold uppercase tracking-wider rounded-full"
+                   />
                    <span className="flex items-center gap-1 text-sm font-medium text-ui-text-muted">
-                     <MapPin className="w-4 h-4" /> {activeContact.location}
+                     <MapPin className="w-4 h-4" /> 
+                     <EditableField
+                       value={activeContact.location}
+                       onSave={(val) => handleFieldUpdate('location', val)}
+                       textClassName="inline-block"
+                     />
                    </span>
                  </div>
                  
-                 <h1 className="text-4xl font-extrabold text-ui-text tracking-tight mb-2">
-                   {activeContact.name}
-                 </h1>
+                 <EditableField
+                   value={activeContact.name}
+                   onSave={(val) => handleFieldUpdate('name', val)}
+                   textClassName="text-4xl font-extrabold text-ui-text tracking-tight mb-2"
+                 />
                  
                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-lg">
                    <span className="font-bold text-ui-text flex items-center gap-2 transition-colors">
                      <Building2 className="w-5 h-5 text-ui-accent" />
-                     {activeContact.currentCompany}
+                     <EditableField
+                       value={activeContact.currentCompany}
+                       onSave={(val) => handleFieldUpdate('currentCompany', val)}
+                       textClassName="inline-block"
+                     />
                    </span>
                    <span className="hidden sm:inline text-ui-border">|</span>
-                   <span className="font-medium text-ui-text-muted">
-                     {activeContact.currentTitle}
-                   </span>
+                   <EditableField
+                     value={activeContact.currentTitle}
+                     onSave={(val) => handleFieldUpdate('currentTitle', val)}
+                     textClassName="font-medium text-ui-text-muted transition-colors whitespace-pre-wrap"
+                   />
                  </div>
                </div>
              </div>
 
              <div className="mt-8 pt-6 border-t border-ui-border flex flex-wrap gap-4 transition-colors">
-               <a href={`mailto:${activeContact.email}`} className="flex items-center gap-2 px-5 py-2.5 bg-ui-accent/10 hover:bg-ui-accent/20 text-ui-accent rounded-xl text-sm font-bold transition-all ring-1 ring-ui-accent/20">
-                  <Mail className="w-4 h-4" /> {activeContact.email}
-               </a>
-               <a href={`tel:${activeContact.phone}`} className="flex items-center gap-2 px-5 py-2.5 bg-ui-bg hover:bg-ui-hover text-ui-text rounded-xl text-sm font-bold transition-all ring-1 ring-ui-border">
-                  <Phone className="w-4 h-4" /> {activeContact.phone}
-               </a>
-               <a href={`https://${activeContact.linkedin}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 bg-ui-accent/10 hover:bg-ui-accent/20 text-ui-accent rounded-xl text-sm font-bold transition-all ring-1 ring-ui-accent/20">
-                  <Globe className="w-4 h-4" /> LinkedIn
-               </a>
+                <div className="flex items-center gap-2 px-5 py-2.5 bg-ui-accent/10 text-ui-accent rounded-xl text-sm font-bold transition-all ring-1 ring-ui-accent/20">
+                   <Mail className="w-4 h-4 shrink-0" /> 
+                   <EditableField
+                      value={activeContact.email}
+                      onSave={(val) => handleFieldUpdate('email', val)}
+                      textClassName="inline-block"
+                   />
+                </div>
+                <div className="flex items-center gap-2 px-5 py-2.5 bg-ui-bg text-ui-text rounded-xl text-sm font-bold transition-all ring-1 ring-ui-border">
+                   <Phone className="w-4 h-4 shrink-0" /> 
+                   <EditableField
+                      value={activeContact.phone}
+                      onSave={(val) => handleFieldUpdate('phone', val)}
+                      textClassName="inline-block"
+                   />
+                </div>
+                <a href={`https://${activeContact.linkedin}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2.5 bg-ui-accent/10 hover:bg-ui-accent/20 text-ui-accent rounded-xl text-sm font-bold transition-all ring-1 ring-ui-accent/20">
+                   <Globe className="w-4 h-4" /> LinkedIn
+                </a>
              </div>
           </div>
 
@@ -175,9 +214,12 @@ export default function Contacts() {
                  <h3 className="flex items-center gap-2 text-sm font-extrabold text-ui-text uppercase tracking-widest mb-4">
                    <Activity className="w-5 h-5 text-ui-accent" /> Executive Profile & Tactics
                  </h3>
-                 <p className="text-ui-text-muted font-medium leading-relaxed text-lg">
-                   {activeContact.profile}
-                 </p>
+                 <EditableField
+                   value={activeContact.profile}
+                   type="textarea"
+                   onSave={(val) => handleFieldUpdate('profile', val)}
+                   textClassName="text-ui-text-muted font-medium leading-relaxed text-lg block w-full"
+                 />
                </div>
 
                {/* Met At / Associated Conferences */}

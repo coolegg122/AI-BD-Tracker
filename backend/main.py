@@ -194,17 +194,34 @@ def get_projects(db: Session = Depends(database.get_db)):
     return db.query(models.Project).all()
 
 @app.patch("/api/v1/projects/{project_id}", response_model=schemas.ProjectResponse)
-def update_project_stage(project_id: int, stage_update: dict, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
-    """看板拖拽：更新项目所处阶段"""
+def update_project(project_id: int, project_update: schemas.ProjectUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """通用项目更新：支持修改公司名、管线、阶段、跟进日期及详情"""
     db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    if "stage" in stage_update:
-        db_project.stage = stage_update["stage"]
-        db.commit()
-        db.refresh(db_project)
+    update_data = project_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_project, key, value)
+        
+    db.commit()
+    db.refresh(db_project)
     return db_project
+
+@app.patch("/api/v1/contacts/{contact_id}", response_model=schemas.ContactResponse)
+def update_contact(contact_id: int, contact_update: schemas.ContactUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """通用联系人更新：支持修改姓名、公司、职位、联系方式等"""
+    db_contact = db.query(models.Contact).filter(models.Contact.id == contact_id).first()
+    if not db_contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    
+    update_data = contact_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_contact, key, value)
+        
+    db.commit()
+    db.refresh(db_contact)
+    return db_contact
 
 @app.get("/api/v1/projects/{project_id}/history", response_model=List[schemas.ProjectHistoryResponse])
 def get_project_history(project_id: int, db: Session = Depends(database.get_db)):

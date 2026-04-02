@@ -89,6 +89,20 @@ class ContactResponse(ContactBase):
     class Config:
         from_attributes = True
 
+class ContactUpdate(BaseModel):
+    name: Optional[str] = None
+    currentCompany: Optional[str] = None
+    currentTitle: Optional[str] = None
+    functionArea: Optional[str] = None
+    photoUrl: Optional[str] = None
+    location: Optional[str] = None
+    email: Optional[str] = None
+    linkedin: Optional[str] = None
+    phone: Optional[str] = None
+    profile: Optional[str] = None
+    metAt: Optional[List[str]] = None
+    details: Optional[dict] = None
+
 class ProjectBase(BaseModel):
     company: str
     pipeline: str = ""
@@ -119,6 +133,13 @@ class ProjectResponse(ProjectBase):
 
     class Config:
         from_attributes = True
+
+class ProjectUpdate(BaseModel):
+    company: Optional[str] = None
+    pipeline: Optional[str] = None
+    stage: Optional[str] = None
+    nextFollowUp: Optional[str] = None
+    details: Optional[dict] = None
 
 class DealBase(BaseModel):
     date: str
