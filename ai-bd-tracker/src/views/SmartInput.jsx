@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function SmartInput() {
-  const { projects, addProject, setProjects, setContacts } = useStore();
+  const { projects, addProject, setProjects, setContacts, setDashboardData } = useStore();
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('manual');
   const [inputText, setInputText] = useState('');
@@ -105,12 +105,14 @@ export default function SmartInput() {
 
       // Refresh global store data so other views reflect the new data immediately
       try {
-        const [updatedProjects, updatedContacts] = await Promise.all([
+        const [updatedProjects, updatedContacts, updatedDashboard] = await Promise.all([
           api.getProjects(),
-          api.getContacts()
+          api.getContacts(),
+          api.getDashboardMock()
         ]);
         setProjects(updatedProjects);
         setContacts(updatedContacts);
+        setDashboardData(updatedDashboard);
       } catch (refreshErr) {
         console.error("Failed to refresh store after sync:", refreshErr);
       }

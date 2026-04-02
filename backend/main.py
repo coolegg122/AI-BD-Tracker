@@ -216,9 +216,28 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
             source_text=request.raw_text # Save traceability
         )
         db.add(db_history)
-        db.commit()
-        db.refresh(db_history)
         results["history"] = {"id": db_history.id, "action": "created"}
+        
+        # 5. NEW: Promote attendees to full contact records if not already in DB
+        attendees = hist_data.get("details", {}).get("attendees", [])
+        for att in attendees:
+            if isinstance(att, dict) and att.get("name"):
+                name = att["name"]
+                # Avoid duplicate logic if the AI already put them in upsert_contacts
+                existing_c = db.query(models.Contact).filter(models.Contact.name.ilike(name)).first()
+                if not existing_c:
+                    new_c = models.Contact(
+                        name=name,
+                        currentCompany=att.get("company") or (proj_data.get("company") if proj_data else "Unknown"),
+                        currentTitle=att.get("title"),
+                        functionArea=att.get("functionArea"),
+                        metAt=[proj_data.get("company")] if proj_data else [],
+                        source_text=request.raw_text
+                    )
+                    db.add(new_c)
+                    results["contacts"].append({"name": name, "action": "promoted_from_attendee"})
+        
+        db.commit()
     else:
         db.commit()
 
