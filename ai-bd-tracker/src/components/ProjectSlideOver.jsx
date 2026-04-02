@@ -17,6 +17,7 @@ export default function ProjectSlideOver() {
   const [prepData, setPrepData] = useState(null);
   const [isPrepLoading, setIsPrepLoading] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [users, setUsers] = useState([]);
   const chatEndRef = useRef(null);
