@@ -1,6 +1,15 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, JSON, Boolean
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, JSON, Boolean, Table, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from database import Base
+
+# Association table for Deal and Asset (Many-to-Many)
+deal_assets = Table(
+    "deal_assets",
+    Base.metadata,
+    Column("deal_id", Integer, ForeignKey("deals.id", ondelete="CASCADE"), primary_key=True),
+    Column("asset_id", Integer, ForeignKey("assets.id", ondelete="CASCADE"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -8,21 +17,37 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     email = Column(String, unique=True, index=True)
-    job_title = Column(String)       # NEW (Phase 30.2): Job Title (e.g. BD Manager)
+    job_title = Column(String)
     role = Column(String)            # Permission Role (admin / guest)
     initials = Column(String)
-    hashed_password = Column(String)  # For local authentication
-    is_active = Column(Boolean, default=True)  # Boolean type for active status
-    notification_prefs = Column(JSON, default=dict) # NEW: Phase 28
-    theme = Column(String, default="light")          # NEW: Phase 28
+    hashed_password = Column(String)
+    is_active = Column(Boolean, default=True)
+    notification_prefs = Column(JSON, default=dict)
+    theme = Column(String, default="light")
 
-    projects = relationship("Project", back_populates="owner")
+    deals = relationship("Deal", back_populates="owner")
 
-class Project(Base):
-    __tablename__ = "projects"
+class Asset(Base):
+    __tablename__ = "assets"
 
     id = Column(Integer, primary_key=True, index=True)
-    company = Column(String, index=True)
+    name = Column(String, index=True, nullable=False)
+    company_id = Column(Integer, ForeignKey("company_intelligence.id", ondelete="SET NULL"))
+    type = Column(String)       # Small Molecule, Antibody, ADC, etc.
+    indication = Column(String) # Lead Indication
+    phase = Column(String)      # Discovery, Preclinical, Phase I, etc.
+    moa = Column(String)        # Mechanism of Action
+    details = Column(JSON, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    company = relationship("CompanyIntelligence", back_populates="assets")
+    deals = relationship("Deal", secondary=deal_assets, back_populates="assets")
+
+class Deal(Base):
+    __tablename__ = "deals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company = Column(String, index=True) # Text company name (kept for legacy/quick search)
     pipeline = Column(String)
     stage = Column(String, default="Initial Contact")
     lastContactDate = Column(String)
@@ -30,68 +55,73 @@ class Project(Base):
     status = Column(String, default="active") # active, dormant, closed
     
     owner_id = Column(Integer, ForeignKey("users.id"))
-    owner = relationship("User", back_populates="projects")
-    details = Column(JSON, default=dict) # NEW (Phase 12): Flexible storage for AI-extracted details
-    source_text = Column(String) # NEW: Traceability for Smart Input
+    owner = relationship("User", back_populates="deals")
+    details = Column(JSON, default=dict)
+    source_text = Column(String)
     
-    # NEW (Phase 16.1): AI Strategist Cache
     negotiation_prep = Column(JSON, default=dict)
     prep_updated_at = Column(String) 
 
-    tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
-    history = relationship("ProjectHistory", back_populates="project", cascade="all, delete-orphan")
-    attachments = relationship("Attachment", back_populates="project", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="deal", cascade="all, delete-orphan")
+    history = relationship("DealHistory", back_populates="deal", cascade="all, delete-orphan")
+    attachments = relationship("Attachment", back_populates="deal", cascade="all, delete-orphan")
+    assets = relationship("Asset", secondary=deal_assets, back_populates="deals")
+    
+    # Phase 2: Economics & Legal
+    economics = relationship("DealEconomics", back_populates="deal", uselist=False, cascade="all, delete-orphan")
+    agreements = relationship("LegalAgreement", back_populates="deal", cascade="all, delete-orphan")
+    due_diligence = relationship("DueDiligenceTracker", back_populates="deal", uselist=False, cascade="all, delete-orphan")
 
 class Attachment(Base):
     __tablename__ = "attachments"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"))
     name = Column(String)
-    file_type = Column(String) # pdf, ppt, image, etc.
-    category = Column(String)  # Scientific, Legal, Financial, etc.
-    url = Column(String)       # Path or URL to the file
+    file_type = Column(String)
+    category = Column(String)
+    url = Column(String)
     uploaded_at = Column(String)
 
-    project = relationship("Project", back_populates="attachments")
+    deal = relationship("Deal", back_populates="attachments")
 
 class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"))
     type = Column(String) # meeting, share, follow_up
     desc = Column(String)
     date = Column(String)
     status = Column(String) # pending, tentative, confirmed
 
-    project = relationship("Project", back_populates="tasks")
+    deal = relationship("Deal", back_populates="tasks")
 
-class ProjectHistory(Base):
-    __tablename__ = "project_history"
+class DealHistory(Base):
+    __tablename__ = "deal_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"))
     type = Column(String) # email, call, document, meeting
     title = Column(String)
     date = Column(String)
     desc = Column(String)
-    details = Column(JSON, default=dict) # To store flexible fields like docId, link, attendees, etc.
-    source_text = Column(String) # NEW (Phase 33): Verbatim source for traceability
+    details = Column(JSON, default=dict)
+    source_text = Column(String)
 
-    project = relationship("Project", back_populates="history")
+    deal = relationship("Deal", back_populates="history")
 
 class Catalyst(Base):
     __tablename__ = "catalysts"
 
     id = Column(Integer, primary_key=True, index=True)
-    competitor = Column(String) # Used as competitor in Dashboard and company in Schedule
-    asset = Column(String)      # e.g. "Keytruda sBLA"
-    type = Column(String)       # e.g. "Trial Readout"
-    event = Column(String)      # The description/event text
-    date = Column(String)       # e.g. "Oct 14"
+    competitor = Column(String) 
+    asset = Column(String)      
+    type = Column(String)       
+    event = Column(String)      
+    date = Column(String)       
     impact = Column(String, default="Medium")
-    color = Column(String, default="blue") # Tailwind color modifier
+    color = Column(String, default="blue")
 
 class Contact(Base):
     __tablename__ = "contacts"
@@ -107,9 +137,9 @@ class Contact(Base):
     linkedin = Column(String)
     phone = Column(String)
     profile = Column(String)
-    metAt = Column(JSON, default=list) # Array of strings
-    details = Column(JSON, default=dict) # NEW: Flexible storage for AI-extracted details
-    source_text = Column(String) # NEW (Phase 33): Verbatim source/context for traceability
+    metAt = Column(JSON, default=list)
+    details = Column(JSON, default=dict)
+    source_text = Column(String)
 
     careerHistory = relationship("CareerHistory", back_populates="contact", cascade="all, delete-orphan")
 
@@ -121,7 +151,7 @@ class CareerHistory(Base):
     company = Column(String)
     title = Column(String)
     dateRange = Column(String)
-    isCurrent = Column(Boolean, default=False) # Boolean type for consistency
+    isCurrent = Column(Boolean, default=False)
 
     contact = relationship("Contact", back_populates="careerHistory")
 
@@ -130,11 +160,13 @@ class CompanyIntelligence(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     company_name = Column(String, unique=True, index=True)
-    focus_areas = Column(JSON, default=list) # Array of strings
+    focus_areas = Column(JSON, default=list)
     bd_strategy = Column(String)
-    patent_cliffs = Column(JSON, default=list) # Array of strings or dicts
-    recent_deals = Column(JSON, default=list) # Array of dicts
-    last_updated = Column(String) # Date string
+    patent_cliffs = Column(JSON, default=list)
+    recent_deals = Column(JSON, default=list)
+    last_updated = Column(String)
+
+    assets = relationship("Asset", back_populates="company")
 
 class PendingIngestion(Base):
     __tablename__ = "pending_ingestion"
@@ -144,11 +176,11 @@ class PendingIngestion(Base):
     sender_email = Column(String, index=True)
     subject = Column(String)
     raw_content = Column(String)
-    attachments = Column(JSON, default=list) # List of filenames
-    ai_extracted_payload = Column(JSON, default=dict) # The first guess by AI
-    entity_type = Column(String) # project, contact, or meeting_note
-    status = Column(String, default="pending") # pending, processed, discarded
-    created_at = Column(String) # YYYY-MM-DD HH:MM
+    attachments = Column(JSON, default=list)
+    ai_extracted_payload = Column(JSON, default=dict)
+    entity_type = Column(String) # deal, contact, or meeting_note
+    status = Column(String, default="pending")
+    created_at = Column(String)
 
 class SmartInputArchive(Base):
     __tablename__ = "smart_input_archive"
@@ -156,7 +188,45 @@ class SmartInputArchive(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     raw_text = Column(String)
-    source_type = Column(String) # manual, email, zoho
-    entities_summary = Column(JSON, default=dict) # e.g. {"project": "Company A", "contacts": ["Name 1"]}
-    created_at = Column(String) # YYYY-MM-DD HH:MM
+    source_type = Column(String)
+    entities_summary = Column(JSON, default=dict)
+    created_at = Column(String)
+
+# Phase 2: Economics, Legal, and DD
+class DealEconomics(Base):
+    __tablename__ = "deal_economics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"), unique=True)
+    upfront = Column(String)  # Formatted string or numeric
+    milestones = Column(String)
+    royalties = Column(String)
+    total_deal_value = Column(String)
+    pos = Column(Integer, default=0) # Probability of Success (0-100)
+    currency = Column(String, default="USD")
+
+    deal = relationship("Deal", back_populates="economics")
+
+class LegalAgreement(Base):
+    __tablename__ = "legal_agreements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"))
+    agreement_type = Column(String) # CDA, NDA, Term Sheet, Definitive Agreement
+    status = Column(String)         # Drafting, Under Review, Negotiating, Signed, Expired
+    effective_date = Column(String)
+    expiration_date = Column(String)
+
+    deal = relationship("Deal", back_populates="agreements")
+
+class DueDiligenceTracker(Base):
+    __tablename__ = "due_diligence"
+
+    id = Column(Integer, primary_key=True, index=True)
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"), unique=True)
+    vdr_link = Column(String)
+    status = Column(String, default="Not Started") # Not Started, Ongoing, Completed
+    key_risks = Column(JSON, default=list)
+
+    deal = relationship("Deal", back_populates="due_diligence")
 

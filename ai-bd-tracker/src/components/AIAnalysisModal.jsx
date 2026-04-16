@@ -90,7 +90,7 @@ export default function AIAnalysisModal() {
                   <li className={`flex gap-3 items-start transition-opacity duration-500 ${visibleItems >= 1 ? 'opacity-100' : 'opacity-0'}`}>
                     <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 className="w-3.5 h-3.5" /></div>
                     <div>
-                      <p className="text-sm font-bold text-ui-text">Accelerate Project Helios Timeline</p>
+                      <p className="text-sm font-bold text-ui-text">Accelerate Deal Helios Timeline</p>
                       <p className="text-xs text-ui-text-muted mt-0.5">We now have a brief window to achieve first-in-class status. Recommend pulling forward the Phase II interim analysis by 4 weeks.</p>
                     </div>
                   </li>

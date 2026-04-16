@@ -8,7 +8,7 @@ import { api } from '../services/api';
 
 export default function Topbar() {
   const navigate = useNavigate();
-  const { notifications, markNotificationRead, dashboardData, openProjectOverview } = useStore();
+  const { notifications, markNotificationRead, dashboardData, openDealOverview } = useStore();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   
@@ -66,8 +66,8 @@ export default function Topbar() {
   const handleSearchResultClick = (result) => {
     setShowSearchResults(false);
     setSearchQuery('');
-    if (result.type === 'project') {
-      openProjectOverview({ id: result.id, company: result.title }); // Simplified object for modal trigger
+    if (result.type === 'deal') {
+      openDealOverview({ id: result.id, company: result.title }); // Simplified object for modal trigger
     } else {
       navigate('/contacts');
     }
@@ -105,7 +105,7 @@ export default function Topbar() {
                         onClick={() => handleSearchResultClick(result)}
                       >
                         <div className={`p-2 rounded-lg bg-ui-accent/10 text-ui-accent`}>
-                          {result.type === 'project' ? <Briefcase className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                          {result.type === 'deal' ? <Briefcase className="w-4 h-4" /> : <Users className="w-4 h-4" />}
                         </div>
                         <div>
                           <div className="text-sm font-bold text-ui-text leading-none mb-1">{result.title}</div>

@@ -6,16 +6,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def extract_universal(text: str, target_type: str = "project") -> dict:
+def extract_universal(text: str, target_type: str = "deal") -> dict:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         print(f"Warning: GEMINI_API_KEY not set. Returning mock data for {target_type}.")
-        if target_type == "project":
+        if target_type == "deal":
             return {
                 "company": "Mocked BioPharma Inc.",
                 "pipeline": "Auto-Generated Mock Pipeline Phase I",
                 "stage": "Due Diligence",
                 "nextFollowUp": "2026-11-01",
+                "deals_assets": [{"name": "MOCK-101", "type": "ADC", "indication": "Oncology"}],
                 "tasks": [{ "type": "meeting", "desc": "Discuss early stage funding", "date": "TBD", "status": "pending" }]
             }
         elif target_type == "contact":
@@ -36,76 +37,67 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
                 "title": "Discussion with Novartis on ADC",
                 "date": "2026-03-31",
                 "desc": "Next steps on data sharing.",
-                "suspected_project_name": "Novartis"
+                "suspected_deal_name": "Novartis"
             }
         
     client = genai.Client(api_key=api_key)
     model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
     
     prompts = {
-        "project": """
-            You are a professional BioPharma BD assistant. Your goal is to extract ALL relevant BD information into a highly structured format.
+        "deal": """
+            You are a professional BioPharma BD assistant. Your goal is to extract Deal (transactional) and Asset (scientific) info.
+            
+            ### DEAL vs ASSET:
+            - **Deal**: The transaction status, stage (Ph1, Ph2), company name, follow-ups, and tasks.
+            - **Asset**: The specific molecule or technology (e.g. "Claudin18.2 ADC").
             
             ### CATEGORIZATION RULES:
-            1. **Scientific**: Target (e.g. Claudin18.2), MoA (e.g. ADC, RLT), Modality (e.g. Small Molecule, mAb), pre-clinical data summaries.
-            2. **Clinical**: Phase (Ph1, Ph2, etc.), Indication (e.g. mCRPC, NSCLC), Trial IDs (NCT numbers), Enrollment status, Primary Endpoints.
-            3. **Financial/Commercial**: Deal terms (upfront, milestones, royalties), Market size, Competitors mentioned, Funding status.
-            4. **Legal**: Patent status, LOE (Loss of Exclusivity) dates, Territory rights (Global, Ex-China, etc.).
+            1. **Scientific**: Target, MoA, Modality, pre-clinical data.
+            2. **Clinical**: Phase, Indication, Trial IDs, Enrollment.
+            3. **Financial**: Deal terms, Market size, Competitors.
+            4. **Legal**: Patent status, LOE, Territory rights.
             
-            ### DYNAMIC CATEGORY CREATION:
-            If you find CRITICAL information that doesn't fit the above 4 buckets (e.g. Manufacturing, Ethics, Supply Chain, ESG), you MUST create a NEW top-level key in the "details" object with a descriptive name.
-            
-            ### DOCUMENT DETECTION:
-            Look for mentions of shared documents or files. For each file mentioned, add it to the "suggested_attachments" list in details.
-            
-            You MUST return a single valid JSON object matching this exact schema:
+            You MUST return a single valid JSON object:
             {
               "company": "Company Name",
-              "pipeline": "Pipeline or Asset Name",
-              "stage": "Clinical Stage (e.g. Phase I, Phase II, Pre-clinical, Marketed)",
+              "pipeline": "Deal Name (e.g. Oncology Collaboration)",
+              "stage": "Clinical Stage (e.g. Phase I)",
               "nextFollowUp": "YYYY-MM-DD",
+              "assets": [
+                { "name": "Asset Name", "type": "Modality (mAb, ADC)", "indication": "Main Indication", "phase": "Clinical Phase", "moa": "MoA details" }
+              ],
               "tasks": [
                 { "type": "meeting/email/follow_up", "desc": "Specific to-do", "date": "YYYY-MM-DD or TBD", "status": "pending" }
               ],
               "attachments": [
-                { "name": "File Name (e.g. ClinicalSummary.pdf)", "file_type": "PDF/PPT/Image", "category": "Scientific/Legal/Financial/Other", "url": "", "uploaded_at": "2026-03-31" }
+                { "name": "File Name", "file_type": "PDF/PPT/Image", "category": "Scientific/Legal/Financial/Other", "url": "", "uploaded_at": "2026-03-31" }
               ],
               "primary_contact": {
-                "name": "Full Name (Optional)",
-                "email": "Primary Email (Optional)",
-                "currentTitle": "Title at their company",
+                "name": "Full Name",
+                "email": "Email",
+                "currentTitle": "Title",
                 "location": "City/Country"
               },
               "details": {
-                "Scientific": { "target": "", "moa": "", "modality": "" },
-                "Clinical": { "phase": "", "indication": "", "trial_id": "" },
-                "Financial": { "deal_value": "" },
-                "Legal": { "patent": "" },
-                "Any_Custom_Category": { "key": "value" }
+                "Scientific": {}, "Clinical": {}, "Financial": {}, "Legal": {}
               }
             }
         """,
         "contact": """
             You are a professional BioPharma BD assistant. Extract executive contact info and career history.
-            Look for all communication channels (email, phone, linkedin) and functional expertise.
             
-            You MUST return a single valid JSON object matching this exact schema:
+            You MUST return a JSON object:
             {
               "name": "Full Name",
               "currentCompany": "Current Company",
               "currentTitle": "Current Title",
-              "functionArea": "Functional Area (e.g. Oncology, BD, CMC)",
+              "functionArea": "Functional Area",
               "location": "City/Country",
               "email": "Primary Email",
               "linkedin": "LinkedIn URL",
               "phone": "Phone Number",
-              "profile": "Short bio (under 20 words)",
-              "details": {
-                "extra_emails": ["secondary@email.com"],
-                "associated_drugs": ["Drug A"],
-                "education": "University/Degree",
-                "languages": ["English", "Chinese"]
-              },
+              "profile": "Short bio",
+              "details": {},
               "careerHistory": [
                 { "company": "Company", "title": "Title", "dateRange": "20XX-20XX", "isCurrent": true }
               ]
@@ -113,74 +105,46 @@ def extract_universal(text: str, target_type: str = "project") -> dict:
         """,
         "meeting_note": """
             You are a professional BioPharma BD assistant. Extract key takeaways.
-            Summarize core conclusions, next steps, and "vibe" of the discussion.
             
-            You MUST return a single valid JSON object matching this exact schema:
+            You MUST return a JSON object:
             {
               "type": "meeting/email/group_call",
               "title": "Short note title",
               "date": "YYYY-MM-DD",
-              "desc": "Core conclusion or progress (under 50 words)",
-              "suspected_project_name": "Company or asset name for matching",
+              "desc": "Summary",
+              "suspected_deal_name": "Company or asset name",
               "details": {
                 "attendees": [
-                    {
-                        "name": "Person Name",
-                        "title": "Job Title (e.g., Medical Director)",
-                        "functionArea": "Function (e.g., Clinical, Legal, BD)",
-                        "company": "Company Name"
-                    }
+                    { "name": "Name", "title": "Title", "functionArea": "Function", "company": "Company" }
                 ],
-                "decisions_made": ["Decision 1"],
+                "decisions_made": [],
                 "sentiment": "Neutral/Positive/Negative",
-                "unresolved_issues": ["Issue A"]
+                "unresolved_issues": []
               }
             }
         """,
         "mixed": """
             You are an advanced BioPharma BD Intelligence Analyst. 
-            Your goal is to parse a complex, mixed input (like an email or call transcript) and extract MULTIPLE entities in a single JSON structure.
+            Extract multiple entities (Deal, Assets, Contacts, Event).
             
-            ### ENTITIES TO EXTRACT:
-            1. **Project Update**: Any information regarding a deal, asset, or pipeline.
-            2. **Contacts**: Any people mentioned with their titles, companies, and roles.
-            3. **Timeline Event**: The core event described by the input (e.g. the meeting itself, the email date).
-            
-            ### RULES:
-            - If a person is mentioned, extract them into the `upsert_contacts` list.
-            - If a project/deal is discussed, extract details into the `update_project` object.
-            - Summarize the overall interaction into the `add_timeline_event` object.
-            
-            You MUST return a single valid JSON object matching this exact schema:
+            You MUST return a JSON object:
             {
-              "update_project": {
+              "update_deal": {
                 "company": "Company Name",
-                "pipeline": "Pipeline/Asset Name",
-                "stage": "Clinical Stage",
+                "pipeline": "Deal Name",
+                "stage": "Stage",
+                "assets": [ { "name": "Asset Name", "type": "", "indication": "", "phase": "" } ],
                 "details": { "Scientific": {}, "Clinical": {}, "Financial": {}, "Legal": {} }
               },
               "upsert_contacts": [
-                {
-                  "name": "Full Name",
-                  "currentCompany": "Company",
-                  "currentTitle": "Title",
-                  "functionArea": "Function (BD/Clinical/Legal)",
-                  "email": "Email if found",
-                  "profile": "Short bio",
-                  "careerHistory": []
-                }
+                { "name": "Full Name", "currentCompany": "Company", "currentTitle": "Title", "email": "Email" }
               ],
               "add_timeline_event": {
                 "type": "meeting/call/email",
-                "title": "Title of the interaction",
+                "title": "Title",
                 "date": "YYYY-MM-DD",
-                "desc": "Short summary",
-                "details": {
-                  "attendees": [
-                    { "name": "Name", "title": "Title", "functionArea": "Function", "company": "Company" }
-                  ],
-                  "minutes": "Key takeaways"
-                }
+                "desc": "Summary",
+                "details": { "attendees": [] }
               }
             }
         """

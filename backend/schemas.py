@@ -12,7 +12,7 @@ class TaskCreate(TaskBase):
 
 class TaskResponse(TaskBase):
     id: int
-    project_id: int
+    deal_id: int
 
     class Config:
         from_attributes = True
@@ -29,7 +29,7 @@ class AttachmentCreate(AttachmentBase):
 
 class AttachmentResponse(AttachmentBase):
     id: int
-    project_id: int
+    deal_id: int
 
     class Config:
         from_attributes = True
@@ -38,6 +38,34 @@ class OwnerBase(BaseModel):
     name: str
     role: str
     initials: str
+
+class AssetBase(BaseModel):
+    name: str
+    company_id: Optional[int] = None
+    type: Optional[str] = None
+    indication: Optional[str] = None
+    phase: Optional[str] = None
+    moa: Optional[str] = None
+    details: Optional[dict] = {}
+
+class AssetCreate(AssetBase):
+    pass
+
+class AssetUpdate(BaseModel):
+    name: Optional[str] = None
+    company_id: Optional[int] = None
+    type: Optional[str] = None
+    indication: Optional[str] = None
+    phase: Optional[str] = None
+    moa: Optional[str] = None
+    details: Optional[dict] = None
+
+class AssetResponse(AssetBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class CareerHistoryBase(BaseModel):
     company: str
@@ -104,7 +132,7 @@ class ContactUpdate(BaseModel):
     metAt: Optional[List[str]] = None
     details: Optional[dict] = None
 
-class ProjectBase(BaseModel):
+class DealBase(BaseModel):
     company: str
     pipeline: str = ""
     stage: str = "Initial Contact"
@@ -113,30 +141,36 @@ class ProjectBase(BaseModel):
     attachments: List[AttachmentCreate] = []
     details: Optional[dict] = {}
     primary_contact: Optional[ContactCreate] = None
-    source_text: Optional[str] = None # NEW: For AI sync tracing
+    source_text: Optional[str] = None
 
     @field_validator('details', mode='before')
     @classmethod
     def details_default(cls, v):
         return v if v is not None else {}
 
-class ProjectCreate(ProjectBase):
+class DealCreate(DealBase):
     pass
 
-class ProjectResponse(ProjectBase):
+class DealResponse(DealBase):
     id: int
     lastContactDate: str
     status: str
     owner: Optional[OwnerBase] = None
     tasks: List[TaskResponse] = []
     attachments: List[AttachmentResponse] = []
+    assets: List[AssetResponse] = []
     negotiation_prep: Optional[dict] = {}
     prep_updated_at: Optional[str] = None
+    
+    # Phase 2: Professional BD Modules
+    economics: Optional["DealEconomicsResponse"] = None
+    agreements: List["LegalAgreementResponse"] = []
+    due_diligence: Optional["DueDiligenceTrackerResponse"] = None
 
     class Config:
         from_attributes = True
 
-class ProjectUpdate(BaseModel):
+class DealUpdate(BaseModel):
     company: Optional[str] = None
     pipeline: Optional[str] = None
     stage: Optional[str] = None
@@ -145,31 +179,26 @@ class ProjectUpdate(BaseModel):
     details: Optional[dict] = None
     source_text: Optional[str] = None
 
-class DealBase(BaseModel):
-    date: str
-    target: str
-    deal_type: str
-    value: str
-
 class IntelligenceBase(BaseModel):
     company_name: str
     focus_areas: List[str] = []
     bd_strategy: str = ""
     patent_cliffs: List[str] = []
-    recent_deals: List[DealBase] = []
+    recent_deals: List[dict] = []
     last_updated: str = ""
 
 class IntelligenceResponse(IntelligenceBase):
     id: int
+    assets: List[AssetResponse] = []
 
     class Config:
         from_attributes = True
 
 class AIParsingRequest(BaseModel):
     raw_text: str
-    type: str = "project" # project, contact, or meeting_note
+    type: str = "deal" # deal, contact, or meeting_note
 
-class ProjectHistoryBase(BaseModel):
+class DealHistoryBase(BaseModel):
     type: str
     title: str
     date: str
@@ -182,12 +211,12 @@ class ProjectHistoryBase(BaseModel):
     def details_default(cls, v):
         return v if v is not None else {}
 
-class ProjectHistoryCreate(ProjectHistoryBase):
+class DealHistoryCreate(DealHistoryBase):
     pass
 
-class ProjectHistoryResponse(ProjectHistoryBase):
+class DealHistoryResponse(DealHistoryBase):
     id: int
-    project_id: int
+    deal_id: int
 
     class Config:
         from_attributes = True
@@ -306,4 +335,73 @@ class SmartInputArchiveResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Phase 2: Economics, Legal, and DD
+class DealEconomicsBase(BaseModel):
+    upfront: Optional[str] = "0"
+    milestones: Optional[str] = "0"
+    royalties: Optional[str] = "0%"
+    total_deal_value: Optional[str] = "0"
+    pos: Optional[int] = 0
+    currency: Optional[str] = "USD"
+
+class DealEconomicsCreate(DealEconomicsBase):
+    pass
+
+class DealEconomicsResponse(DealEconomicsBase):
+    id: int
+    deal_id: int
+
+    class Config:
+        from_attributes = True
+
+class LegalAgreementBase(BaseModel):
+    agreement_type: str # CDA, NDA, Term Sheet, Definitive Agreement
+    status: str         # Drafting, Under Review, Negotiating, Signed, Expired
+    effective_date: Optional[str] = None
+    expiration_date: Optional[str] = None
+
+class LegalAgreementCreate(LegalAgreementBase):
+    pass
+
+class LegalAgreementResponse(LegalAgreementBase):
+    id: int
+    deal_id: int
+
+    class Config:
+        from_attributes = True
+
+class DueDiligenceTrackerBase(BaseModel):
+    vdr_link: Optional[str] = None
+    status: str = "Not Started"
+    key_risks: Optional[List[dict]] = []
+
+class DueDiligenceTrackerCreate(DueDiligenceTrackerBase):
+    pass
+
+class DueDiligenceTrackerResponse(DueDiligenceTrackerBase):
+    id: int
+    deal_id: int
+
+    class Config:
+        from_attributes = True
+
+class DealEconomicsUpdate(BaseModel):
+    upfront: Optional[str] = None
+    milestones: Optional[str] = None
+    royalties: Optional[str] = None
+    total_deal_value: Optional[str] = None
+    pos: Optional[int] = None
+    currency: Optional[str] = None
+
+class LegalAgreementUpdate(BaseModel):
+    agreement_type: Optional[str] = None
+    status: Optional[str] = None
+    effective_date: Optional[str] = None
+    expiration_date: Optional[str] = None
+
+class DueDiligenceTrackerUpdate(BaseModel):
+    vdr_link: Optional[str] = None
+    status: Optional[str] = None
+    key_risks: Optional[List[dict]] = None
 

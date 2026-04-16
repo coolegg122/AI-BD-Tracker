@@ -118,7 +118,7 @@ def sync_zoho_inbox(db, ai_extract_fn) -> dict:
 
                 # Run AI extraction
                 try:
-                    ai_payload = ai_extract_fn(plain_body, "project")
+                    ai_payload = ai_extract_fn(plain_body, "deal")
                 except Exception as ai_err:
                     ai_payload = {}
                     errors.append(f"AI extraction failed for '{subject}': {ai_err}")
@@ -140,7 +140,7 @@ def sync_zoho_inbox(db, ai_extract_fn) -> dict:
                     raw_content=plain_body[:4000],
                     attachments=attachment_names,
                     ai_extracted_payload=ai_payload,
-                    entity_type="project",
+                    entity_type="deal",
                     status="pending",
                     created_at=datetime.now().strftime("%Y-%m-%d %H:%M")
                 )

@@ -2,12 +2,12 @@ import React from 'react';
 import { CalendarDays, Video, MoreHorizontal, Rocket, Microscope, Gavel, Zap, FileText, Mail, History, Phone, DoorOpen, Wand2, ChevronRight, Activity, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import ProjectFunnel from '../components/charts/ProjectFunnel';
-import PortfolioTrend from '../components/charts/PortfolioTrend';
+import DealFunnel from '../components/charts/DealFunnel';
+import DealTrend from '../components/charts/DealTrend';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { projects, dashboardData, dismissAlert, openProjectOverview, openAlertAnalysis } = useStore();
+  const { deals, dashboardData, dismissAlert, openDealOverview, openAlertAnalysis } = useStore();
 
   if (!dashboardData) {
     return (
@@ -29,16 +29,16 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="col-span-1 p-6 rounded-xl bg-ui-card flex flex-col justify-between shadow-sm border-l-4 border-ui-accent transition-colors">
-          <p className="text-[10px] font-bold text-ui-text-muted uppercase tracking-wider mb-2 transition-colors">Total Active Projects</p>
+          <p className="text-[10px] font-bold text-ui-text-muted uppercase tracking-wider mb-2 transition-colors">Total Active Deals</p>
           <div className="flex items-end justify-between">
-            <span className="text-4xl font-extrabold text-ui-accent transition-colors">{projects.length > 0 ? projects.length : metrics.activeProjects}</span>
+            <span className="text-4xl font-extrabold text-ui-accent transition-colors">{deals.length > 0 ? deals.length : metrics.activeDeals}</span>
             <span className="text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded transition-colors">+3 this month</span>
           </div>
         </div>
         <div className="col-span-1 p-6 rounded-xl bg-ui-card flex flex-col justify-between shadow-sm border-l-4 border-orange-500 transition-colors">
-          <p className="text-[10px] font-bold text-ui-text-muted uppercase tracking-wider mb-2 transition-colors">Dormant Projects</p>
+          <p className="text-[10px] font-bold text-ui-text-muted uppercase tracking-wider mb-2 transition-colors">Dormant Deals</p>
           <div className="flex items-end justify-between">
-            <span className="text-4xl font-extrabold text-orange-500 transition-colors">0{projects.filter(p => p.status==='dormant').length || metrics.dormantProjects}</span>
+            <span className="text-4xl font-extrabold text-orange-500 transition-colors">0{deals.filter(d => d.status==='dormant').length || metrics.dormantDeals}</span>
             <span className="text-[10px] font-bold text-orange-600 bg-orange-500/10 px-2 py-1 rounded transition-colors">&gt; 14 days idle</span>
           </div>
         </div>
@@ -61,7 +61,7 @@ export default function Dashboard() {
             <PieChartIcon className="w-5 h-5 text-ui-accent" />
             <h3 className="text-lg font-bold text-ui-text">Deal Funnel & Stages</h3>
           </div>
-          <ProjectFunnel projects={projects} />
+          <DealFunnel deals={deals} />
         </div>
         
         <div className="bg-ui-card rounded-2xl p-6 border border-ui-border shadow-sm transition-colors">
@@ -69,7 +69,7 @@ export default function Dashboard() {
             <TrendingUp className="w-5 h-5 text-ui-accent" />
             <h3 className="text-lg font-bold text-ui-text">Portfolio Momentum</h3>
           </div>
-          <PortfolioTrend />
+          <DealTrend />
         </div>
       </div>
 
@@ -84,34 +84,34 @@ export default function Dashboard() {
         </div>
         
         <div className="bg-ui-card rounded-2xl border border-ui-border shadow-sm overflow-hidden transition-colors">
-          {projects.length === 0 ? (
-            <div className="p-8 text-center text-ui-text-muted text-sm">No BD projects extracted yet. Use Smart Input to build your pipeline.</div>
+          {deals.length === 0 ? (
+            <div className="p-8 text-center text-ui-text-muted text-sm">No BD deals extracted yet. Use Smart Input to build your pipeline.</div>
           ) : (
             <div className="divide-y divide-ui-border">
-              {projects.map(p => (
+              {deals.map(d => (
                 <div 
-                  key={p.id} 
+                  key={d.id} 
                   className="flex items-center justify-between p-4 hover:bg-ui-hover transition-colors cursor-pointer group"
-                  onClick={() => openProjectOverview(p)}
+                  onClick={() => openDealOverview(d)}
                 >
                   <div className="w-1/3 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-ui-accent/10 flex items-center justify-center text-ui-accent shrink-0 font-bold text-xs ring-1 ring-ui-accent/20 transition-colors">
-                      {p.company?.substring(0,2).toUpperCase() || '??'}
+                      {d.company?.substring(0,2).toUpperCase() || '??'}
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-ui-text group-hover:text-ui-accent transition-colors">{p.company || 'Unnamed Company'}</h4>
-                      <p className="text-[11px] text-ui-text-muted line-clamp-1">{p.pipeline || 'No Pipeline Defined'}</p>
+                      <h4 className="font-bold text-sm text-ui-text group-hover:text-ui-accent transition-colors">{d.company || 'Unnamed Company'}</h4>
+                      <p className="text-[11px] text-ui-text-muted line-clamp-1">{d.pipeline || 'No Pipeline Defined'}</p>
                     </div>
                   </div>
 
                   <div className="w-1/4 hidden md:flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span className="text-xs font-bold text-ui-text tracking-tight">{p.stage || 'Initial'}</span>
+                    <span className="text-xs font-bold text-ui-text tracking-tight">{d.stage || 'Initial'}</span>
                   </div>
 
                   <div className="w-1/4">
                      <p className="text-[10px] font-bold text-ui-text-muted uppercase tracking-wider mb-0.5">Next Check-in</p>
-                     <p className="text-xs font-medium text-ui-text">{p.nextFollowUp || 'TBD'}</p>
+                     <p className="text-xs font-medium text-ui-text">{d.nextFollowUp || 'TBD'}</p>
                   </div>
 
                   <div className="flex items-center justify-end w-12 text-ui-text-muted opacity-30 group-hover:text-ui-accent group-hover:opacity-100 transition-all">
@@ -188,7 +188,7 @@ export default function Dashboard() {
                   <p className="text-ui-text text-xs leading-relaxed mb-3 font-medium">
                     "{alertItem.content}"
                   </p>
-                  <div className="flex gap-3 mt-4 items-center">
+                  <div className="flex Pav-3 items-center">
                     <button className="text-[10px] font-bold text-white bg-ui-accent hover:opacity-90 px-3 py-1.5 rounded shadow-sm transition-colors" onClick={() => openAlertAnalysis(alertItem.id)}>
                       {alertItem.action || 'Analyze Impact'}
                     </button>

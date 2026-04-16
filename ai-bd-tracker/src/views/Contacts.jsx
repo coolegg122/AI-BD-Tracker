@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import EditableField from '../components/EditableField';
 
 export default function Contacts() {
-  const { contacts, projects, updateContact, contactsLoaded } = useStore();
+  const { contacts, deals, updateContact, contactsLoaded } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [groupBy, setGroupBy] = useState('all'); // 'all', 'company', 'function'
@@ -31,13 +31,13 @@ export default function Contacts() {
     
     const groups = {};
     
-    if (groupBy === 'project' && projects) {
-      // Find which projects each contact belongs to via history attendees
+    if (groupBy === 'deal' && deals) {
+      // Find which deals each contact belongs to via history attendees
       filteredContacts.forEach(c => {
         let matched = false;
-        projects.forEach(p => {
-          // This is a simple heuristic: if the contact is met at a project, or name match in history
-          const nameMatch = (p.history || []).some(h => 
+        deals.forEach(p => {
+          // This is a simple heuristic: if the contact is met at a deal, or name match in history
+          const nameMatch = (p.engagement_history || []).some(h => 
             Array.isArray(h.details?.attendees) && 
             h.details.attendees.some(a => 
               (typeof a === 'object' && a.name?.toLowerCase() === c.name.toLowerCase()) ||
@@ -46,7 +46,7 @@ export default function Contacts() {
           );
           
           if (nameMatch) {
-            const groupKey = p.company + " - " + p.pipeline;
+            const groupKey = p.company + " - " + p.engagement_focus;
             if (!groups[groupKey]) groups[groupKey] = [];
             groups[groupKey].push(c);
             matched = true;
@@ -68,7 +68,7 @@ export default function Contacts() {
     
     // Sort group names
     return Object.fromEntries(Object.entries(groups).sort());
-  }, [filteredContacts, groupBy, projects]);
+  }, [filteredContacts, groupBy, deals]);
 
   const activeContact = contacts.find(c => c.id === selectedContactId) || contacts[0];
 
@@ -110,7 +110,7 @@ export default function Contacts() {
           </div>
           
           <div className="flex p-1 bg-ui-bg rounded-xl mb-4 border border-ui-border transition-colors">
-            {['all', 'company', 'function', 'project'].map((mode) => (
+            {['all', 'company', 'function', 'deal'].map((mode) => (
               <button
                 key={mode}
                 onClick={() => setGroupBy(mode)}
@@ -120,7 +120,7 @@ export default function Contacts() {
                     : 'text-ui-text-muted hover:text-ui-text'
                 }`}
               >
-                {mode === 'all' ? 'A-Z' : mode}
+                {mode === 'all' ? 'A-Z' : mode === 'deal' ? 'Deal' : mode}
               </button>
             ))}
           </div>

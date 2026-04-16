@@ -88,7 +88,6 @@ export default function Sidebar() {
                 <ChevronRight className="w-4 h-4 text-ui-text-muted" />
               )}
             </button>
- streams
             {conferencesExpanded && (
               <div className="mt-1 space-y-1 relative">
                 {/* Visual connecting line for sub-menu */}

@@ -51,7 +51,7 @@ function detailFromBody(data) {
 
 export const api = {
   // Universal extraction from raw text using AI Engine
-  extractInfo: async (raw_text, type = "project") => {
+  extractInfo: async (raw_text, type = "deal") => {
     try {
       const response = await fetch(`${API_BASE_URL}/extract`, {
         method: 'POST',
@@ -90,88 +90,88 @@ export const api = {
     }
   },
 
-  // Get all projects
-  getProjects: async () => {
+  // Get all deals
+  getDeals: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects`, {
+      const response = await fetch(`${API_BASE_URL}/deals`, {
         headers: getAuthHeaders(false) // Don't include content-type for GET requests
       });
       if (!response.ok) {
-          throw new Error(`Failed to fetch projects: ${response.statusText}`);
+          throw new Error(`Failed to fetch deals: ${response.statusText}`);
       }
       return response.json();
     } catch (error) {
-      console.error('GetProjects API error:', error);
+      console.error('GetDeals API error:', error);
       throw error;
     }
   },
 
-  // Save/Create a new project
-  createProject: async (projectData) => {
+  // Save/Create a new deal
+  createDeal: async (dealData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects`, {
+      const response = await fetch(`${API_BASE_URL}/deals`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify(projectData),
+        body: JSON.stringify(dealData),
       });
       if (!response.ok) {
         const errorData = await readJsonSafe(response);
-        throw new Error(detailFromBody(errorData) || `Create project failed: ${response.statusText}`);
+        throw new Error(detailFromBody(errorData) || `Create deal failed: ${response.statusText}`);
       }
       return await readJsonSafe(response);
     } catch (error) {
-      console.error('CreateProject API error:', error);
+      console.error('CreateDeal API error:', error);
       throw error;
     }
   },
 
-  // Update a project's stage
-  updateProjectStage: async (projectId, stage) => {
+  // Update a deal's stage
+  updateDealStage: async (dealId, stage) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ stage }),
       });
       if (!response.ok) {
-          throw new Error(`Failed to update project stage: ${response.statusText}`);
+          throw new Error(`Failed to update deal stage: ${response.statusText}`);
       }
       return response.json();
     } catch (error) {
-      console.error('UpdateProjectStage API error:', error);
+      console.error('UpdateDealStage API error:', error);
       throw error;
     }
   },
 
-  // Get project history
-  getProjectHistory: async (projectId) => {
+  // Get deal history
+  getDealHistory: async (dealId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/history`, {
         headers: getAuthHeaders(false) // Don't include content-type for GET requests
       });
       if (!response.ok) {
-          throw new Error(`Failed to fetch project history: ${response.statusText}`);
+          throw new Error(`Failed to fetch deal history: ${response.statusText}`);
       }
       return response.json();
     } catch (error) {
-      console.error('GetProjectHistory API error:', error);
+      console.error('GetDealHistory API error:', error);
       throw error;
     }
   },
 
-  createProjectHistory: async (projectId, historyData) => {
+  createDealHistory: async (dealId, historyData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/history`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/history`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(historyData),
       });
       if (!response.ok) {
-          throw new Error(`Failed to create project history: ${response.statusText}`);
+          throw new Error(`Failed to create deal history: ${response.statusText}`);
       }
       return response.json();
     } catch (error) {
-      console.error('CreateProjectHistory API error:', error);
+      console.error('CreateDealHistory API error:', error);
       throw error;
     }
   },
@@ -345,16 +345,16 @@ export const api = {
     }
   },
 
-  // --- Phase 26: Project Attachments ---
-  getProjectAttachments: async (projectId) => {
+  // --- Phase 26: Deal Attachments ---
+  getDealAttachments: async (dealId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/attachments`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/attachments`, {
         headers: getAuthHeaders(false) // Don't include content-type for GET requests
       });
-      if (!response.ok) throw new Error(`Failed to fetch attachments for project ${projectId}`);
+      if (!response.ok) throw new Error(`Failed to fetch attachments for deal ${dealId}`);
       return response.json();
     } catch (error) {
-      console.error('GetProjectAttachments API error:', error);
+      console.error('GetDealAttachments API error:', error);
       throw error;
     }
   },
@@ -409,9 +409,9 @@ export const api = {
   },
 
   // --- Phase 28.1: AI Strategist ---
-  getNegotiationPrep: async (projectId, force = false) => {
+  getNegotiationPrep: async (dealId, force = false) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/negotiation-prep?force=${force}`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/negotiation-prep?force=${force}`, {
         headers: getAuthHeaders(false)
       });
       if (!response.ok) throw new Error('Failed to fetch negotiation prep');
@@ -422,9 +422,9 @@ export const api = {
     }
   },
 
-  sendStrategistMessage: async (projectId, message, history = []) => {
+  sendStrategistMessage: async (dealId, message, history = []) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/strategist-chat`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/strategist-chat`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ message, history }),
@@ -470,20 +470,20 @@ export const api = {
   },
 
   // --- Phase 31: General Edit API ---
-  updateProject: async (projectId, data) => {
+  updateDeal: async (dealId, data) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to update project');
+        throw new Error(errorData.detail || 'Failed to update deal');
       }
       return response.json();
     } catch (error) {
-      console.error('UpdateProject API error:', error);
+      console.error('UpdateDeal API error:', error);
       throw error;
     }
   },
@@ -536,6 +536,152 @@ export const api = {
       return response.json();
     } catch (error) {
       console.error('SaveSmartInputArchive API error:', error);
+      throw error;
+    }
+  },
+
+  // --- Phase 33: Asset Management ---
+  getAssets: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assets`, {
+        headers: getAuthHeaders(false)
+      });
+      if (!response.ok) throw new Error('Failed to fetch assets');
+      return response.json();
+    } catch (error) {
+      console.error('GetAssets API error:', error);
+      throw error;
+    }
+  },
+
+  createAsset: async (assetData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assets`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(assetData),
+      });
+      if (!response.ok) throw new Error('Failed to create asset');
+      return response.json();
+    } catch (error) {
+      console.error('CreateAsset API error:', error);
+      throw error;
+    }
+  },
+
+  getAssetDetail: async (assetId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assets/${assetId}`, {
+        headers: getAuthHeaders(false)
+      });
+      if (!response.ok) throw new Error('Failed to fetch asset detail');
+      return response.json();
+    } catch (error) {
+      console.error('GetAssetDetail API error:', error);
+      throw error;
+    }
+  },
+
+  updateAsset: async (assetId, assetData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assets/${assetId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(assetData),
+      });
+      if (!response.ok) throw new Error('Failed to update asset');
+      return response.json();
+    } catch (error) {
+      console.error('UpdateAsset API error:', error);
+      throw error;
+    }
+  },
+
+  associateAssetToDeal: async (dealId, assetId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/assets/${assetId}`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) throw new Error('Failed to link asset to deal');
+      return response.json();
+    } catch (error) {
+      console.error('AssociateAssetToDeal API error:', error);
+      throw error;
+    }
+  },
+
+  disassociateAssetFromDeal: async (dealId, assetId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/assets/${assetId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) throw new Error('Failed to unlink asset from deal');
+      return response.json();
+    } catch (error) {
+      console.error('DisassociateAssetFromDeal API error:', error);
+      throw error;
+    }
+  },
+
+  // --- Phase 2: Professional BD Upgrade ---
+  updateDealEconomics: async (dealId, econData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/economics`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(econData),
+      });
+      if (!response.ok) throw new Error('Failed to update deal economics');
+      return response.json();
+    } catch (error) {
+      console.error('UpdateDealEconomics API error:', error);
+      throw error;
+    }
+  },
+
+  addDealAgreement: async (dealId, agreementData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/agreements`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(agreementData),
+      });
+      if (!response.ok) throw new Error('Failed to add deal agreement');
+      return response.json();
+    } catch (error) {
+      console.error('AddDealAgreement API error:', error);
+      throw error;
+    }
+  },
+
+  updateDealAgreement: async (dealId, agreementId, agreementData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/agreements/${agreementId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(agreementData),
+      });
+      if (!response.ok) throw new Error('Failed to update deal agreement');
+      return response.json();
+    } catch (error) {
+      console.error('UpdateDealAgreement API error:', error);
+      throw error;
+    }
+  },
+
+  updateDealDueDiligence: async (dealId, ddData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/deals/${dealId}/due-diligence`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(ddData),
+      });
+      if (!response.ok) throw new Error('Failed to update deal due diligence');
+      return response.json();
+    } catch (error) {
+      console.error('UpdateDealDueDiligence API error:', error);
       throw error;
     }
   }

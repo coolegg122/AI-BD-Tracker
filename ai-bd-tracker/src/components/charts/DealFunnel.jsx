@@ -11,7 +11,7 @@ const STAGE_COLORS = {
   'Negotiation': '#1e40af'     // blue-800
 };
 
-export default function ProjectFunnel({ projects }) {
+export default function DealFunnel({ deals }) {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -25,7 +25,7 @@ export default function ProjectFunnel({ projects }) {
     { name: 'Negotiation', count: 0 }
   ];
 
-  projects.forEach(p => {
+  deals.forEach(p => {
     const entry = stageData.find(d => d.name === p.stage);
     if (entry) entry.count += 1;
   });

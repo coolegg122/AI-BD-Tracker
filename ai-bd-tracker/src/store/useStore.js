@@ -4,25 +4,27 @@ import { STAGES } from '../mocks/demoData';
 
 export const useStore = create((set) => ({
   user: null,
-  projects: [],
+  deals: [],
+  assets: [],
   contacts: [],
   dashboardData: null,
   scheduleData: null,
   notifications: [],
   contactsLoaded: false,
-  selectedOverviewProject: null, // Phase 6: Timeline modal
+  selectedOverviewDeal: null, // Refactored from Project
   stages: STAGES,
   appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
   
   setUser: (user) => set({ user }),
-  setProjects: (projects) => set({ projects }),
+  setDeals: (deals) => set({ deals }),
+  setAssets: (assets) => set({ assets }),
   setContacts: (contacts) => set({ contacts, contactsLoaded: true }),
   setDashboardData: (data) => set({ dashboardData: data }),
   setScheduleData: (data) => set({ scheduleData: data }),
   setNotifications: (data) => set({ notifications: data }),
   
-  openProjectOverview: (project) => set({ selectedOverviewProject: project }),
-  closeProjectOverview: () => set({ selectedOverviewProject: null }),
+  openDealOverview: (deal) => set({ selectedOverviewDeal: deal }),
+  closeDealOverview: () => set({ selectedOverviewDeal: null }),
   
   selectedAlertForAnalysis: null,
   openAlertAnalysis: (alertId) => set({ selectedAlertForAnalysis: alertId }),
@@ -42,21 +44,59 @@ export const useStore = create((set) => ({
     notifications: state.notifications.map(n => n.id === notifId ? { ...n, read: true } : n)
   })),
 
-  updateProjectStage: (projectId, newStage) => set((state) => ({
-    projects: state.projects.map(p => p.id === projectId ? { ...p, stage: newStage } : p)
+  updateDealStage: (dealId, newStage) => set((state) => ({
+    deals: state.deals.map(d => d.id === dealId ? { ...d, stage: newStage } : d)
   })),
   // Phase 31: Generic updates
-  updateProject: (projectId, updatedFields) => set((state) => ({
-    projects: state.projects.map(p => p.id === projectId ? { ...p, ...updatedFields } : p),
-    // Update selectedOverviewProject if it matches
-    selectedOverviewProject: state.selectedOverviewProject?.id === projectId 
-      ? { ...state.selectedOverviewProject, ...updatedFields }
-      : state.selectedOverviewProject
+  updateDeal: (dealId, updatedFields) => set((state) => ({
+    deals: state.deals.map(d => d.id === dealId ? { ...d, ...updatedFields } : d),
+    // Update selectedOverviewDeal if it matches
+    selectedOverviewDeal: state.selectedOverviewDeal?.id === dealId 
+      ? { ...state.selectedOverviewDeal, ...updatedFields }
+      : state.selectedOverviewDeal
   })),
   updateContact: (contactId, updatedFields) => set((state) => ({
     contacts: state.contacts.map(c => c.id === contactId ? { ...c, ...updatedFields } : c)
   })),
-  addProject: (project) => set((state) => ({
-    projects: [project, ...state.projects]
+  addDeal: (deal) => set((state) => ({
+    deals: [deal, ...state.deals]
+  })),
+
+  // Phase 2: Professional BD Actions
+  updateDealEconomics: (dealId, economics) => set((state) => ({
+    deals: state.deals.map(d => d.id === dealId ? { ...d, economics } : d),
+    selectedOverviewDeal: state.selectedOverviewDeal?.id === dealId 
+      ? { ...state.selectedOverviewDeal, economics }
+      : state.selectedOverviewDeal
+  })),
+  addDealAgreement: (dealId, agreement) => set((state) => ({
+    deals: state.deals.map(d => d.id === dealId 
+      ? { ...d, agreements: [...(d.agreements || []), agreement] } 
+      : d
+    ),
+    selectedOverviewDeal: state.selectedOverviewDeal?.id === dealId 
+      ? { 
+          ...state.selectedOverviewDeal, 
+          agreements: [...(state.selectedOverviewDeal.agreements || []), agreement] 
+        }
+      : state.selectedOverviewDeal
+  })),
+  updateDealAgreement: (dealId, agreementId, updatedAgreement) => set((state) => ({
+    deals: state.deals.map(d => d.id === dealId 
+      ? { ...d, agreements: (d.agreements || []).map(a => a.id === agreementId ? updatedAgreement : a) } 
+      : d
+    ),
+    selectedOverviewDeal: state.selectedOverviewDeal?.id === dealId 
+      ? { 
+          ...state.selectedOverviewDeal, 
+          agreements: (state.selectedOverviewDeal.agreements || []).map(a => a.id === agreementId ? updatedAgreement : a) 
+        }
+      : state.selectedOverviewDeal
+  })),
+  updateDealDueDiligence: (dealId, due_diligence) => set((state) => ({
+    deals: state.deals.map(d => d.id === dealId ? { ...d, due_diligence } : d),
+    selectedOverviewDeal: state.selectedOverviewDeal?.id === dealId 
+      ? { ...state.selectedOverviewDeal, due_diligence }
+      : state.selectedOverviewDeal
   })),
 }));

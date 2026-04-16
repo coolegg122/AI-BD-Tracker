@@ -30,7 +30,7 @@ if _db_url.startswith("sqlite"):
     models.Base.metadata.create_all(bind=database.engine)
 
 
-app = FastAPI(title="AI-BD Tracker API", version="0.1.0")
+app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
 
 # ==========================================
 # PHASE 7: SQLADMIN BACK-OFFICE PORTAL
@@ -42,17 +42,23 @@ try:
 
     admin = Admin(app, database.engine)
 
-    class ProjectAdmin(ModelView, model=models.Project):
-        column_list = [models.Project.id, models.Project.company, models.Project.pipeline, models.Project.stage, models.Project.nextFollowUp, models.Project.status]
-        name = "BD Project"
-        name_plural = "BD Projects"
+    class DealAdmin(ModelView, model=models.Deal):
+        column_list = [models.Deal.id, models.Deal.company, models.Deal.pipeline, models.Deal.stage, models.Deal.nextFollowUp, models.Deal.status]
+        name = "BD Deal"
+        name_plural = "BD Deals"
         icon = "fa-solid fa-briefcase"
 
     class TaskAdmin(ModelView, model=models.Task):
-        column_list = [models.Task.id, models.Task.project_id, models.Task.type, models.Task.desc, models.Task.date]
+        column_list = [models.Task.id, models.Task.deal_id, models.Task.type, models.Task.desc, models.Task.date]
         name = "Task / Event"
         name_plural = "Tasks & Events"
         icon = "fa-solid fa-list-check"
+
+    class AssetAdmin(ModelView, model=models.Asset):
+        column_list = [models.Asset.id, models.Asset.name, models.Asset.type, models.Asset.indication, models.Asset.phase]
+        name = "Asset"
+        name_plural = "Assets"
+        icon = "fa-solid fa-dna"
 
     class CatalystAdmin(ModelView, model=models.Catalyst):
         column_list = [models.Catalyst.id, models.Catalyst.competitor, models.Catalyst.asset, models.Catalyst.type, models.Catalyst.date, models.Catalyst.impact]
@@ -66,16 +72,16 @@ try:
         name_plural = "Key Contacts"
         icon = "fa-solid fa-users"
 
-    class ProjectHistoryAdmin(ModelView, model=models.ProjectHistory):
-        column_list = [models.ProjectHistory.id, models.ProjectHistory.project_id, models.ProjectHistory.type, models.ProjectHistory.title, models.ProjectHistory.date]
-        name = "Project History"
-        name_plural = "Project Histories"
+    class DealHistoryAdmin(ModelView, model=models.DealHistory):
+        column_list = [models.DealHistory.id, models.DealHistory.deal_id, models.DealHistory.type, models.DealHistory.title, models.DealHistory.date]
+        name = "Deal History"
+        name_plural = "Deal Histories"
         icon = "fa-solid fa-clock-rotate-left"
 
     class AttachmentAdmin(ModelView, model=models.Attachment):
-        column_list = [models.Attachment.id, models.Attachment.project_id, models.Attachment.name, models.Attachment.file_type, models.Attachment.category]
-        name = "Project Document"
-        name_plural = "Project Documents"
+        column_list = [models.Attachment.id, models.Attachment.deal_id, models.Attachment.name, models.Attachment.file_type, models.Attachment.category]
+        name = "Deal Document"
+        name_plural = "Deal Documents"
         icon = "fa-solid fa-file-pdf"
 
     class UserAdmin(ModelView, model=models.User):
@@ -103,11 +109,12 @@ try:
         icon = "fa-solid fa-graduation-cap"
 
     admin.add_view(UserAdmin)
-    admin.add_view(ProjectAdmin)
+    admin.add_view(DealAdmin)
+    admin.add_view(AssetAdmin)
     admin.add_view(TaskAdmin)
     admin.add_view(CatalystAdmin)
     admin.add_view(ContactAdmin)
-    admin.add_view(ProjectHistoryAdmin)
+    admin.add_view(DealHistoryAdmin)
     admin.add_view(AttachmentAdmin)
     admin.add_view(CareerHistoryAdmin)
 except Exception as _sqladmin_err:
@@ -129,7 +136,7 @@ def read_root():
 @app.post("/api/v1/extract", response_model=dict)
 def ai_extract_bd_data(request: schemas.AIParsingRequest, current_user: models.User = Depends(get_current_admin_user)):
     """
-    接收长文本，根据类型 (Project, Contact, Meeting Note) 调用大模型提取结构化数据
+    接收长文本，根据类型 (Deal, Contact, Meeting Note) 调用大模型提取结构化数据
     """
     try:
         parsed_data = extract_universal(request.raw_text, request.type)
@@ -143,104 +150,118 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
     # 1. AI Extraction
     parsed = extract_mixed(request.raw_text)
     
-    results = {"project": None, "contacts": [], "history": None}
+    results = {"deal": None, "contacts": [], "assets": [], "history": None}
     
-    # 2. Update/Create Project
-    proj_data = parsed.get("update_project")
-    if proj_data:
-        company = proj_data.get("company")
-        # Try to match existing project by company + pipeline
-        db_project = db.query(models.Project).filter(
-            models.Project.company.ilike(company)
+    # 2. Update/Create Deal
+    deal_data = parsed.get("update_deal")
+    if deal_data:
+        company = deal_data.get("company")
+        db_deal = db.query(models.Deal).filter(
+            models.Deal.company.ilike(company)
         ).first()
         
-        if db_project:
-            # Update existing
-            if proj_data.get("stage"): db_project.stage = proj_data["stage"]
-            if proj_data.get("details"):
-                existing_details = db_project.details or {}
-                # Deep merge or simple update
-                for k, v in proj_data["details"].items():
+        if db_deal:
+            if deal_data.get("stage"): db_deal.stage = deal_data["stage"]
+            if deal_data.get("details"):
+                existing_details = db_deal.details or {}
+                for k, v in deal_data["details"].items():
                     existing_details[k] = v
-                db_project.details = existing_details
+                db_deal.details = existing_details
             
-            db_project.source_text = request.raw_text # NEW: Traceability
-            results["project"] = {"id": db_project.id, "action": "updated"}
+            db_deal.source_text = request.raw_text
+            results["deal"] = {"id": db_deal.id, "action": "updated"}
         else:
-            # NEW: Auto-create new project if not found
-            db_project = models.Project(
+            db_deal = models.Deal(
                 company=company,
-                pipeline=proj_data.get("pipeline") or "Unknown Pipeline",
-                stage=proj_data.get("stage") or "Initial Contact",
+                pipeline=deal_data.get("pipeline") or "Unknown Pipeline",
+                stage=deal_data.get("stage") or "Initial Contact",
                 lastContactDate=get_now_str(),
                 owner_id=current_user.id,
-                details=proj_data.get("details", {}),
-                source_text=request.raw_text, # NEW: Traceability
+                details=deal_data.get("details", {}),
+                source_text=request.raw_text,
                 status="active"
             )
-            db.add(db_project)
-            db.flush() # Ensure ID is generated for history/timeline linking
-            results["project"] = {"id": db_project.id, "action": "created", "company": company}
+            db.add(db_deal)
+            db.flush()
+            results["deal"] = {"id": db_deal.id, "action": "created", "company": company}
+
+        # Handle Assets associated with the Deal
+        assets_data = deal_data.get("assets", [])
+        for asset in assets_data:
+            if not asset.get("name"): continue
+            # Check if asset exists
+            existing_asset = db.query(models.Asset).filter(models.Asset.name.ilike(asset["name"])).first()
+            if not existing_asset:
+                new_asset = models.Asset(
+                    name=asset["name"],
+                    type=asset.get("type"),
+                    indication=asset.get("indication"),
+                    phase=asset.get("phase"),
+                    moa=asset.get("moa")
+                )
+                db.add(new_asset)
+                db.flush()
+                db_deal.assets.append(new_asset)
+                results["assets"].append({"name": asset["name"], "action": "created_and_linked"})
+            else:
+                if existing_asset not in db_deal.assets:
+                    db_deal.assets.append(existing_asset)
+                    results["assets"].append({"name": asset["name"], "action": "linked_existing"})
 
     # 3. Upsert Contacts
     contacts_data = parsed.get("upsert_contacts", [])
     for c in contacts_data:
         if not c.get("name"): continue
-        # Find by name OR email
         existing_c = db.query(models.Contact).filter(
             (models.Contact.name.ilike(c["name"])) | 
             (models.Contact.email == c.get("email"))
         ).first()
         
         if existing_c:
-            # Update
             if c.get("currentTitle"): existing_c.currentTitle = c["currentTitle"]
             if c.get("functionArea"): existing_c.functionArea = c["functionArea"]
-            existing_c.source_text = request.raw_text # Save traceability
+            existing_c.source_text = request.raw_text
             results["contacts"].append({"name": c["name"], "action": "updated"})
         else:
-            # Create
             new_c = models.Contact(
                 name=c["name"],
-                currentCompany=c.get("currentCompany") or (proj_data.get("company") if proj_data else "Unknown"),
+                currentCompany=c.get("currentCompany") or (deal_data.get("company") if deal_data else "Unknown"),
                 currentTitle=c.get("currentTitle"),
                 functionArea=c.get("functionArea"),
                 email=c.get("email"),
                 profile=c.get("profile"),
-                source_text=request.raw_text # Save traceability
+                source_text=request.raw_text
             )
             db.add(new_c)
             results["contacts"].append({"name": c["name"], "action": "created"})
 
     # 4. Add Timeline Event (History)
     hist_data = parsed.get("add_timeline_event")
-    if hist_data and results["project"] and results["project"].get("id"):
-        db_history = models.ProjectHistory(
-            project_id=results["project"]["id"],
+    if hist_data and results["deal"] and results["deal"].get("id"):
+        db_history = models.DealHistory(
+            deal_id=results["deal"]["id"],
             type=hist_data.get("type", "meeting"),
             title=hist_data.get("title"),
             date=hist_data.get("date") or get_now_str(),
             desc=hist_data.get("desc"),
             details=hist_data.get("details", {}),
-            source_text=request.raw_text # Save traceability
+            source_text=request.raw_text
         )
         db.add(db_history)
         results["history"] = {"id": db_history.id, "action": "created"}
         
-        # 5. NEW: Promote attendees to full contact records if not already in DB
         attendees = hist_data.get("details", {}).get("attendees", [])
         for att in attendees:
             if isinstance(att, dict) and att.get("name"):
                 name = att["name"]
-                # Avoid duplicate logic if the AI already put them in upsert_contacts
                 existing_c = db.query(models.Contact).filter(models.Contact.name.ilike(name)).first()
                 if not existing_c:
                     new_c = models.Contact(
                         name=name,
-                        currentCompany=att.get("company") or (proj_data.get("company") if proj_data else "Unknown"),
+                        currentCompany=att.get("company") or (deal_data.get("company") if deal_data else "Unknown"),
                         currentTitle=att.get("title"),
                         functionArea=att.get("functionArea"),
-                        metAt=[proj_data.get("company")] if proj_data else [],
+                        metAt=[deal_data.get("company")] if deal_data else [],
                         source_text=request.raw_text
                     )
                     db.add(new_c)
@@ -251,85 +272,148 @@ def process_universal_smart_input(request: schemas.AIParsingRequest, db: Session
 
 
 
-@app.post("/api/v1/projects", response_model=schemas.ProjectResponse)
-def create_project(project: schemas.ProjectCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
-    """保存 AI 提取后确认的项目，或手动新建项目"""
-    db_project = models.Project(
-        company=project.company,
-        pipeline=project.pipeline,
-        stage=project.stage,
-        nextFollowUp=project.nextFollowUp,
+@app.post("/api/v1/deals", response_model=schemas.DealResponse)
+def create_deal(deal: schemas.DealCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """保存 AI 提取后确认的交易，或手动新建交易"""
+    db_deal = models.Deal(
+        company=deal.company,
+        pipeline=deal.pipeline,
+        stage=deal.stage,
+        nextFollowUp=deal.nextFollowUp,
         lastContactDate=get_now_str(),
-        details=project.details,
-        status="active"
+        details=deal.details,
+        status="active",
+        owner_id=current_user.id
     )
-    db.add(db_project)
+    db.add(db_deal)
     db.commit()
-    db.refresh(db_project)
+    db.refresh(db_deal)
     
-    for task in project.tasks:
-        db_task = models.Task(**task.model_dump(), project_id=db_project.id)
+    for task in deal.tasks:
+        db_task = models.Task(**task.model_dump(), deal_id=db_deal.id)
         db.add(db_task)
     
-    for att in project.attachments:
-        db_att = models.Attachment(**att.model_dump(), project_id=db_project.id)
+    for att in deal.attachments:
+        db_att = models.Attachment(**att.model_dump(), deal_id=db_deal.id)
         db.add(db_att)
 
     # Auto-sync primary contact if provided
-    if project.primary_contact and project.primary_contact.name:
-        pc = project.primary_contact
+    if deal.primary_contact and deal.primary_contact.name:
+        pc = deal.primary_contact
         existing_contact = db.query(models.Contact).filter(models.Contact.email == pc.email).first() if pc.email else None
         
         if existing_contact:
-            # Update existing contact
             existing_contact.name = pc.name
-            existing_contact.currentCompany = pc.currentCompany or db_project.company
+            existing_contact.currentCompany = pc.currentCompany or db_deal.company
             existing_contact.currentTitle = pc.currentTitle or existing_contact.currentTitle
-            if db_project.company not in (existing_contact.metAt or []):
-                new_met_at = (existing_contact.metAt or []) + [db_project.company]
+            if db_deal.company not in (existing_contact.metAt or []):
+                new_met_at = (existing_contact.metAt or []) + [db_deal.company]
                 existing_contact.metAt = new_met_at
         else:
-            # Create new contact
             db_contact = models.Contact(
                 name=pc.name,
                 email=pc.email,
-                currentCompany=pc.currentCompany or db_project.company,
+                currentCompany=pc.currentCompany or db_deal.company,
                 currentTitle=pc.currentTitle,
                 location=pc.location,
-                metAt=[db_project.company],
+                metAt=[db_deal.company],
                 details=pc.details or {}
             )
             db.add(db_contact)
             
     db.commit()
-    db.refresh(db_project)
+    db.refresh(db_deal)
     
-    return db_project
+    return db_deal
 
-@app.get("/api/v1/projects/{project_id}/attachments", response_model=List[schemas.AttachmentResponse])
-def get_project_attachments(project_id: int, db: Session = Depends(database.get_db)):
-    """获取项目的全量附件与档案列表"""
-    return db.query(models.Attachment).filter(models.Attachment.project_id == project_id).all()
+@app.get("/api/v1/deals/{deal_id}/attachments", response_model=List[schemas.AttachmentResponse])
+def get_deal_attachments(deal_id: int, db: Session = Depends(database.get_db)):
+    """获取交易的全量附件与档案列表"""
+    return db.query(models.Attachment).filter(models.Attachment.deal_id == deal_id).all()
 
-@app.get("/api/v1/projects", response_model=List[schemas.ProjectResponse])
-def get_projects(db: Session = Depends(database.get_db)):
-    """获取所有项目，供 Dashboard 和 Kanban 使用"""
-    return db.query(models.Project).all()
+@app.get("/api/v1/deals", response_model=List[schemas.DealResponse])
+def get_deals(db: Session = Depends(database.get_db)):
+    """获取所有交易，供 Dashboard 和 Kanban 使用"""
+    return db.query(models.Deal).all()
 
-@app.patch("/api/v1/projects/{project_id}", response_model=schemas.ProjectResponse)
-def update_project(project_id: int, project_update: schemas.ProjectUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
-    """通用项目更新：支持修改公司名、管线、阶段、跟进日期及详情"""
-    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+@app.get("/api/v1/deals/{deal_id}", response_model=schemas.DealResponse)
+def get_deal_detail(deal_id: int, db: Session = Depends(database.get_db)):
+    """获取指定交易的详细信息"""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    if not db_deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    return db_deal
+
+@app.patch("/api/v1/deals/{deal_id}", response_model=schemas.DealResponse)
+def update_deal(deal_id: int, deal_update: schemas.DealUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """通用交易更新"""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    if not db_deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
     
     update_data = project_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_project, key, value)
         
     db.commit()
-    db.refresh(db_project)
-    return db_project
+    db.refresh(db_deal)
+    return db_deal
+
+@app.patch("/api/v1/deals/{deal_id}/economics", response_model=schemas.DealEconomicsResponse)
+def update_deal_economics(deal_id: int, econ_update: schemas.DealEconomicsUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Update financial valuation data for a deal."""
+    db_econ = db.query(models.DealEconomics).filter(models.DealEconomics.deal_id == deal_id).first()
+    if not db_econ:
+        db_econ = models.DealEconomics(deal_id=deal_id, **econ_update.model_dump())
+        db.add(db_econ)
+    else:
+        update_data = econ_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_econ, key, value)
+    
+    db.commit()
+    db.refresh(db_econ)
+    return db_econ
+
+@app.post("/api/v1/deals/{deal_id}/agreements", response_model=schemas.LegalAgreementResponse)
+def add_deal_agreement(deal_id: int, agreement: schemas.LegalAgreementCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Add a new legal agreement (NDA, TS, etc.) to a deal."""
+    db_agreement = models.LegalAgreement(**agreement.model_dump(), deal_id=deal_id)
+    db.add(db_agreement)
+    db.commit()
+    db.refresh(db_agreement)
+    return db_agreement
+
+@app.patch("/api/v1/deals/{deal_id}/agreements/{agreement_id}", response_model=schemas.LegalAgreementResponse)
+def update_deal_agreement(deal_id: int, agreement_id: int, agreement_update: schemas.LegalAgreementUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Update the status or dates of a specific legal agreement."""
+    db_agreement = db.query(models.LegalAgreement).filter(models.LegalAgreement.id == agreement_id, models.LegalAgreement.deal_id == deal_id).first()
+    if not db_agreement:
+        raise HTTPException(status_code=404, detail="Agreement not found")
+    
+    update_data = agreement_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_agreement, key, value)
+        
+    db.commit()
+    db.refresh(db_agreement)
+    return db_agreement
+
+@app.patch("/api/v1/deals/{deal_id}/due-diligence", response_model=schemas.DueDiligenceTrackerResponse)
+def update_deal_due_diligence(deal_id: int, dd_update: schemas.DueDiligenceTrackerUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Update Due Diligence status and VDR links."""
+    db_dd = db.query(models.DueDiligenceTracker).filter(models.DueDiligenceTracker.deal_id == deal_id).first()
+    if not db_dd:
+        db_dd = models.DueDiligenceTracker(deal_id=deal_id, **dd_update.model_dump())
+        db.add(db_dd)
+    else:
+        update_data = dd_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_dd, key, value)
+            
+    db.commit()
+    db.refresh(db_dd)
+    return db_dd
 
 @app.patch("/api/v1/contacts/{contact_id}", response_model=schemas.ContactResponse)
 def update_contact(contact_id: int, contact_update: schemas.ContactUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
@@ -346,19 +430,19 @@ def update_contact(contact_id: int, contact_update: schemas.ContactUpdate, db: S
     db.refresh(db_contact)
     return db_contact
 
-@app.get("/api/v1/projects/{project_id}/history", response_model=List[schemas.ProjectHistoryResponse])
-def get_project_history(project_id: int, db: Session = Depends(database.get_db)):
-    """获取指定项目的历史追踪足迹"""
-    history = db.query(models.ProjectHistory).filter(models.ProjectHistory.project_id == project_id).order_by(models.ProjectHistory.id.desc()).all()
+@app.get("/api/v1/deals/{deal_id}/history", response_model=List[schemas.DealHistoryResponse])
+def get_deal_history(deal_id: int, db: Session = Depends(database.get_db)):
+    """获取指定交易的历史追踪足迹"""
+    history = db.query(models.DealHistory).filter(models.DealHistory.deal_id == deal_id).order_by(models.DealHistory.id.desc()).all()
     return history
 
-@app.post("/api/v1/projects/{project_id}/history", response_model=schemas.ProjectHistoryResponse)
-def create_project_history(project_id: int, history_entry: schemas.ProjectHistoryCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
-    """新增一条项目历史追踪足迹"""
-    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    db_history = models.ProjectHistory(**history_entry.model_dump(), project_id=project_id)
+@app.post("/api/v1/deals/{deal_id}/history", response_model=schemas.DealHistoryResponse)
+def create_deal_history(deal_id: int, history_entry: schemas.DealHistoryCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """新增一条交易历史追踪足迹"""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    if not db_deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    db_history = models.DealHistory(**history_entry.model_dump(), deal_id=deal_id)
     db.add(db_history)
     db.commit()
     db.refresh(db_history)
@@ -475,34 +559,33 @@ def create_smart_input_archive(archive_data: schemas.SmartInputArchiveCreate, db
 
 
 
-@app.get("/api/v1/projects/{project_id}/negotiation-prep")
-def get_project_negotiation_prep(project_id: int, force: bool = False, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_active_user)):
-    """Fetch or generate a strategic AI briefing for a project."""
-    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+@app.get("/api/v1/deals/{deal_id}/negotiation-prep")
+def get_deal_negotiation_prep(deal_id: int, force: bool = False, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_active_user)):
+    """Fetch or generate a strategic AI briefing for a deal."""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    if not db_deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
 
     # Cooldown Check (4 hours)
     cooldown_hours = 4
-    can_use_cache = db_project.negotiation_prep and db_project.prep_updated_at
+    can_use_cache = db_deal.negotiation_prep and db_deal.prep_updated_at
     if can_use_cache and not force:
-        last_updated = datetime.strptime(db_project.prep_updated_at, '%Y-%m-%d %H:%M:%S')
+        last_updated = datetime.strptime(db_deal.prep_updated_at, '%Y-%m-%d %H:%M:%S')
         if datetime.now() - last_updated < timedelta(hours=cooldown_hours):
-            return db_project.negotiation_prep
+            return db_deal.negotiation_prep
 
     # 1. Gather all Context
-    history = db.query(models.ProjectHistory).filter(models.ProjectHistory.project_id == project_id).all()
-    contacts = db.query(models.Contact).filter(models.Contact.currentCompany.ilike(db_project.company)).all()
-    # Attempt to find intelligence
-    intel = db.query(models.CompanyIntelligence).filter(models.CompanyIntelligence.company_name.ilike(db_project.company)).first()
+    history = db.query(models.DealHistory).filter(models.DealHistory.deal_id == deal_id).all()
+    contacts = db.query(models.Contact).filter(models.Contact.currentCompany.ilike(db_deal.company)).all()
+    intel = db.query(models.CompanyIntelligence).filter(models.CompanyIntelligence.company_name.ilike(db_deal.company)).first()
     
     # 2. Call specialized AI Strategist
     context = {
-        "project": {
-            "company": db_project.company,
-            "pipeline": db_project.pipeline,
-            "stage": db_project.stage,
-            "details": db_project.details or {}
+        "deal": {
+            "company": db_deal.company,
+            "pipeline": db_deal.pipeline,
+            "stage": db_deal.stage,
+            "details": db_deal.details or {}
         },
         "history": [{"type": h.type, "title": h.title, "date": h.date, "desc": h.desc} for h in history],
         "contacts": [{"name": c.name, "title": c.currentTitle, "profile": c.profile} for c in contacts],
@@ -515,38 +598,37 @@ def get_project_negotiation_prep(project_id: int, force: bool = False, db: Sessi
 
     try:
         prep_data = generate_negotiation_prep(context)
-        db_project.negotiation_prep = prep_data
-        db_project.prep_updated_at = get_now_str(include_time=True, include_seconds=True)
+        db_deal.negotiation_prep = prep_data
+        db_deal.prep_updated_at = get_now_str(include_time=True, include_seconds=True)
         db.commit()
         return prep_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate strategist briefing: {str(e)}")
 
-@app.post("/api/v1/projects/{project_id}/strategist-chat", response_model=schemas.ChatResponse)
-def project_strategist_chat(
-    project_id: int, 
+@app.post("/api/v1/deals/{deal_id}/strategist-chat", response_model=schemas.ChatResponse)
+def deal_strategist_chat(
+    deal_id: int, 
     chat_req: schemas.ChatRequest,
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    """Chat with the AI Strategist about a specific project's negotiation."""
-    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    """Chat with the AI Strategist about a specific deal's negotiation."""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    if not db_deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
     
-    if not db_project.negotiation_prep:
+    if not db_deal.negotiation_prep:
         raise HTTPException(status_code=400, detail="Please generate the AI Prep briefing first.")
 
-    # Context for the chat
-    project_context = {
-        "company": db_project.company,
-        "pipeline": db_project.pipeline,
-        "stage": db_project.stage
+    deal_context = {
+        "company": db_deal.company,
+        "pipeline": db_deal.pipeline,
+        "stage": db_deal.stage
     }
     
     response_text = chat_with_strategist(
-        project_context,
-        db_project.negotiation_prep,
+        deal_context,
+        db_deal.negotiation_prep,
         chat_req.message,
         chat_req.history
     )
@@ -835,24 +917,38 @@ def global_search(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    """Global search for projects and contacts."""
+    """Global search for deals, assets, and contacts."""
     if len(q) < 2:
         return []
 
     results = []
     
-    # Search Projects
-    projects = db.query(models.Project).filter(
-        (models.Project.company.ilike(f"%{q}%")) | 
-        (models.Project.pipeline.ilike(f"%{q}%"))
+    # Search Deals
+    deals = db.query(models.Deal).filter(
+        (models.Deal.company.ilike(f"%{q}%")) | 
+        (models.Deal.pipeline.ilike(f"%{q}%"))
     ).limit(5).all()
     
-    for p in projects:
+    for d in deals:
         results.append(schemas.SearchResultItem(
-            type="project",
-            id=p.id,
-            title=p.company,
-            subtitle=p.pipeline or "No pipeline"
+            type="deal",
+            id=d.id,
+            title=d.company,
+            subtitle=d.pipeline or "No pipeline"
+        ))
+
+    # Search Assets
+    assets = db.query(models.Asset).filter(
+        (models.Asset.name.ilike(f"%{q}%")) | 
+        (models.Asset.indication.ilike(f"%{q}%"))
+    ).limit(5).all()
+    
+    for a in assets:
+        results.append(schemas.SearchResultItem(
+            type="asset",
+            id=a.id,
+            title=a.name,
+            subtitle=f"{a.type} - {a.indication}" if a.type and a.indication else (a.type or a.indication or "No details")
         ))
 
     # Search Contacts
@@ -887,4 +983,75 @@ def update_user_preferences(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+# ==========================================
+# ASSET MANAGEMENT ENDPOINTS
+# ==========================================
+
+@app.get("/api/v1/assets", response_model=List[schemas.AssetResponse])
+def get_assets(db: Session = Depends(database.get_db)):
+    """List all biological or technological assets."""
+    return db.query(models.Asset).all()
+
+@app.post("/api/v1/assets", response_model=schemas.AssetResponse)
+def create_asset(asset: schemas.AssetCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Create a new asset."""
+    db_asset = models.Asset(**asset.model_dump())
+    db.add(db_asset)
+    db.commit()
+    db.refresh(db_asset)
+    return db_asset
+
+@app.get("/api/v1/assets/{asset_id}", response_model=schemas.AssetResponse)
+def get_asset_detail(asset_id: int, db: Session = Depends(database.get_db)):
+    """Get detailed information for a specific asset."""
+    db_asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    if not db_asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return db_asset
+
+@app.patch("/api/v1/assets/{asset_id}", response_model=schemas.AssetResponse)
+def update_asset(asset_id: int, asset_update: schemas.AssetUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Update asset information."""
+    db_asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    if not db_asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    update_data = asset_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_asset, key, value)
+    
+    db.commit()
+    db.refresh(db_asset)
+    return db_asset
+
+@app.post("/api/v1/deals/{deal_id}/assets/{asset_id}")
+def associate_asset_to_deal(deal_id: int, asset_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Link an asset to a deal."""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    db_asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    
+    if not db_deal or not db_asset:
+        raise HTTPException(status_code=404, detail="Deal or Asset not found")
+        
+    if db_asset not in db_deal.assets:
+        db_deal.assets.append(db_asset)
+        db.commit()
+        
+    return {"status": "success", "message": f"Asset {asset_id} linked to Deal {deal_id}"}
+
+@app.delete("/api/v1/deals/{deal_id}/assets/{asset_id}")
+def disassociate_asset_from_deal(deal_id: int, asset_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Unlink an asset from a deal."""
+    db_deal = db.query(models.Deal).filter(models.Deal.id == deal_id).first()
+    db_asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    
+    if not db_deal or not db_asset:
+        raise HTTPException(status_code=404, detail="Deal or Asset not found")
+        
+    if db_asset in db_deal.assets:
+        db_deal.assets.remove(db_asset)
+        db.commit()
+        
+    return {"status": "success", "message": f"Asset {asset_id} unlinked from Deal {deal_id}"}
 

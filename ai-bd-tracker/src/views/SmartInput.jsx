@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown, Inbox, Trash2, Paperclip, Mail, Plus } from 'lucide-react';
+import { FileText, Wand2, Microscope, UserPlus, MessageSquare, Check, X, AlertCircle, ChevronDown, Inbox, Trash2, Paperclip, Mail, Plus, Layers } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function SmartInput() {
-  const { projects, addProject, setProjects, setContacts, setDashboardData } = useStore();
+  const { deals, addDeal, setDeals, setContacts, setDashboardData } = useStore();
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('manual');
   const [inputText, setInputText] = useState('');
@@ -163,8 +163,9 @@ export default function SmartInput() {
           raw_text: inputText,
           source_type: activeIngestionId ? 'email' : 'manual',
           entities_summary: {
-             project: editData?.update_project?.company || null,
-             contacts: editData?.upsert_contacts?.map(c => c.name) || []
+             deal: editData?.update_deal?.company || null,
+             contacts: editData?.upsert_contacts?.map(c => c.name) || [],
+             assets: editData?.upsert_assets?.map(a => a.name) || []
           }
         });
       } catch (err) {
@@ -175,12 +176,12 @@ export default function SmartInput() {
 
       // Refresh global store data so other views reflect the new data immediately
       try {
-        const [updatedProjects, updatedContacts, updatedDashboard] = await Promise.all([
-          api.getProjects(),
+        const [updatedDeals, updatedContacts, updatedDashboard] = await Promise.all([
+          api.getDeals(),
           api.getContacts(),
           api.getDashboardMock()
         ]);
-        setProjects(updatedProjects);
+        setDeals(updatedDeals);
         setContacts(updatedContacts);
         setDashboardData(updatedDashboard);
       } catch (refreshErr) {
@@ -199,13 +200,13 @@ export default function SmartInput() {
       fetchHistory(); // Refresh history
     } catch (error) {
 
-      showMessage('error', `Save failed: ${error.message}`);
+      showMessage('error', `Sync failed: ${error.message}`);
     }
     setIsSaving(false);
   };
 
   const fillTestData = () => {
-    setInputText("Minutes from Pfizer meeting (Oct 12). \n\nMet with Dr. Emily Watson (Chief Medical Officer) and Dr. Thomas Wayne (BD Lead). \n\nDiscussed Project Helios. Pfizer wants to proceed to Phase II diligence regarding the ADC asset. Emily mentioned she previously worked at Novartis for 8 years and Roche for 3 years.");
+    setInputText("Minutes from Pfizer meeting (Oct 12). \n\nMet with Dr. Emily Watson (Chief Medical Officer) and Dr. Thomas Wayne (BD Lead). \n\nDiscussed Deal Helios. Pfizer wants to proceed to Phase II diligence regarding the ADC asset. Emily mentioned she previously worked at Novartis for 8 years and Roche for 3 years.");
   };
 
   return (
@@ -221,8 +222,8 @@ export default function SmartInput() {
 
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-ui-text mb-2">Smart Input</h2>
-          <p className="text-ui-text-muted max-w-xl text-sm leading-relaxed">Multi-entity extraction engine. Paste raw transcripts and let AI structure your intelligence.</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-ui-text mb-2">Smart Intake</h2>
+          <p className="text-ui-text-muted max-w-xl text-sm leading-relaxed">Multi-entity extraction engine. Structure unstructured intelligence into Deals, Assets, and Network.</p>
         </div>
         
         <div className="flex bg-ui-hover p-1 rounded-xl border border-ui-border transition-colors">
@@ -249,16 +250,16 @@ export default function SmartInput() {
                   <Wand2 className="w-4 h-4 text-ui-accent" />
                   <span className="text-xs font-bold uppercase tracking-wider text-ui-accent">Mixed Intelligence Input</span>
                 </div>
-                <button onClick={fillTestData} className="text-[10px] font-bold text-ui-accent hover:bg-ui-accent/10 px-2 py-1 rounded transition-colors">Fill Mixed Sample</button>
+                <button onClick={fillTestData} className="text-[10px] font-bold text-ui-accent hover:bg-ui-accent/10 px-2 py-1 rounded transition-colors">Fill Sample</button>
               </div>
-              <textarea className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-ui-text resize-none placeholder:text-ui-text-muted/50 focus:outline-none" placeholder="Paste an email or transcript..." value={inputText} onChange={(e) => setInputText(e.target.value)} />
+              <textarea className="w-full h-48 p-6 bg-transparent border-none focus:ring-0 text-ui-text resize-none placeholder:text-ui-text-muted/50 focus:outline-none" placeholder="Paste an email, call transcript, or meeting notes..." value={inputText} onChange={(e) => setInputText(e.target.value)} />
             </div>
           </div>
           <div className="flex justify-center">
             <button onClick={handleAIParse} disabled={isAnalyzing || !inputText.trim() || !isAdmin} className="flex flex-col items-center gap-2">
-              <div className={`flex items-center gap-2 bg-ui-accent text-white px-10 py-3.5 rounded-full font-bold hover:opacity-90 transition-all ${(!isAdmin || isAnalyzing || !inputText.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <div className={`flex items-center gap-2 bg-ui-accent text-white px-10 py-3.5 rounded-full font-bold hover:shadow-lg transition-all ${(!isAdmin || isAnalyzing || !inputText.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <Wand2 className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                <span>{isAnalyzing ? 'AI Guessing...' : 'AI Extract & Review'}</span>
+                <span>{isAnalyzing ? 'Extracting Entities...' : 'Extract Intelligence'}</span>
               </div>
             </button>
           </div>
@@ -267,7 +268,7 @@ export default function SmartInput() {
         <section className="space-y-4 animate-in slide-in-from-right-4 duration-300">
            <div className="flex items-center justify-between mb-2">
                <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">{pendingIngestions.length} Pending Records</span>
-               <button onClick={handleSyncMail} disabled={isSyncing || !isAdmin} className="flex items-center gap-1.5 bg-ui-accent text-white text-xs font-bold px-4 py-1.5 rounded-lg"><Mail className="w-3.5 h-3.5" /> Sync Zoho</button>
+               <button onClick={handleSyncMail} disabled={isSyncing || !isAdmin} className="flex items-center gap-1.5 bg-ui-accent text-white text-xs font-bold px-4 py-1.5 rounded-lg"><Mail className="w-3.5 h-3.5" /> Sync Remote</button>
            </div>
            {pendingIngestions.map(item => (
              <div key={item.id} className="bg-ui-card rounded-xl border border-ui-border p-6 flex justify-between items-center transition-colors hover:border-ui-accent/50 shadow-sm">
@@ -281,7 +282,7 @@ export default function SmartInput() {
                 </div>
                 <div className="flex items-center gap-3">
                   <button onClick={(e) => handleDeleteIngestion(item.id, e)} className="p-2.5 text-ui-text-muted rounded-lg hover:text-red-500 hover:bg-red-50"><Trash2 className="w-5 h-5" /></button>
-                  <button onClick={() => handleReviewInboxItem(item)} className="bg-ui-accent text-white px-6 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2">Review <Check className="w-4 h-4" /></button>
+                  <button onClick={() => handleReviewInboxItem(item)} className="bg-ui-accent text-white px-6 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2">Map Intelligence <Check className="w-4 h-4" /></button>
                 </div>
              </div>
            ))}
@@ -329,7 +330,7 @@ export default function SmartInput() {
                             <span className="text-[10px] font-medium text-ui-text-muted">• {item.created_at}</span>
                           </div>
                           <h4 className="text-sm font-bold text-ui-text line-clamp-1">
-                            {item.entities_summary?.project || item.entities_summary?.subject || 'Structured Intelligence Extraction'}
+                            {item.entities_summary?.deal || item.entities_summary?.subject || 'Structured Intelligence Extraction'}
                           </h4>
                         </div>
                       </div>
@@ -344,7 +345,7 @@ export default function SmartInput() {
           {history.length === 0 && !isLoadingHistory && (
             <div className="text-center py-20 bg-ui-sidebar rounded-2xl border-2 border-dashed border-ui-border">
               <MessageSquare className="w-12 h-12 text-ui-text-muted mx-auto mb-4 opacity-20" />
-              <p className="text-ui-text-muted font-bold text-sm">No historical records found.</p>
+              <p className="text-ui-text-muted font-bold text-sm">No historical records found. Start extracting to build your intelligence archive.</p>
             </div>
           )}
         </section>
@@ -376,16 +377,22 @@ export default function SmartInput() {
                 <div className="mt-6 space-y-4">
                   <h4 className="text-xs font-black uppercase text-ui-text-muted tracking-widest border-b border-ui-border pb-2">Extracted Entities</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    {selectedArchive.entities_summary.project && (
+                    {selectedArchive.entities_summary.deal && (
                       <div className="bg-ui-sidebar p-3 rounded-lg border border-ui-border">
-                        <label className="text-[9px] font-black uppercase text-ui-text-muted block mb-1">Target Project</label>
-                        <p className="text-sm font-bold text-ui-accent">{selectedArchive.entities_summary.project}</p>
+                        <label className="text-[9px] font-black uppercase text-ui-text-muted block mb-1">Target Deal</label>
+                        <p className="text-sm font-bold text-ui-accent">{selectedArchive.entities_summary.deal}</p>
                       </div>
                     )}
                     {selectedArchive.entities_summary.contacts && selectedArchive.entities_summary.contacts.length > 0 && (
                       <div className="bg-ui-sidebar p-3 rounded-lg border border-ui-border">
                         <label className="text-[9px] font-black uppercase text-ui-text-muted block mb-1">Affected Contacts</label>
                         <p className="text-xs font-medium text-ui-text">{selectedArchive.entities_summary.contacts.join(', ')}</p>
+                      </div>
+                    )}
+                    {selectedArchive.entities_summary.assets && selectedArchive.entities_summary.assets.length > 0 && (
+                      <div className="bg-ui-sidebar p-3 rounded-lg border border-ui-border col-span-2">
+                        <label className="text-[9px] font-black uppercase text-ui-text-muted block mb-1">Linked Assets</label>
+                        <p className="text-xs font-medium text-ui-text">{selectedArchive.entities_summary.assets.join(', ')}</p>
                       </div>
                     )}
                   </div>
@@ -403,27 +410,27 @@ export default function SmartInput() {
             <div className="flex items-center gap-3 border-l-4 border-ui-accent pl-4">
                 <div>
                     <h3 className="text-lg font-bold text-ui-text">Intelligence Preview</h3>
-                    <p className="text-xs text-ui-text-muted font-medium italic">Universal AI has mapped your input to the following modules.</p>
+                    <p className="text-xs text-ui-text-muted font-medium italic">Universal AI has mapped your input to the following Deal modules.</p>
                 </div>
             </div>
             <button onClick={() => { setParsedResult(null); setActiveIngestionId(null); }} className="text-ui-text-muted hover:text-red-500"><X className="w-5 h-5" /></button>
           </div>
 
           <div className="bg-ui-card rounded-2xl border-2 border-ui-accent/20 shadow-xl p-8 space-y-10">
-            {editData.update_project && (
+            {editData.update_deal && (
                 <div className="animate-in fade-in duration-500">
-                    <div className="flex items-center gap-2 mb-4"><Microscope className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">Target Project Update</h4></div>
+                    <div className="flex items-center gap-2 mb-4"><Microscope className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">Target Deal Alignment</h4></div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-ui-sidebar p-5 rounded-xl border border-ui-border">
-                        <div><label className="text-[9px] font-bold text-ui-text-muted uppercase block">Company</label><p className="text-sm font-black text-ui-text">{editData.update_project.company || 'N/A'}</p></div>
-                        <div><label className="text-[9px] font-bold text-ui-text-muted uppercase block">Pipeline</label><p className="text-sm font-bold text-ui-accent">{editData.update_project.pipeline || 'N/A'}</p></div>
-                        <div><label className="text-[9px] font-bold text-ui-text-muted uppercase block">Stage</label><span className="text-[10px] bg-ui-accent/10 text-ui-accent px-2 py-0.5 rounded-full font-bold">{editData.update_project.stage || 'Detected'}</span></div>
+                        <div><label className="text-[9px] font-bold text-ui-text-muted uppercase block">Company</label><p className="text-sm font-black text-ui-text">{editData.update_deal.company || 'N/A'}</p></div>
+                        <div><label className="text-[9px] font-bold text-ui-text-muted uppercase block">Engagement Focus</label><p className="text-sm font-bold text-ui-accent">{editData.update_deal.pipeline || 'N/A'}</p></div>
+                        <div><label className="text-[9px] font-bold text-ui-text-muted uppercase block">Stage</label><span className="text-[10px] bg-ui-accent/10 text-ui-accent px-2 py-0.5 rounded-full font-bold">{editData.update_deal.stage || 'Detected'}</span></div>
                     </div>
                 </div>
             )}
 
             {editData.upsert_contacts && editData.upsert_contacts.length > 0 && (
                 <div className="animate-in fade-in duration-500 delay-100">
-                    <div className="flex items-center gap-2 mb-4"><UserPlus className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">People & Network ({editData.upsert_contacts.length})</h4></div>
+                    <div className="flex items-center gap-2 mb-4"><UserPlus className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">Network Intelligence ({editData.upsert_contacts.length})</h4></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {editData.upsert_contacts.map((contact, idx) => (
                             <div key={idx} className="bg-ui-sidebar p-4 rounded-xl border border-ui-border flex items-center gap-4">
@@ -435,9 +442,23 @@ export default function SmartInput() {
                 </div>
             )}
 
+            {editData.upsert_assets && editData.upsert_assets.length > 0 && (
+                <div className="animate-in fade-in duration-500 delay-150">
+                    <div className="flex items-center gap-2 mb-4"><Layers className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">Asset Cataloging ({editData.upsert_assets.length})</h4></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {editData.upsert_assets.map((asset, idx) => (
+                            <div key={idx} className="bg-ui-sidebar p-4 rounded-xl border border-ui-border flex items-center gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-ui-accent/10 flex items-center justify-center text-ui-accent font-black text-[10px]">{asset.code || 'AS'}</div>
+                                <div className="flex-1"><p className="text-xs font-black text-ui-text">{asset.name}</p><p className="text-[9px] text-ui-text-muted font-bold">{asset.category}</p></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {editData.add_timeline_event && (
                 <div className="animate-in fade-in duration-500 delay-200">
-                    <div className="flex items-center gap-2 mb-4"><MessageSquare className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">History Footprint</h4></div>
+                    <div className="flex items-center gap-2 mb-4"><MessageSquare className="w-4 h-4 text-ui-accent" /><h4 className="text-xs font-black uppercase text-ui-text-muted">Engagement Footprint</h4></div>
                     <div className="bg-ui-sidebar p-5 rounded-xl border border-ui-border">
                         <div className="flex justify-between mb-2"><h5 className="text-sm font-black text-ui-text">{editData.add_timeline_event.title}</h5><span className="text-[10px] font-bold text-ui-text-muted">{editData.add_timeline_event.date}</span></div>
                         <p className="text-xs text-ui-text-muted leading-relaxed italic line-clamp-2">"{editData.add_timeline_event.desc}"</p>
@@ -448,7 +469,7 @@ export default function SmartInput() {
             <div className="mt-8 pt-8 border-t border-ui-border flex justify-end gap-3">
                 <button onClick={() => { setParsedResult(null); setActiveIngestionId(null); }} className="px-6 py-2.5 text-sm font-bold text-ui-text-muted">Discard</button>
                 <button onClick={handleConfirmSave} disabled={isSaving || !isAdmin} className="flex items-center gap-2 bg-ui-accent text-white px-10 py-2.5 rounded-xl font-bold shadow-lg shadow-ui-accent/20">
-                    {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} One-Click Sync
+                    {isSaving ? <Wand2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Commit to Intelligence
                 </button>
             </div>
           </div>

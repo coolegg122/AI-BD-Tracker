@@ -12,7 +12,7 @@ const data = [
   { month: 'Oct', deals: 15, intelligence: 72 }
 ];
 
-export default function PortfolioTrend() {
+export default function DealTrend() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   return (

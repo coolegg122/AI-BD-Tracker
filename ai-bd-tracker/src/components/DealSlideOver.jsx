@@ -1,19 +1,29 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, Users, History, ChevronDown, ChevronUp, Link, Download, Microscope, Target, BrainCircuit, Sparkles, Send, ShieldAlert, ListChecks, MessageSquareQuote, Loader2 } from 'lucide-react';
+import { 
+  X, Calendar, MessageSquare, FileText, CheckCircle2, Clock, Mail, Phone, 
+  Users, History, ChevronDown, ChevronUp, Link, Download, Microscope, 
+  Target, BrainCircuit, Sparkles, Send, ShieldAlert, ListChecks, 
+  MessageSquareQuote, Loader2, Layers, Gavel, DollarSign, Globe, ExternalLink, Plus,
+  TrendingUp, AlertTriangle, ShieldCheck
+} from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import EditableField from './EditableField';
 
-export default function ProjectSlideOver() {
-  const { selectedOverviewProject, closeProjectOverview, stages, updateProject } = useStore();
+export default function DealSlideOver() {
+  const { 
+    selectedOverviewDeal, closeDealOverview, stages, 
+    updateDealEconomics, addDealAgreement, updateDealAgreement, updateDealDueDiligence,
+    updateDeal, users: storeUsers
+  } = useStore();
   const { isAdmin } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [expandedEventId, setExpandedEventId] = useState(null);
   const [historyData, setHistoryData] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('timeline'); // timeline, details, documents, prep
+  const [activeTab, setActiveTab] = useState('timeline'); // timeline, economics, legal, details, documents, prep
   const [prepData, setPrepData] = useState(null);
   const [isPrepLoading, setIsPrepLoading] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
@@ -22,34 +32,41 @@ export default function ProjectSlideOver() {
   const [users, setUsers] = useState([]);
   const chatEndRef = useRef(null);
 
+  // For New Agreement Modal/Inline
+  const [showAddAgreement, setShowAddAgreement] = useState(false);
+  const [newAgreement, setNewAgreement] = useState({ agreement_type: 'NDA', status: 'In Review' });
+
   useEffect(() => {
-    if (selectedOverviewProject) {
+    if (selectedOverviewDeal) {
       setTimeout(() => setIsVisible(true), 10);
       setExpandedEventId(null); 
-      setActiveTab('timeline');
+      // Keep active tab if it's one of the valid ones
+      if (!['timeline', 'economics', 'legal', 'details', 'documents', 'prep'].includes(activeTab)) {
+        setActiveTab('timeline');
+      }
       setPrepData(null);
       setChatHistory([]);
       setChatMessage('');
-      fetchHistory(selectedOverviewProject.id);
-      fetchAttachments(selectedOverviewProject.id);
+      fetchHistory(selectedOverviewDeal.id);
+      fetchAttachments(selectedOverviewDeal.id);
       if (isAdmin) fetchUsers();
     } else {
       setIsVisible(false);
       setHistoryData([]);
     }
-  }, [selectedOverviewProject]);
+  }, [selectedOverviewDeal]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, isSending]);
 
-  const fetchHistory = async (projectId) => {
+  const fetchHistory = async (dealId) => {
     setIsLoading(true);
     try {
-      const data = await api.getProjectHistory(projectId);
+      const data = await api.getDealHistory(dealId);
       setHistoryData(data);
     } catch (err) {
-      console.error("Failed to load project history:", err);
+      console.error("Failed to load deal history:", err);
     } finally {
       setIsLoading(false);
     }
@@ -58,16 +75,15 @@ export default function ProjectSlideOver() {
   const fetchUsers = async () => {
     try {
       const data = await api.getUsers();
-      // Filter for active users who could lead a project
       setUsers(data);
     } catch (err) {
       console.error("Failed to load user list:", err);
     }
   };
 
-  const fetchAttachments = async (projectId) => {
+  const fetchAttachments = async (dealId) => {
     try {
-      const data = await api.getProjectAttachments(projectId);
+      const data = await api.getDealAttachments(dealId);
       setAttachments(data);
     } catch (err) {
       console.error("Failed to load attachments:", err);
@@ -76,10 +92,10 @@ export default function ProjectSlideOver() {
   };
 
   const fetchPrep = async (force = false) => {
-    if (!selectedOverviewProject) return;
+    if (!selectedOverviewDeal) return;
     setIsPrepLoading(true);
     try {
-      const data = await api.getNegotiationPrep(selectedOverviewProject.id, force);
+      const data = await api.getNegotiationPrep(selectedOverviewDeal.id, force);
       setPrepData(data);
     } catch (err) {
       console.error("Failed to load prep:", err);
@@ -90,7 +106,7 @@ export default function ProjectSlideOver() {
 
   const handleChatSubmit = async (e) => {
     e.preventDefault();
-    if (!chatMessage.trim() || isSending || !selectedOverviewProject) return;
+    if (!chatMessage.trim() || isSending || !selectedOverviewDeal) return;
 
     const userMsg = { role: 'user', content: chatMessage };
     setChatHistory(prev => [...prev, userMsg]);
@@ -98,7 +114,7 @@ export default function ProjectSlideOver() {
     setIsSending(true);
 
     try {
-      const res = await api.sendStrategistMessage(selectedOverviewProject.id, chatMessage, chatHistory);
+      const res = await api.sendStrategistMessage(selectedOverviewDeal.id, chatMessage, chatHistory);
       setChatHistory(prev => [...prev, { role: 'ai', content: res.response }]);
     } catch (err) {
       setChatHistory(prev => [...prev, { role: 'ai', content: "Sorry, I lost my train of thought. Error connecting to strategist." }]);
@@ -108,34 +124,71 @@ export default function ProjectSlideOver() {
   };
 
   const handleFieldUpdate = async (field, newValue) => {
-    if (!selectedOverviewProject) return;
+    if (!selectedOverviewDeal) return;
     try {
-      // Logic for nested details update
       let updateData = { [field]: newValue };
       
-      // If it's a detail nested update (formatted as 'details.category.key')
       if (field.startsWith('details.')) {
         const parts = field.split('.');
         const category = parts[1];
         const key = parts[2];
-        const currentDetails = { ...(selectedOverviewProject.details || {}) };
+        const currentDetails = { ...(selectedOverviewDeal.details || {}) };
         const categoryData = { ...(currentDetails[category] || {}) };
         categoryData[key] = newValue;
         currentDetails[category] = categoryData;
         updateData = { details: currentDetails };
       }
 
-      await api.updateProject(selectedOverviewProject.id, updateData);
-      updateProject(selectedOverviewProject.id, updateData);
+      await api.updateDeal(selectedOverviewDeal.id, updateData);
+      updateDeal(selectedOverviewDeal.id, updateData);
     } catch (err) {
-      console.error(`Failed to update project field ${field}:`, err);
+      console.error(`Failed to update deal field ${field}:`, err);
       throw err;
     }
   };
 
-  if (!selectedOverviewProject && !isVisible) return null;
+  // Phase 2 Specific Handlers
+  const handleEconomicsUpdate = async (field, value) => {
+    try {
+      const updated = await api.updateDealEconomics(selectedOverviewDeal.id, { [field]: value });
+      updateDealEconomics(selectedOverviewDeal.id, updated);
+    } catch (err) {
+      console.error("Failed to update economics:", err);
+    }
+  };
 
-  const project = selectedOverviewProject || {};
+  const handleAddAgreement = async () => {
+    try {
+      const added = await api.addDealAgreement(selectedOverviewDeal.id, newAgreement);
+      addDealAgreement(selectedOverviewDeal.id, added);
+      setShowAddAgreement(false);
+      setNewAgreement({ agreement_type: 'NDA', status: 'In Review' });
+    } catch (err) {
+      console.error("Failed to add agreement:", err);
+    }
+  };
+
+  const handleAgreementUpdate = async (agreementId, field, value) => {
+    try {
+      const updated = await api.updateDealAgreement(selectedOverviewDeal.id, agreementId, { [field]: value });
+      updateDealAgreement(selectedOverviewDeal.id, agreementId, updated);
+    } catch (err) {
+      console.error("Failed to update agreement:", err);
+    }
+  };
+
+  const handleDDUpdate = async (field, value) => {
+    try {
+      const updated = await api.updateDealDueDiligence(selectedOverviewDeal.id, { [field]: value });
+      updateDealDueDiligence(selectedOverviewDeal.id, updated);
+    } catch (err) {
+      console.error("Failed to update due diligence:", err);
+    }
+  };
+
+  if (!selectedOverviewDeal && !isVisible) return null;
+
+  const deal = selectedOverviewDeal || {};
 
   const getIcon = (type) => {
     switch (type) {
@@ -155,48 +208,62 @@ export default function ProjectSlideOver() {
     <>
       <div 
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
-        onClick={closeProjectOverview}
+        onClick={closeDealOverview}
       ></div>
       
-      <div className={`fixed inset-y-0 right-0 w-full md:w-[500px] bg-ui-card shadow-2xl border-l border-ui-border z-50 transform transition-transform duration-300 ease-in-out flex flex-col transition-colors ${isVisible ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 w-full md:w-[600px] bg-ui-card shadow-2xl border-l border-ui-border z-50 transform transition-transform duration-300 ease-in-out flex flex-col transition-colors ${isVisible ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-ui-border bg-ui-sidebar flex justify-between items-start shrink-0 transition-colors">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <EditableField
-                value={project.stage}
+                value={deal.stage}
                 type="select"
                 options={stages.map(s => ({ id: s.id, label: s.label }))}
                 onSave={(val) => handleFieldUpdate('stage', val)}
                 className="inline-block"
                 textClassName="px-2.5 py-1 bg-ui-accent/10 text-ui-accent text-[10px] uppercase font-bold tracking-wider rounded-md"
               />
-              <span className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md transition-colors ${project.status === 'overdue' ? 'bg-red-500/10 text-red-600' : 'bg-green-500/10 text-green-600'}`}>
-                {project.status === 'overdue' ? 'Stalled / Action Req.' : 'Active'}
+              <span className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md transition-colors ${deal.status === 'overdue' ? 'bg-red-500/10 text-red-600' : 'bg-green-500/10 text-green-600'}`}>
+                {deal.status === 'overdue' ? 'Stalled / Action Req.' : 'Active'}
               </span>
+              {deal.due_diligence?.status && (
+                <span className="px-2 py-1 bg-amber-500/10 text-amber-600 text-[10px] uppercase font-bold rounded-md">
+                   DD: {deal.due_diligence.status}
+                </span>
+              )}
             </div>
             <EditableField
-              value={project.company}
+              value={deal.company}
               onSave={(val) => handleFieldUpdate('company', val)}
               textClassName="text-2xl font-extrabold text-ui-text"
               label="Company Name"
             />
-            <EditableField
-              value={project.pipeline}
-              onSave={(val) => handleFieldUpdate('pipeline', val)}
-              textClassName="text-sm font-medium text-ui-text-muted mt-1"
-              label="Pipeline Asset"
-            />
+            <div className="flex items-center gap-3 mt-1">
+              <EditableField
+                value={deal.pipeline}
+                onSave={(val) => handleFieldUpdate('pipeline', val)}
+                textClassName="text-sm font-medium text-ui-text-muted"
+                label="Engagement Focus"
+              />
+              {deal.economics?.total_deal_value && (
+                <span className="text-xs font-black text-ui-accent bg-ui-accent/5 px-2 py-0.5 rounded border border-ui-accent/10 whitespace-nowrap">
+                   {deal.economics.currency || '$'}{deal.economics.total_deal_value}
+                </span>
+              )}
+            </div>
           </div>
-          <button onClick={closeProjectOverview} className="p-2 text-ui-text-muted hover:text-ui-text hover:bg-ui-hover rounded-full transition-colors">
+          <button onClick={closeDealOverview} className="p-2 text-ui-text-muted hover:text-ui-text hover:bg-ui-hover rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex bg-ui-card px-6 border-b border-ui-border shrink-0 transition-colors">
+        <div className="flex bg-ui-card px-4 border-b border-ui-border shrink-0 transition-colors overflow-x-auto no-scrollbar">
           {[
             { id: 'timeline', label: 'Timeline', icon: History },
+            { id: 'economics', label: 'Economics', icon: DollarSign },
+            { id: 'legal', label: 'Legal & DD', icon: Gavel },
             { id: 'details', label: 'Deep Dive', icon: Microscope },
             { id: 'documents', label: 'Docs', icon: FileText },
             { id: 'prep', label: 'AI Strategy', icon: BrainCircuit }
@@ -232,15 +299,15 @@ export default function ProjectSlideOver() {
                   <div className="bg-ui-card p-4 rounded-xl border border-ui-border shadow-sm relative overflow-hidden ring-1 ring-ui-accent/10 hover:shadow-md transition-all cursor-pointer">
                     <div className="absolute top-0 left-0 w-1 h-full bg-ui-accent"></div>
                     <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-bold text-sm text-ui-text line-clamp-1">{project.tasks && project.tasks.length > 0 ? project.tasks[0].desc : 'Determine Next Action'}</h4>
-                      <span className="text-[10px] font-bold text-ui-accent bg-ui-accent/10 px-2 py-1 rounded">Next Step</span>
+                       <h4 className="font-bold text-sm text-ui-text line-clamp-1">{deal.tasks && deal.tasks.length > 0 ? deal.tasks[0].desc : 'Determine Next Action'}</h4>
+                       <span className="text-[10px] font-bold text-ui-accent bg-ui-accent/10 px-2 py-1 rounded">Next Step</span>
                     </div>
                     <div className="flex items-center gap-4 text-xs font-medium text-ui-text-muted">
                       <div className="flex items-center gap-1.5 bg-ui-hover px-2 py-1 rounded">
                         <Calendar className="w-3.5 h-3.5" />
                         Target: 
                         <EditableField
-                          value={project.nextFollowUp || ''}
+                          value={deal.nextFollowUp || ''}
                           type="date"
                           onSave={(val) => handleFieldUpdate('nextFollowUp', val)}
                           textClassName="font-bold text-ui-accent"
@@ -250,19 +317,19 @@ export default function ProjectSlideOver() {
                         <Users className="w-3.5 h-3.5" />
                         Responsibility: 
                         <EditableField
-                          value={project.owner?.id || ''}
+                          value={deal.owner?.id || ''}
                           type="select"
                           options={users.map(u => ({ id: u.id, label: u.name }))}
                           onSave={(val) => handleFieldUpdate('owner_id', val ? parseInt(val) : null)}
                           textClassName="font-bold text-ui-text"
-                          label="Project Lead"
+                          label="Deal Lead"
                           placeholder="Deal Team"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {project.tasks && project.tasks.slice(1).map((t, i) => (
+                  {deal.tasks && deal.tasks.slice(1).map((t, i) => (
                     <div key={i} className="bg-ui-card p-3.5 rounded-xl border border-ui-border shadow-sm relative pl-4 transition-colors">
                       <div className="absolute top-0 left-0 w-1 h-full bg-ui-text-muted opacity-20 rounded-l-xl"></div>
                       <div className="flex justify-between items-center mb-1">
@@ -278,23 +345,23 @@ export default function ProjectSlideOver() {
               <div>
                 <h3 className="text-sm font-extrabold text-ui-text uppercase tracking-widest mb-5 flex items-center gap-2">
                   <History className="w-4 h-4 text-ui-text-muted opacity-50" />
-                  Historical Footprints
+                  Engagement History
                 </h3>
                 
                 <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-ui-border transition-colors">
                   <div className="relative pb-2">
                     <div className="absolute -left-[1.35rem] top-1 w-2.5 h-2.5 rounded-full border-2 border-green-500 bg-ui-card shadow-[0_0_0_4px_theme(colors.ui.card)]"></div>
-                    <span className="text-[9px] font-bold text-ui-text-muted uppercase tracking-widest">{project.lastContactDate || 'Recently'}</span>
+                    <span className="text-[9px] font-bold text-ui-text-muted uppercase tracking-widest">{deal.lastContactDate || 'Recently'}</span>
                     <div className="mt-1 bg-ui-card p-3.5 rounded-xl border border-ui-border shadow-sm">
-                      <h4 className="font-bold text-xs text-ui-text">Latest CRM Sync Entry</h4>
-                      <p className="text-[11px] text-ui-text-muted mt-1 leading-relaxed">System tracked an update via AI Intake module.</p>
+                      <h4 className="font-bold text-xs text-ui-text">Latest Intelligence Intake</h4>
+                      <p className="text-[11px] text-ui-text-muted mt-1 leading-relaxed">System tracked an update via AI analysis engine.</p>
                     </div>
                   </div>
 
                   {isLoading ? (
-                    <div className="text-center py-4 text-xs font-bold text-ui-text-muted animate-pulse transition-colors">Loading Footprints...</div>
+                    <div className="text-center py-4 text-xs font-bold text-ui-text-muted animate-pulse transition-colors">Loading History...</div>
                   ) : historyData.length === 0 ? (
-                    <div className="text-center py-4 text-xs font-medium text-ui-text-muted transition-colors">No footprints recorded yet.</div>
+                    <div className="text-center py-4 text-xs font-medium text-ui-text-muted transition-colors">No engagement history recorded yet.</div>
                   ) : historyData.map((item) => {
                     const isExpanded = expandedEventId === item.id;
                     return (
@@ -305,7 +372,7 @@ export default function ProjectSlideOver() {
                         <span className="text-[9px] font-bold text-ui-text-muted uppercase tracking-widest block mb-1">{item.date}</span>
                         
                         <div 
-                          className={`bg-ui-card rounded-xl border ${isExpanded ? 'border-ui-accent shadow-md ring-1 ring-ui-accent/10' : 'border-ui-border shadow-sm hover:border-ui-text-muted/30'} transition-all cursor-pointer overflow-hidden`}
+                           className={`bg-ui-card rounded-xl border ${isExpanded ? 'border-ui-accent shadow-md ring-1 ring-ui-accent/10' : 'border-ui-border shadow-sm hover:border-ui-text-muted/30'} transition-all cursor-pointer overflow-hidden`}
                           onClick={() => handleToggleExpand(item.id)}
                         >
                           <div className="p-3.5 flex justify-between items-start">
@@ -365,7 +432,7 @@ export default function ProjectSlideOver() {
                                       {Array.isArray(item.details.attendees) ? (
                                         item.details.attendees.map((attendee, idx) => {
                                           const matchedContact = typeof attendee === 'object' 
-                                            ? (useStore.getState().contacts || []).find(c => 
+                                            ? (storeUsers || []).find(c => 
                                                 c.name.toLowerCase() === attendee.name?.toLowerCase() ||
                                                 (attendee.name && c.name.toLowerCase().includes(attendee.name.toLowerCase()))
                                               )
@@ -378,7 +445,7 @@ export default function ProjectSlideOver() {
                                                 className="flex items-center gap-2 p-1 pr-3 bg-ui-bg rounded-lg border border-ui-border shadow-sm group/contact transition-all hover:border-ui-accent/30"
                                               >
                                                 <img 
-                                                  src={matchedContact.photoUrl} 
+                                                   src={matchedContact.photoUrl} 
                                                   className="w-6 h-6 rounded-md object-cover grayscale group-hover/contact:grayscale-0 transition-all" 
                                                   alt="" 
                                                 />
@@ -422,22 +489,289 @@ export default function ProjectSlideOver() {
                   <div className="relative pt-2">
                     <div className="absolute -left-[1.35rem] top-3 w-2.5 h-2.5 rounded-full border-2 border-ui-border bg-ui-card transition-colors"></div>
                     <span className="text-[9px] font-bold text-ui-text-muted uppercase tracking-widest">Inception</span>
-                    <p className="text-[11px] font-bold text-ui-text-muted mt-0.5 opacity-80">Project Created via DB Scan</p>
+                    <p className="text-[11px] font-bold text-ui-text-muted mt-0.5 opacity-80">Deal Created via Smart Intake</p>
                   </div>
                 </div>
               </div>
             </>
           )}
 
+          {activeTab === 'economics' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-ui-card p-5 rounded-2xl border border-ui-border shadow-sm">
+                     <div className="flex items-center gap-2 mb-4">
+                        <div className="p-2 bg-green-500/10 rounded-lg text-green-600">
+                           <DollarSign className="w-4 h-4" />
+                        </div>
+                        <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest leading-none">Valuation</h4>
+                     </div>
+                     <div className="space-y-4">
+                        <div>
+                           <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-1">Upfront Payment</label>
+                           <EditableField
+                              value={deal.economics?.upfront || '0'}
+                              onSave={(val) => handleEconomicsUpdate('upfront', val)}
+                              textClassName="text-lg font-black text-ui-text"
+                           />
+                        </div>
+                        <div>
+                           <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-1">Royalties (%)</label>
+                           <EditableField
+                              value={deal.economics?.royalties || 'N/A'}
+                              onSave={(val) => handleEconomicsUpdate('royalties', val)}
+                              textClassName="text-sm font-bold text-ui-text"
+                           />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="bg-ui-card p-5 rounded-2xl border border-ui-border shadow-sm">
+                     <div className="flex items-center gap-2 mb-4">
+                        <div className="p-2 bg-ui-accent/10 rounded-lg text-ui-accent">
+                           <TrendingUp className="w-4 h-4" />
+                        </div>
+                        <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest leading-none">Success Odds</h4>
+                     </div>
+                     <div className="flex flex-col items-center justify-center h-[calc(100%-2rem)]">
+                        <div className="relative w-24 h-24 mb-3">
+                           <svg className="w-full h-full transform -rotate-90">
+                              <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-ui-border"/>
+                              <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 * (1 - (deal.economics?.pos || 0) / 100)} className="text-ui-accent transition-all duration-1000"/>
+                           </svg>
+                           <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-xl font-black text-ui-text">{deal.economics?.pos || 0}%</span>
+                              <span className="text-[8px] font-bold text-ui-text-muted uppercase">POS</span>
+                           </div>
+                        </div>
+                        <EditableField
+                           value={deal.economics?.pos || 0}
+                           type="number"
+                           onSave={(val) => handleEconomicsUpdate('pos', parseInt(val))}
+                           textClassName="text-[10px] font-bold text-ui-accent hover:underline"
+                           placeholder="Edit POS"
+                        />
+                     </div>
+                  </div>
+               </div>
+
+               <div className="bg-ui-card rounded-2xl border border-ui-border overflow-hidden shadow-sm">
+                  <div className="bg-ui-sidebar px-4 py-3 border-b border-ui-border flex items-center justify-between">
+                     <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest">Milestone Structure</h4>
+                     <label className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-ui-text-muted uppercase">Currency:</span>
+                        <EditableField
+                           value={deal.economics?.currency || 'USD'}
+                           onSave={(val) => handleEconomicsUpdate('currency', val)}
+                           textClassName="text-[10px] font-black text-ui-accent"
+                        />
+                     </label>
+                  </div>
+                  <div className="p-5">
+                     <label className="text-[9px] font-bold text-ui-text-muted uppercase block mb-2">Milestones Details</label>
+                     <EditableField
+                        value={deal.economics?.milestones || ''}
+                        type="textarea"
+                        onSave={(val) => handleEconomicsUpdate('milestones', val)}
+                        textClassName="text-xs text-ui-text font-medium leading-relaxed whitespace-pre-line block min-h-[100px]"
+                        placeholder="Define milestones (Development, Regulatory, Sales targets)..."
+                     />
+                  </div>
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'legal' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+               {/* Agreements Tracking */}
+               <div className="bg-ui-card rounded-2xl border border-ui-border overflow-hidden shadow-sm">
+                  <div className="bg-ui-sidebar px-4 py-3 border-b border-ui-border flex items-center justify-between">
+                     <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest flex items-center gap-2">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Legal Agreements
+                     </h4>
+                     <button 
+                        onClick={() => setShowAddAgreement(true)}
+                        className="p-1 text-ui-accent hover:bg-ui-accent/10 rounded-lg transition-all"
+                     >
+                        <Plus className="w-4 h-4" />
+                     </button>
+                  </div>
+                  <div className="p-4 space-y-3">
+                     {deal.agreements && deal.agreements.length > 0 ? (
+                        deal.agreements.map((ag) => (
+                           <div key={ag.id} className="p-4 bg-ui-bg rounded-xl border border-ui-border hover:border-ui-accent/30 transition-all flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                 <div className={`p-2 rounded-lg ${ag.status === 'Signed' ? 'bg-green-500/10 text-green-600' : 'bg-ui-accent/10 text-ui-accent'}`}>
+                                    <Gavel className="w-4 h-4" />
+                                 </div>
+                                 <div>
+                                    <div className="text-xs font-bold text-ui-text">{ag.agreement_type}</div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                       <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${ag.status === 'Signed' ? 'bg-green-500/10 text-green-600' : 'bg-ui-accent/10 text-ui-accent'}`}>
+                                          {ag.status}
+                                       </span>
+                                       {ag.effective_date && (
+                                          <span className="text-[9px] text-ui-text-muted font-bold tracking-tight">Eff: {ag.effective_date}</span>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <EditableField
+                                    value={ag.status}
+                                    type="select"
+                                    options={[
+                                       { id: 'In Review', label: 'In Review' },
+                                       { id: 'Negotiating', label: 'Negotiating' },
+                                       { id: 'Signed', label: 'Signed' },
+                                       { id: 'Expired', label: 'Expired' }
+                                    ]}
+                                    onSave={(val) => handleAgreementUpdate(ag.id, 'status', val)}
+                                    textClassName="text-[10px] font-black text-ui-text-muted hover:text-ui-accent"
+                                 />
+                              </div>
+                           </div>
+                        ))
+                     ) : (
+                        <p className="text-[11px] text-ui-text-muted font-medium italic text-center py-4">No legal tracks established.</p>
+                     )}
+
+                     {showAddAgreement && (
+                        <div className="p-4 bg-ui-sidebar rounded-xl border border-ui-accent/30 animate-in slide-in-from-top-2">
+                           <div className="grid grid-cols-2 gap-3 mb-4">
+                              <div>
+                                 <label className="text-[8px] font-bold text-ui-text-muted uppercase mb-1 block">Type</label>
+                                 <select 
+                                    className="w-full bg-ui-card border border-ui-border rounded px-2 py-1.5 text-xs text-ui-text"
+                                    value={newAgreement.agreement_type}
+                                    onChange={(e) => setNewAgreement({...newAgreement, agreement_type: e.target.value})}
+                                 >
+                                    <option value="NDA">NDA</option>
+                                    <option value="CDA">CDA</option>
+                                    <option value="Term Sheet">Term Sheet</option>
+                                    <option value="Definitive Agreement">Definitive Agreement</option>
+                                    <option value="Amendment">Amendment</option>
+                                 </select>
+                              </div>
+                              <div>
+                                 <label className="text-[8px] font-bold text-ui-text-muted uppercase mb-1 block">Status</label>
+                                 <select 
+                                    className="w-full bg-ui-card border border-ui-border rounded px-2 py-1.5 text-xs text-ui-text"
+                                    value={newAgreement.status}
+                                    onChange={(e) => setNewAgreement({...newAgreement, status: e.target.value})}
+                                 >
+                                    <option value="In Review">In Review</option>
+                                    <option value="Negotiating">Negotiating</option>
+                                    <option value="Signed">Signed</option>
+                                 </select>
+                              </div>
+                           </div>
+                           <div className="flex gap-2">
+                              <button onClick={handleAddAgreement} className="flex-1 py-1.5 bg-ui-accent text-white text-[10px] font-black uppercase rounded shadow-sm">Save Agreement</button>
+                              <button onClick={() => setShowAddAgreement(false)} className="px-3 py-1.5 border border-ui-border text-ui-text-muted text-[10px] font-bold uppercase rounded">Cancel</button>
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               </div>
+
+               {/* Due Diligence Tracker */}
+               <div className="bg-ui-card rounded-2xl border border-ui-border overflow-hidden shadow-sm">
+                  <div className="bg-ui-sidebar px-4 py-3 border-b border-ui-border flex items-center justify-between">
+                     <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest flex items-center gap-2">
+                        <Microscope className="w-3.5 h-3.5" /> Due Diligence Status
+                     </h4>
+                     <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${deal.due_diligence?.status === 'Clean' ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'}`}>
+                        {deal.due_diligence?.status || 'Pending'}
+                     </span>
+                  </div>
+                  <div className="p-5 space-y-5">
+                     <div className="flex items-center justify-between p-3 bg-ui-accent/5 rounded-xl border border-ui-accent/10">
+                        <div className="flex items-center gap-3">
+                           <Globe className="w-4 h-4 text-ui-accent" />
+                           <div className="text-[11px] font-bold text-ui-text">Virtual Data Room (VDR)</div>
+                        </div>
+                        {deal.due_diligence?.vdr_link ? (
+                           <a href={deal.due_diligence.vdr_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[10px] font-black text-ui-accent hover:underline">
+                              Access VDR <ExternalLink className="w-3 h-3" />
+                           </a>
+                        ) : (
+                           <EditableField
+                              value=""
+                              onSave={(val) => handleDDUpdate('vdr_link', val)}
+                              textClassName="text-[10px] font-bold text-ui-text-muted italic"
+                              placeholder="Insert VDR Link"
+                           />
+                        )}
+                     </div>
+
+                     <div>
+                        <div className="flex items-center gap-2 mb-3">
+                           <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                           <h5 className="text-[10px] font-black text-ui-text uppercase tracking-widest">Key Risk Assessment</h5>
+                        </div>
+                        <div className="bg-ui-bg p-4 rounded-xl border border-ui-border min-h-[80px]">
+                           <EditableField
+                              value={deal.due_diligence?.key_risks ? JSON.stringify(deal.due_diligence.key_risks, null, 2) : ''}
+                              type="textarea"
+                              onSave={(val) => {
+                                 try {
+                                    handleDDUpdate('key_risks', JSON.parse(val));
+                                 } catch(e) {
+                                    handleDDUpdate('key_risks', [{ note: val }]);
+                                 }
+                              }}
+                              textClassName="text-[11px] text-ui-text font-medium leading-relaxed whitespace-pre-line block"
+                              placeholder="Describe critical risks found during DD..."
+                           />
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          )}
+
           {activeTab === 'details' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-               {Object.entries(project.details || {}).length === 0 ? (
+               
+               {/* NEW: Associated Assets Section */}
+               <div className="bg-ui-card rounded-2xl border border-ui-border overflow-hidden shadow-sm transition-colors mb-6">
+                  <div className="bg-ui-accent/5 px-4 py-3 border-b border-ui-border flex items-center justify-between transition-colors">
+                     <h4 className="text-[11px] font-black text-ui-accent uppercase tracking-widest flex items-center gap-2">
+                       <Layers className="w-3.5 h-3.5" /> Key Interfacing Assets
+                     </h4>
+                  </div>
+                  <div className="p-4">
+                     {deal.assets && deal.assets.length > 0 ? (
+                       <div className="space-y-3">
+                         {deal.assets.map(asset => (
+                           <div key={asset.id} className="flex items-center justify-between p-3 bg-ui-bg rounded-xl border border-ui-border hover:border-ui-accent/30 transition-all group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-ui-accent/10 text-ui-accent flex items-center justify-center font-bold text-[10px]">
+                                   {asset.code || 'AS'}
+                                </div>
+                                <div>
+                                   <div className="text-xs font-bold text-ui-text">{asset.name}</div>
+                                   <div className="text-[10px] text-ui-text-muted uppercase tracking-tighter">{asset.category}</div>
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-bold text-ui-text-muted opacity-0 group-hover:opacity-100 transition-opacity uppercase font-black">Active</span>
+                           </div>
+                         ))}
+                       </div>
+                     ) : (
+                       <p className="text-[11px] text-ui-text-muted font-medium italic">No assets linked to this engagement yet.</p>
+                     )}
+                  </div>
+               </div>
+
+               {Object.entries(deal.details || {}).length === 0 ? (
                  <div className="text-center py-20 bg-ui-card rounded-2xl border border-ui-border mt-8">
                     <Microscope className="w-12 h-12 text-ui-text-muted opacity-20 mx-auto mb-4" />
                     <p className="text-sm font-bold text-ui-text-muted">No deep intelligence extracted yet.</p>
                  </div>
                ) : (
-                 Object.entries(project.details).map(([category, content]) => (
+                 Object.entries(deal.details).map(([category, content]) => (
                    <div key={category} className="bg-ui-card rounded-2xl border border-ui-border overflow-hidden shadow-sm transition-colors">
                       <div className="bg-ui-sidebar px-4 py-3 border-b border-ui-border flex items-center justify-between transition-colors">
                          <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest">{category}</h4>
@@ -485,7 +819,7 @@ export default function ProjectSlideOver() {
                         <div>
                           <h4 className="text-sm font-bold text-ui-text">{att.name}</h4>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-black text-ui-accent uppercase px-1.5 py-0.5 bg-ui-accent/10 rounded">{att.category}</span>
+                             <span className="text-[10px] font-black text-ui-accent uppercase px-1.5 py-0.5 bg-ui-accent/10 rounded">{att.category}</span>
                             <span className="text-[10px] text-ui-text-muted font-bold">{att.file_type} • {att.uploaded_at}</span>
                           </div>
                         </div>
@@ -514,7 +848,7 @@ export default function ProjectSlideOver() {
                   <div className="bg-ui-accent/5 border border-ui-accent/20 rounded-2xl p-5 relative overflow-hidden transition-colors">
                     <Sparkles className="absolute top-4 right-4 w-5 h-5 text-ui-accent/30" />
                     <h4 className="text-[11px] font-black text-ui-accent uppercase tracking-widest mb-3 flex items-center gap-2">
-                       <Target className="w-4 h-4" /> Executive BD Briefing
+                       <Target className="w-4 h-4" /> Executive Briefing
                     </h4>
                     <p className="text-xs text-ui-text leading-relaxed font-medium">
                       {prepData.executive_summary}
@@ -525,7 +859,7 @@ export default function ProjectSlideOver() {
                   {prepData.contact_profiling && (
                     <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
                        <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <Users className="w-4 h-4 text-ui-accent" /> Contact Profiling
+                          <Users className="w-4 h-4 text-ui-accent" /> Contact Intelligence
                        </h4>
                        <p className="text-xs text-ui-text-muted font-medium leading-relaxed">
                          {prepData.contact_profiling}
@@ -537,7 +871,7 @@ export default function ProjectSlideOver() {
                   {prepData.product_catalyst_alignment && (
                     <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
                        <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-ui-success" /> Product-Catalyst Alignment
+                          <Sparkles className="w-4 h-4 text-ui-success" /> Asset Synergy Alignment
                        </h4>
                        <p className="text-xs text-ui-text-muted font-medium leading-relaxed">
                          {prepData.product_catalyst_alignment}
@@ -549,7 +883,7 @@ export default function ProjectSlideOver() {
                      {/* Strategic Levers */}
                      <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
                         <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-4 flex items-center gap-2">
-                           <ShieldAlert className="w-4 h-4 text-ui-warning" /> Negotiation Levers
+                           <ShieldAlert className="w-4 h-4 text-ui-warning" /> Strategic Levers
                         </h4>
                         <div className="text-xs text-ui-text-muted font-medium bg-ui-bg p-3 rounded-xl border border-ui-border/50 leading-relaxed italic">
                            {prepData.negotiation_levers}
@@ -559,7 +893,7 @@ export default function ProjectSlideOver() {
                      {/* Suggested Agenda */}
                      <div className="bg-ui-card rounded-2xl border border-ui-border p-5 transition-colors">
                         <h4 className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-4 flex items-center gap-2 text-ui-success">
-                           <ListChecks className="w-4 h-4" /> Proposed Meeting Agenda
+                           <ListChecks className="w-4 h-4" /> Proposed Session Agenda
                         </h4>
                         <ul className="space-y-2">
                            {(prepData.suggested_agenda || []).map((item, i) => (
@@ -603,7 +937,7 @@ export default function ProjectSlideOver() {
                        {chatHistory.length === 0 && (
                          <div className="text-center py-10 opacity-30">
                             <MessageSquare className="w-8 h-8 mx-auto mb-2" />
-                            <p className="text-[10px] font-bold">Ask anything about this project...</p>
+                            <p className="text-[10px] font-bold">Ask anything about this deal...</p>
                          </div>
                        )}
                        {chatHistory.map((msg, i) => (
@@ -628,7 +962,7 @@ export default function ProjectSlideOver() {
                          type="text" 
                          value={chatMessage}
                          onChange={(e) => setChatMessage(e.target.value)}
-                         placeholder="Deep dive suggestion..."
+                         placeholder="Strategic inquiry..."
                          className="flex-1 bg-ui-card border border-ui-border rounded-xl px-4 py-2 text-xs text-ui-text placeholder:text-ui-text-muted focus:ring-1 focus:ring-ui-accent focus:outline-none transition-all"
                        />
                        <button 
@@ -647,7 +981,7 @@ export default function ProjectSlideOver() {
                     className={`w-full py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-dashed border-ui-border rounded-xl ${!isAdmin ? 'opacity-50 cursor-not-allowed text-ui-text-muted' : 'text-ui-text-muted hover:text-ui-accent'}`}
                   >
                     <Clock className="w-3.5 h-3.5" />
-                    {isAdmin ? `Analysed: ${prepData.updated_at || 'Recently'} • Refresh Strategic Analysis` : 'Read-Only Mode: Analysis Refresh Disabled'}
+                    {isAdmin ? `Analysed: ${prepData.updated_at || 'Recently'} • Refresh Strategy` : 'Read-Only Mode: Strategic Refresh Disabled'}
                   </button>
                 </>
               ) : (
@@ -669,6 +1003,13 @@ export default function ProjectSlideOver() {
 
       </div>
     </>
+  );
+}
+
+// Simple fallback icon component
+function VideoIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
   );
 }
 

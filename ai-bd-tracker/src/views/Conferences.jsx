@@ -45,9 +45,9 @@ const logoMap = {
 const mockConferences = [
   {
     id: 'jpm2027', type: 'JPM', isHistorical: false, acronym: 'JPM 2027', name: '45th Annual J.P. Morgan Healthcare Conference', date: 'January 11-14, 2027', location: 'Westin St. Francis, San Francisco, CA', timezoneInfo: 'PST (UTC-8) | 16 hrs behind Beijing', color: 'blue',
-    objectives: ['Secure Series B lead investor (Target: $50M).', 'Finalize global out-licensing terms for Project Helios.'],
+    objectives: ['Secure Series B lead investor (Target: $50M).', 'Finalize global out-licensing terms for Asset Helios.'],
     delegation: [{ name: 'Dr. Alex Mercer', title: 'CEO', role: 'Executive Sponsor & Deal Closer' }, { name: 'Elena Rostova', title: 'CBO', role: 'Lead Negotiator' }],
-    meetings: [{ id: 'm1', partner: 'Pfizer', time: 'Jan 12, 10:00 AM PST (Jan 13, 02:00 AM Beijing)', focus: 'Project Helios Licensing', goal: 'Push for $30M upfront payment.', ourAttendees: ['Alex Mercer'], counterparties: [{ name: 'Dr. Sarah Jenkins', title: 'SVP, Global BD', bio: 'Veteran deal-maker. Deeply analytical.' }] }]
+    meetings: [{ id: 'm1', partner: 'Pfizer', time: 'Jan 12, 10:00 AM PST (Jan 13, 02:00 AM Beijing)', focus: 'Asset Helios Out-Licensing', goal: 'Push for $30M upfront payment.', ourAttendees: ['Alex Mercer'], counterparties: [{ name: 'Dr. Sarah Jenkins', title: 'SVP, Global BD', bio: 'Veteran deal-maker. Deeply analytical.' }] }]
   },
   {
     id: 'jpm2026', type: 'JPM', isHistorical: true, acronym: 'JPM 2026', name: '44th Annual J.P. Morgan Healthcare Conference', date: 'January 12-15, 2026', location: 'San Francisco, CA', timezoneInfo: 'PST (UTC-8)', color: 'slate',
@@ -63,7 +63,7 @@ const mockConferences = [
   },
   {
     id: 'asco2027', type: 'ASCO', isHistorical: false, acronym: 'ASCO 2027', name: 'American Society of Clinical Oncology Annual Meeting', date: 'June 4-8, 2027', location: 'McCormick Place, Chicago, IL', timezoneInfo: 'CDT (UTC-5) | 13 hrs behind Beijing', color: 'indigo',
-    objectives: ['Oral presentation for Project Helios Phase 2a interim data.', 'Poach key KOLs from competing trials.'],
+    objectives: ['Oral presentation for Asset Helios Phase 2a interim data.', 'Poach key KOLs from competing trials.'],
     delegation: [{ name: 'Dr. Chen Wei', title: 'CMO', role: 'KOL Whisperer' }, { name: 'Elena Rostova', title: 'CBO', role: 'Partnering' }],
     meetings: [{ id: 'm3', partner: 'Merck & Co.', time: 'June 5, 03:00 PM CDT (June 6, 04:00 AM Beijing)', focus: 'Combo Trial Feasibility', goal: 'Secure free drug supply agreement for Keytruda combo arm.', ourAttendees: ['Dr. Chen Wei', 'Elena Rostova'], counterparties: [{ name: 'Dr. Amanda Lewis', title: 'Global Clinical Lead', bio: 'Extremely protective of Keytruda combo rationale.' }] }]
   },

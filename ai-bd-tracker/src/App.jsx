@@ -5,7 +5,7 @@ import { api } from './services/api';
 import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
-import ProjectSlideOver from './components/ProjectSlideOver';
+import DealSlideOver from './components/DealSlideOver';
 import AIAnalysisModal from './components/AIAnalysisModal';
 import SmartInput from './views/SmartInput';
 import Dashboard from './views/Dashboard';
@@ -59,7 +59,7 @@ const ProtectedLayout = ({ children }) => {
         </main>
         
         {/* Global Modals accessible from all views */}
-        <ProjectSlideOver />
+        <DealSlideOver />
         <AIAnalysisModal />
       </div>
     </div>
@@ -67,15 +67,15 @@ const ProtectedLayout = ({ children }) => {
 };
 
 export default function App() {
-  const { setProjects, setContacts, setDashboardData, setScheduleData, setNotifications } = useStore();
+  const { setDeals, setContacts, setDashboardData, setScheduleData, setNotifications } = useStore();
 
   useEffect(() => {
-    const loadProjects = async () => {
+    const loadDeals = async () => {
       try {
-        const data = await api.getProjects();
-        setProjects(data);
+        const data = await api.getDeals();
+        setDeals(data);
       } catch (err) {
-        console.error("Failed to load projects from backend:", err);
+        console.error("Failed to load deals from backend:", err);
       }
     };
 
@@ -98,10 +98,10 @@ export default function App() {
       }
     };
 
-    loadProjects();
+    loadDeals();
     loadContacts();
     loadMockData();
-  }, [setProjects, setContacts, setDashboardData, setScheduleData, setNotifications]);
+  }, [setDeals, setContacts, setDashboardData, setScheduleData, setNotifications]);
 
   return (
     <BrowserRouter>
