@@ -4,7 +4,7 @@ import {
   Users, History, ChevronDown, ChevronUp, Link, Download, Microscope, 
   Target, BrainCircuit, Sparkles, Send, ShieldAlert, ListChecks, 
   MessageSquareQuote, Loader2, Layers, Gavel, DollarSign, Globe, ExternalLink, Plus,
-  TrendingUp, AlertTriangle, ShieldCheck
+  TrendingUp, AlertTriangle, ShieldCheck, Video
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
@@ -192,7 +192,7 @@ export default function DealSlideOver() {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'meeting': return <VideoIcon/>;
+      case 'meeting': return <Video className="w-4 h-4"/>;
       case 'document': return <FileText className="w-4 h-4"/>;
       case 'email': return <Mail className="w-4 h-4"/>;
       case 'call': return <Phone className="w-4 h-4"/>;
@@ -1006,16 +1006,5 @@ export default function DealSlideOver() {
   );
 }
 
-// Simple fallback icon component
-function VideoIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
-  );
-}
-
-// Simple fallback icon component
-function VideoIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
   );
 }

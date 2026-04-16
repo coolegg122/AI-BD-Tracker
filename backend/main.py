@@ -30,7 +30,7 @@ if _db_url.startswith("sqlite"):
     models.Base.metadata.create_all(bind=database.engine)
 
 
-app = FastAPI(title="AI-BD Tracker API", version="1.0.0")
+app = FastAPI(title="AI-BD Tracker API", version="1.0.1")
 
 # ==========================================
 # PHASE 7: SQLADMIN BACK-OFFICE PORTAL
