@@ -1005,6 +1005,3 @@ export default function DealSlideOver() {
     </>
   );
 }
-
-  );
-}
