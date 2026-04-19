@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator, EmailStr
 from typing import List, Optional
+from datetime import datetime
 
 class TaskBase(BaseModel):
     type: str

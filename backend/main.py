@@ -30,7 +30,7 @@ if _db_url.startswith("sqlite"):
     models.Base.metadata.create_all(bind=database.engine)
 
 
-app = FastAPI(title="AI-BD Tracker API", version="1.0.2")
+app = FastAPI(title="AI-BD Tracker API", version="1.0.3")
 
 # ==========================================
 # PHASE 7: SQLADMIN BACK-OFFICE PORTAL
@@ -351,9 +351,9 @@ def update_deal(deal_id: int, deal_update: schemas.DealUpdate, db: Session = Dep
     if not db_deal:
         raise HTTPException(status_code=404, detail="Deal not found")
     
-    update_data = project_update.model_dump(exclude_unset=True)
+    update_data = deal_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(db_project, key, value)
+        setattr(db_deal, key, value)
         
     db.commit()
     db.refresh(db_deal)
